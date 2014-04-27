@@ -25,3 +25,4 @@ I wanted to add some features and to have it hosted on GitHub.
 
 Support for .NET 2.0 is kept.
 
+*Gifs are made using LICEcap http://www.cockos.com/licecap/*
