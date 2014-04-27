@@ -19,5 +19,3 @@ New features:
 
 I have kept project to target .NET 2.0.
 
-
-// TODO: add binaries
