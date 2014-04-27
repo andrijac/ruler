@@ -3,6 +3,9 @@ ruler
 
 Fork of small utility application for Windows called Ruler.
 
+Download working version:
+https://github.com/andrijac/ruler/tree/master/Bin/Debug
+
 Original project was developed by Jeff Key:
 
 - http://weblogs.asp.net/jkey/archive/2004/09/01/224433.aspx
