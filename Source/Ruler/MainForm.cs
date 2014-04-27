@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace Ruler
 {
-	sealed public class MainForm : Form
+	sealed public class MainForm : Form, IRulerInfo
 	{
 		#region ResizeRegion enum
 
@@ -28,16 +28,9 @@ namespace Ruler
 		private MenuItem _toolTipMenuItem;
 		private MenuItem _lockedMenuItem;
 
-		private bool _isLocked;
-
 		public MainForm()
 		{
-			RulerInfo rulerInfo = new RulerInfo();
-
-			rulerInfo.Width = 400;
-			rulerInfo.Height = 75;
-			rulerInfo.Opacity = 0.65;
-			//rulerInfo.IsVertical = this.IsVertical;
+			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
 
 			this.Init(rulerInfo);
 		}
@@ -47,13 +40,19 @@ namespace Ruler
 			this.Init(rulerInfo);
 		}
 
-		private bool IsVertical
+		public bool IsVertical
 		{
 			get { return this._verticalMenuItem.Checked; }
 			set { this._verticalMenuItem.Checked = value; }
 		}
 
-		private bool ShowToolTip
+		public bool IsLocked
+		{
+			get;
+			set;
+		}
+
+		public bool ShowToolTip
 		{
 			get
 			{
@@ -83,8 +82,7 @@ namespace Ruler
 			this.Text = "Ruler";
 			this.BackColor = Color.White;
 
-			this.ClientSize = new Size(rulerInfo.Width, rulerInfo.Height);
-			this.Opacity = rulerInfo.Opacity;
+			rulerInfo.CopyInto(this);
 
 			this.FormBorderStyle = FormBorderStyle.None;
 
@@ -92,18 +90,13 @@ namespace Ruler
 			this.Font = new Font("Tahoma", 10);
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
-
-			this._isLocked = false;
 		}
 
 		private RulerInfo GetRulerInfo()
 		{
 			RulerInfo rulerInfo = new RulerInfo();
 
-			rulerInfo.Width = this.Width;
-			rulerInfo.Height = this.Height;
-			rulerInfo.Opacity = this.Opacity;
-			rulerInfo.IsVertical = false;
+			this.CopyInto(rulerInfo);
 
 			return rulerInfo;
 		}
@@ -132,7 +125,12 @@ namespace Ruler
 
 		private void SetWidthHeightHandler(object sender, EventArgs e)
 		{
-			SizeSetForm form = new SizeSetForm(this.Width, this.Height);
+			SetSizeForm form = new SetSizeForm(this.Width, this.Height);
+
+			if (this.TopMost)
+			{
+				form.TopMost = true;
+			}
 
 			if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 			{
@@ -145,8 +143,8 @@ namespace Ruler
 
 		private void LockHandler(object sender, EventArgs e)
 		{
-			this._isLocked = !this._isLocked;
-			this._lockedMenuItem.Checked = this._isLocked;
+			this.IsLocked = !this.IsLocked;
+			this._lockedMenuItem.Checked = this.IsLocked;
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
@@ -342,7 +340,7 @@ namespace Ruler
 
 		private void HandleResize()
 		{
-			if (this._isLocked)
+			if (this.IsLocked)
 			{
 				return;
 			}
@@ -535,7 +533,7 @@ namespace Ruler
 					TopMost = mi.Checked;
 					break;
 
-				case "About":
+				case "About...":
 					string message = string.Format("Ruler v{0} by Jeff Key\nwww.sliver.com\nIcon by Kristen Magee @ www.kbecca.com", Application.ProductVersion);
 					MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 					break;
@@ -548,10 +546,10 @@ namespace Ruler
 
 		private void ChangeOrientation()
 		{
-			IsVertical = !IsVertical;
+			this.IsVertical = !IsVertical;
 			int width = Width;
-			Width = Height;
-			Height = width;
+			this.Width = Height;
+			this.Height = width;
 		}
 	}
 }

@@ -32,6 +32,7 @@
     </UpgradeBackupLocation>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
@@ -94,12 +95,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExtensionSupport.cs" />
+    <Compile Include="IRulerInfo.cs" />
     <Compile Include="RulerInfo.cs" />
-    <Compile Include="SizeSetForm.cs">
+    <Compile Include="SetSizeForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SizeSetForm.Designer.cs">
-      <DependentUpon>SizeSetForm.cs</DependentUpon>
+    <Compile Include="SetSizeForm.Designer.cs">
+      <DependentUpon>SetSizeForm.cs</DependentUpon>
     </Compile>
     <Content Include="app.ico" />
     <Compile Include="AssemblyInfo.cs">
@@ -112,9 +115,12 @@
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="SizeSetForm.resx">
-      <DependentUpon>SizeSetForm.cs</DependentUpon>
+    <EmbeddedResource Include="SetSizeForm.resx">
+      <DependentUpon>SetSizeForm.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

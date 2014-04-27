@@ -1,6 +1,6 @@
 ﻿namespace Ruler
 {
-	partial class SizeSetForm
+	partial class SetSizeForm
 	{
 		/// <summary>
 		/// Required designer variable.

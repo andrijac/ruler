@@ -8,12 +8,12 @@ using System.Windows.Forms;
 
 namespace Ruler
 {
-	public partial class SizeSetForm : Form
+	public partial class SetSizeForm : Form
 	{
 		private int originalWidth;
 		private int originalHeight;
 
-		public SizeSetForm(int initWidth, int initHeight)
+		public SetSizeForm(int initWidth, int initHeight)
 		{
 			this.InitializeComponent();
 
