@@ -14,7 +14,7 @@ Original project was developed by Jeff Key:
 
 I wanted to add some features and to have it hosted on GitHub.
 
-<a id="newfeatures"></a>New features:
+<a name="newfeatures" href="#newfeatures">#</a>New features:
 
 - Lock ruler from resizing - it happens from time to time that when I move ruler around with mouse I accidentally resize it.
 - Set size dialog - to set exact size I want ruler to be, not to try to adjust it with keyboard or mouse pixel by pixel.
