@@ -26,20 +26,9 @@ namespace Ruler
 		private ContextMenu _menu = new ContextMenu();
 		private MenuItem _verticalMenuItem;
 		private MenuItem _toolTipMenuItem;
+		private MenuItem _lockedMenuItem;
 
-		private bool _isVertical;
-
-		private RulerInfo GetRulerInfo()
-		{
-			RulerInfo rulerInfo = new RulerInfo();
-
-			rulerInfo.Width = this.Width;
-			rulerInfo.Height = this.Height;
-			rulerInfo.Opacity = this.Opacity;
-			rulerInfo.IsVertical = false;
-
-			return rulerInfo;
-		}
+		private bool _isLocked;
 
 		public MainForm()
 		{
@@ -58,7 +47,30 @@ namespace Ruler
 			this.Init(rulerInfo);
 		}
 
-		public void Init(RulerInfo rulerInfo)
+		private bool IsVertical
+		{
+			get { return this._verticalMenuItem.Checked; }
+			set { this._verticalMenuItem.Checked = value; }
+		}
+
+		private bool ShowToolTip
+		{
+			get
+			{
+				return this._toolTipMenuItem.Checked;
+			}
+			set
+			{
+				this._toolTipMenuItem.Checked = value;
+
+				if (value)
+				{
+					this.SetToolTip();
+				}
+			}
+		}
+
+		private void Init(RulerInfo rulerInfo)
 		{
 			this.SetStyle(ControlStyles.ResizeRedraw, true);
 			this.UpdateStyles();
@@ -80,44 +92,35 @@ namespace Ruler
 			this.Font = new Font("Tahoma", 10);
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+
+			this._isLocked = false;
 		}
 
-		private bool IsVertical
+		private RulerInfo GetRulerInfo()
 		{
-			get { return this._verticalMenuItem.Checked; }
-			set { this._verticalMenuItem.Checked = value; }
-		}
+			RulerInfo rulerInfo = new RulerInfo();
 
-		private bool ShowToolTip
-		{
-			get
-			{
-				return this._toolTipMenuItem.Checked;
-			}
-			set
-			{
-				this._toolTipMenuItem.Checked = value;
+			rulerInfo.Width = this.Width;
+			rulerInfo.Height = this.Height;
+			rulerInfo.Opacity = this.Opacity;
+			rulerInfo.IsVertical = false;
 
-				if (value)
-				{
-					SetToolTip();
-				}
-			}
+			return rulerInfo;
 		}
 
 		private void SetUpMenu()
 		{
-			AddMenuItem("Stay On Top");
-			_verticalMenuItem = AddMenuItem("Vertical");
-			_toolTipMenuItem = AddMenuItem("Tool Tip");
-			MenuItem opacityMenuItem = AddMenuItem("Opacity");
-			AddMenuItem("Lock resize", Shortcut.None, this.LockHandler);
-			AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
-			AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
-			AddMenuItem("-");
-			AddMenuItem("About...");
-			AddMenuItem("-");
-			AddMenuItem("Exit");
+			this.AddMenuItem("Stay On Top");
+			this._verticalMenuItem = this.AddMenuItem("Vertical");
+			this._toolTipMenuItem = this.AddMenuItem("Tool Tip");
+			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
+			this._lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
+			this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
+			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
+			this.AddMenuItem("-");
+			this.AddMenuItem("About...");
+			this.AddMenuItem("-");
+			this.AddMenuItem("Exit");
 
 			for (int i = 10; i <= 100; i += 10)
 			{
@@ -142,6 +145,8 @@ namespace Ruler
 
 		private void LockHandler(object sender, EventArgs e)
 		{
+			this._isLocked = !this._isLocked;
+			this._lockedMenuItem.Checked = this._isLocked;
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
@@ -227,9 +232,9 @@ namespace Ruler
 
 		protected override void OnResize(EventArgs e)
 		{
-			if (ShowToolTip)
+			if (this.ShowToolTip)
 			{
-				SetToolTip();
+				this.SetToolTip();
 			}
 
 			base.OnResize(e);
@@ -337,6 +342,11 @@ namespace Ruler
 
 		private void HandleResize()
 		{
+			if (this._isLocked)
+			{
+				return;
+			}
+
 			switch (_resizeRegion)
 			{
 				case ResizeRegion.E:

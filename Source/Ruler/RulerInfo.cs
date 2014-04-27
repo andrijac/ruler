@@ -18,6 +18,9 @@ namespace Ruler
 			set;
 		}
 
+		/// <summary>
+		/// TODO
+		/// </summary>
 		public bool IsVertical
 		{
 			get;
@@ -25,6 +28,24 @@ namespace Ruler
 		}
 
 		public double Opacity
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
+		/// TODO
+		/// </summary>
+		public bool ShowToolTip
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
+		/// TODO
+		/// </summary>
+		public bool IsLocked
 		{
 			get;
 			set;
