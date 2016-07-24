@@ -118,8 +118,8 @@ namespace Ruler
 			for (int i = 10; i <= 100; i += 10)
 			{
 				MenuItem subMenu = new MenuItem(i + "%");
-                subMenu.Checked = i == Opacity * 100;
-                subMenu.Click += new EventHandler(OpacityMenuHandler);
+				subMenu.Checked = i == Opacity * 100;
+				subMenu.Click += new EventHandler(OpacityMenuHandler);
 				opacityMenuItem.MenuItems.Add(subMenu);
 			}
 		}
@@ -508,26 +508,28 @@ namespace Ruler
 		private void OpacityMenuHandler(object sender, EventArgs e)
 		{
 			MenuItem mi = (MenuItem)sender;
-            UncheckMenuItem(mi.Parent);        
-            mi.Checked = true;
+			UncheckMenuItem(mi.Parent);
+			mi.Checked = true;
 			Opacity = double.Parse(mi.Text.Replace("%", "")) / 100;
 		}
 
-        private void UncheckMenuItem(Menu parent)
-        {
-            if (parent == null || parent.MenuItems == null)
-                return;
+		private void UncheckMenuItem(Menu parent)
+		{
+			if (parent == null || parent.MenuItems == null)
+			{
+				return;
+			}
 
-            for(int i = 0; i < parent.MenuItems.Count; i++)
-            {
-                if(parent.MenuItems[i].Checked)
-                {
-                    parent.MenuItems[i].Checked = false;
-                }
-            }
-        }
+			for (int i = 0; i < parent.MenuItems.Count; i++)
+			{
+				if (parent.MenuItems[i].Checked)
+				{
+					parent.MenuItems[i].Checked = false;
+				}
+			}
+		}
 
-        private void MenuHandler(object sender, EventArgs e)
+		private void MenuHandler(object sender, EventArgs e)
 		{
 			MenuItem mi = (MenuItem)sender;
 
