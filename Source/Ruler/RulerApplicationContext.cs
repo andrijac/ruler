@@ -48,7 +48,7 @@ namespace Ruler
             RegistryKey key = Registry.CurrentUser.OpenSubKey(AutostartRegistryPath, true);
             if (autoStartMenuItem.Checked)
             {
-                key.SetValue(Application.ProductName, true);
+                key.SetValue(Application.ProductName, "\"" + Application.ExecutablePath + "\"");
             }
             else
             {
