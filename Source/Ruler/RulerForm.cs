@@ -82,7 +82,7 @@ namespace Ruler
             ResourceManager resources = new ResourceManager(typeof(RulerForm));
             this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
 
-            this.SetUpMenu();
+            this.SetUpMenu(rulerInfo);
 
             this.Text = "Ruler";
             this.BackColor = Color.White;
@@ -109,7 +109,7 @@ namespace Ruler
             return rulerInfo;
         }
 
-        private void SetUpMenu()
+        private void SetUpMenu(RulerInfo rulerInfo)
         {
             this.AddMenuItem("Stay On Top");
             this._verticalMenuItem = this.AddMenuItem("Vertical");
@@ -124,7 +124,7 @@ namespace Ruler
             for (int i = 10; i <= 100; i += 10)
             {
                 MenuItem subMenu = new MenuItem(i + "%");
-                subMenu.Checked = i == Opacity * 100;
+                subMenu.Checked = i == rulerInfo.Opacity * 100;
                 subMenu.Click += new EventHandler(OpacityMenuHandler);
                 opacityMenuItem.MenuItems.Add(subMenu);
             }
