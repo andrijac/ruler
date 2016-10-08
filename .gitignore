@@ -13,7 +13,7 @@
 x64/
 build/
 bld/
-[Bb]in/
+Source/[Bb]in/
 [Oo]bj/
 
 # MSTest test Results
