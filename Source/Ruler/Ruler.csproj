@@ -152,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <Compile Include="Config.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

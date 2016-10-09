@@ -9,17 +9,18 @@ using System.Windows.Forms;
 
 namespace Ruler
 {
-    class RulerApplicationContext : ApplicationContext
+    public class RulerApplicationContext : ApplicationContext
     {
-        private NotifyIcon trayIcon;
-        private MenuItem autoStartMenuItem;
         private string AutostartRegistryPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+        private NotifyIcon _trayIcon;
+        private MenuItem _autoStartMenuItem;
+        private Config _config;
         public RulerApplicationContext()
         {
             // Initialize Tray Icon
-            autoStartMenuItem = new MenuItem("Autostart", toggleAutoStart);
+            _autoStartMenuItem = new MenuItem("Autostart", toggleAutoStart);
             RegistryKey key = Registry.CurrentUser.OpenSubKey(AutostartRegistryPath, true);
-            autoStartMenuItem.Checked = key.GetValue(Application.ProductName) != null;
+            _autoStartMenuItem.Checked = key.GetValue(Application.ProductName) != null;
             key.Close();
 
             ResourceManager resources = new ResourceManager(typeof(RulerForm));
@@ -27,26 +28,29 @@ namespace Ruler
                 new MenuItem("Horizontal Ruler", NewHorizontalRuler),
                 new MenuItem("Vertical Ruler", NewVerticalRuler),
                 new MenuItem("-"),
-                autoStartMenuItem,
+                _autoStartMenuItem,
                 new MenuItem("-"),
                 new MenuItem("About", About),
                 new MenuItem("Exit", Exit),
             });
 
-            trayIcon = new NotifyIcon()
+            _trayIcon = new NotifyIcon()
             {
                 Icon = ((Icon)(resources.GetObject("$this.Icon"))),
                 ContextMenu = contextMenu
             };
 
-            trayIcon.Click += handleClick;
-            trayIcon.Visible = true;
+            _trayIcon.Click += handleClick;
+            _trayIcon.Visible = true;
+
+            // load config
+            _config = Config.Load();
         }
         void toggleAutoStart(object sender, EventArgs e)
         {
-            autoStartMenuItem.Checked = !autoStartMenuItem.Checked;
+            _autoStartMenuItem.Checked = !_autoStartMenuItem.Checked;
             RegistryKey key = Registry.CurrentUser.OpenSubKey(AutostartRegistryPath, true);
-            if (autoStartMenuItem.Checked)
+            if (_autoStartMenuItem.Checked)
             {
                 key.SetValue(Application.ProductName, "\"" + Application.ExecutablePath + "\"");
             }
@@ -75,26 +79,24 @@ namespace Ruler
         }
         void NewVerticalRuler(object sender, EventArgs e)
         {
-            var info = RulerInfo.GetDefaultRulerInfo();
-            info.IsVertical = true;
-            var w = info.Width;
-            info.Width = 45;
-            info.Height = w;
-            var ruler = new RulerForm(info);
+            var ruler = new RulerForm(this, _config.VerticalRulerInfo);
             ruler.Show();
         }
         void NewHorizontalRuler(object sender, EventArgs e)
         {
-            var info = RulerInfo.GetDefaultRulerInfo();
-            var ruler = new RulerForm(info);
+            var ruler = new RulerForm(this, _config.HorizontalRulerInfo);
             ruler.Show();
         }
         void Exit(object sender, EventArgs e)
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
-            trayIcon.Visible = false;
+            _trayIcon.Visible = false;
 
             Application.Exit();
+        }
+        public void SaveConfig()
+        {
+            Config.Save(_config);
         }
     }
 }

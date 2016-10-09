@@ -30,18 +30,23 @@ namespace Ruler
         private MenuItem _verticalMenuItem;
         private MenuItem _toolTipMenuItem;
         private MenuItem _lockedMenuItem;
+        private MenuItem _topMostMenuItem;
         private DragMode _dragMode = DragMode.None;
+        private RulerApplicationContext _context;
+        private RulerInfo _info;
 
-        public RulerForm()
+        public RulerForm(RulerApplicationContext context)
         {
-            RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
-
-            this.Init(rulerInfo);
+            _context = context;
+            _info = RulerInfo.GetDefaultRulerInfo();
+            this.Init();
         }
 
-        public RulerForm(RulerInfo rulerInfo)
+        public RulerForm(RulerApplicationContext context, RulerInfo rulerInfo)
         {
-            this.Init(rulerInfo);
+            _context = context;
+            _info = rulerInfo;
+            this.Init();
         }
 
         public bool IsVertical
@@ -73,7 +78,7 @@ namespace Ruler
             }
         }
 
-        private void Init(RulerInfo rulerInfo)
+        private void Init()
         {
             this.MinimumSize = new Size(1,1);
             this.SetStyle(ControlStyles.ResizeRedraw, true);
@@ -82,7 +87,7 @@ namespace Ruler
             ResourceManager resources = new ResourceManager(typeof(RulerForm));
             this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
 
-            this.SetUpMenu(rulerInfo);
+            this.SetUpMenu();
 
             this.Text = "Ruler";
             this.BackColor = Color.White;
@@ -95,9 +100,11 @@ namespace Ruler
 
             this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 
-            rulerInfo.CopyInto(this);
-
+            _info.CopyInto(this);
+            _topMostMenuItem.Checked = this.TopMost;
+            _lockedMenuItem.Checked = this.IsLocked;
             this.ShowInTaskbar = false;
+
         }
 
         private RulerInfo GetRulerInfo()
@@ -109,22 +116,24 @@ namespace Ruler
             return rulerInfo;
         }
 
-        private void SetUpMenu(RulerInfo rulerInfo)
+        private void SetUpMenu()
         {
-            this.AddMenuItem("Stay On Top");
+            this._topMostMenuItem = this.AddMenuItem("Stay On Top");
             this._verticalMenuItem = this.AddMenuItem("Vertical");
             this._toolTipMenuItem = this.AddMenuItem("Tool Tip");
             MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
             this._lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
             this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
+            this.AddMenuItem("-");
             this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
+            this.AddMenuItem("Save as default", Shortcut.None, this.SaveAsDefault);
             this.AddMenuItem("-");
             this.AddMenuItem("Close");
 
             for (int i = 10; i <= 100; i += 10)
             {
                 MenuItem subMenu = new MenuItem(i + "%");
-                subMenu.Checked = i == rulerInfo.Opacity * 100;
+                subMenu.Checked = i == _info.Opacity * 100;
                 subMenu.Click += new EventHandler(OpacityMenuHandler);
                 opacityMenuItem.MenuItems.Add(subMenu);
             }
@@ -147,7 +156,11 @@ namespace Ruler
                 this.Height = size.Height;
             }
         }
-
+        private void SaveAsDefault(object sender, EventArgs e)
+        {
+            this.CopyInto(_info);
+            _context.SaveConfig();
+        }
         private void LockHandler(object sender, EventArgs e)
         {
             this.IsLocked = !this.IsLocked;
@@ -156,8 +169,7 @@ namespace Ruler
 
         private void DuplicateHandler(object sender, EventArgs e)
         {
-            RulerInfo rulerInfo = this.GetRulerInfo();
-            var copy = new RulerForm(rulerInfo);
+            var copy = new RulerForm(_context, _info);
             copy.Show();
         }
 
