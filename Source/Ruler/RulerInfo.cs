@@ -85,16 +85,16 @@ namespace Ruler
 			return rulerInfo;
 		}
 
-		public static RulerInfo GetDefaultRulerInfo()
+		public static RulerInfo GetDefaultRulerInfo(bool isVertical=false)
 		{
 			RulerInfo rulerInfo = new RulerInfo();
 
-			rulerInfo.Width = 400;
-			rulerInfo.Height = 75;
-			rulerInfo.Opacity = 0.65;
+            rulerInfo.Width = isVertical ? 45 : 400;
+			rulerInfo.Height = isVertical ? 400 : 75;
+			rulerInfo.Opacity = 0.60;
 			rulerInfo.ShowToolTip = false;
 			rulerInfo.IsLocked = false;
-			rulerInfo.IsVertical = false;
+            rulerInfo.IsVertical = isVertical;
 			rulerInfo.TopMost = false;
 
 			return rulerInfo;
