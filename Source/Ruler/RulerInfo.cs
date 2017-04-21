@@ -91,7 +91,7 @@ namespace Ruler
 
 			rulerInfo.Width = 400;
 			rulerInfo.Height = 75;
-			rulerInfo.Opacity = 0.65;
+			rulerInfo.Opacity = 0.60;
 			rulerInfo.ShowToolTip = false;
 			rulerInfo.IsLocked = false;
 			rulerInfo.IsVertical = false;

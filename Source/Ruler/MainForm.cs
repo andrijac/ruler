@@ -76,6 +76,7 @@ namespace Ruler
 
 			ResourceManager resources = new ResourceManager(typeof(MainForm));
 			this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
+		    this.Opacity = rulerInfo.Opacity;
 
 			this.SetUpMenu();
 
