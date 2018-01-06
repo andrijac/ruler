@@ -172,3 +172,7 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+/Source/.vs/Ruler/v15/Server/sqlite3/storage.ide-wal
+/Source/.vs/Ruler/v15/Server/sqlite3/storage.ide-shm
+/Source/.vs/Ruler/v15/Server/sqlite3/storage.ide
+/Source/.vs/Ruler/v15/Server/sqlite3/db.lock

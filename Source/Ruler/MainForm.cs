@@ -62,14 +62,23 @@ namespace Ruler
 			{
 				this._toolTipMenuItem.Checked = value;
 
-				if (value)
-				{
-					this.SetToolTip();
-				}
+                if (value)
+                {
+                    this.SetToolTip();
+                }
+                else
+                {
+                    this.HideToolTip();
+                }
 			}
 		}
 
-		private void Init(RulerInfo rulerInfo)
+        private void HideToolTip()
+        {
+            this._toolTip.Active = false;
+        }
+
+        private void Init(RulerInfo rulerInfo)
 		{
 			this.SetStyle(ControlStyles.ResizeRedraw, true);
 			this.UpdateStyles();
@@ -242,8 +251,10 @@ namespace Ruler
 
 		private void SetToolTip()
 		{
+            
 			_toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", Width, Height));
-		}
+            _toolTip.Active = true;
+        }
 
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
