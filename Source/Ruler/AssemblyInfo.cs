@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 // associated with an assembly.
 //
 [assembly: AssemblyTitle("Ruler")]
-[assembly: AssemblyDescription("It's a ruler")]
+[assembly: AssemblyDescription("Simple on-screen pixel ruler. Original author Jeff Key.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Jeff Key")]
 [assembly: AssemblyProduct("Ruler")]
@@ -54,5 +54,5 @@ using System.Runtime.CompilerServices;
 //       documentation for more information on this.
 //
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile("")]
-[assembly: AssemblyKeyName("")]
+//[assembly: AssemblyKeyFile("")]
+//[assembly: AssemblyKeyName("")]
