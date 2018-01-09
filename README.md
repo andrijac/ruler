@@ -32,7 +32,7 @@ Support for .NET 2.0 is kept. :thumbsup:
 
 <img src="https://github.com/andrijac/ruler/raw/master/img/setsize.gif">
 
-###Ruler shortcuts:
+### Ruler shortcuts:
 
 - **Space** and **Double click** will toggle direction of ruler. 
 - **Arrow keys** move ruler around
