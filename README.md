@@ -10,6 +10,7 @@ Simple on-screen pixel ruler.
 Binaries:
 https://github.com/andrijac/ruler/tree/master/Bin
 
+### Legacy
 Ruler is fork of small utility application originally developed by Jeff Key:
 
 - http://ruler.codeplex.com/ :floppy_disk:
@@ -18,7 +19,7 @@ Ruler is fork of small utility application originally developed by Jeff Key:
 
 Support for .NET 2.0 is kept. :thumbsup:
 
-**<a name="newfeatures" href="https://github.com/andrijac/ruler/blob/master/NewFeatures.md">Added features</a>**
+**<a name="newfeatures" href="https://github.com/andrijac/ruler/blob/master/NewFeatures.md">Added features in this fork.</a>**
 
 ### Ruler shortcuts:
 
@@ -30,9 +31,9 @@ In current implementation, you can either not use parameters (just start app) or
 Parameters are intended to be used internally to duplicate Ruler by passing configuration to new instance, but you can use them to save prefered Ruler configuration too
 The way parameters are passed to program and parsed might change in future.
 
-`ruler [Width:int] [Height:int] [IsVertical:bool] [Opacity:double] [ShowToolTip:bool] [IsLocked:bool] [TopMost:bool]`
+`ruler.exe [Width:int] [Height:int] [IsVertical:bool] [Opacity:double] [ShowToolTip:bool] [IsLocked:bool] [TopMost:bool]`
 
 Example:
-`ruler 100 50 false 0.6 true false true`
+`ruler.exe 100 50 false 0.6 true false true`
 
 *Gifs are made using LICEcap http://www.cockos.com/licecap/*
