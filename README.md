@@ -1,24 +1,24 @@
 ruler
 =====
+Simple on-screen pixel ruler.
 
-Fork of small utility application for Windows called Ruler.
+<br />
+<a href="http://www.softpedia.com/progDownload/Ruler-andrijac-Download-256095.html"><img alt="download page" src="https://raw.githubusercontent.com/andrijac/ruler/master/img/softpedia_download_large_shadow.png" /></a>
 
 <img src="https://github.com/andrijac/ruler/raw/master/img/ruler.gif">
 
-Download working version:
+Binaries:
 https://github.com/andrijac/ruler/tree/master/Bin
 
-Original project was developed by Jeff Key:
+Ruler is fork of small utility application originally developed by Jeff Key:
 
 - http://ruler.codeplex.com/ :floppy_disk:
 - ~~http://weblogs.asp.net/jkey/archive/2004/09/01/224433.aspx~~ :skull:
 - ~~http://www.sliver.com/dotnet/ruler/~~ :skull:
 
-I wanted to add some features and to have it hosted on GitHub.
-
 Support for .NET 2.0 is kept. :thumbsup:
 
-<a name="newfeatures" href="https://github.com/andrijac/ruler/blob/master/NewFeatures.md">New features</a>
+**<a name="newfeatures" href="https://github.com/andrijac/ruler/blob/master/NewFeatures.md">Added features</a>**
 
 ### Ruler shortcuts:
 
