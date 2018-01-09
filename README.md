@@ -25,7 +25,11 @@ Support for .NET 2.0 is kept. :thumbsup:
 - **Space** and **Double click**: will toggle direction of ruler. 
 - **Arrow keys**: move ruler
 
-### Command line parameters:
+### Command line parameters (optional):
+In current implementation, you can either not use parameters (just start app) or use all parameters (you cannot used parameters selectively)
+Parameters are intended to be used internally to duplicate ruler, but you can use them to save settings too.
+The way parameters are passed to program and parsed might change in future.
+
 `ruler [Width:int] [Height:int] [IsVertical:bool] [Opacity:double] [ShowToolTip:bool] [IsLocked:bool] [TopMost:bool]`
 
 Example:
