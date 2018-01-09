@@ -72,30 +72,32 @@ namespace Ruler
 			string isLocked = args[5];
 			string topMost = args[6];
 
-			RulerInfo rulerInfo = new RulerInfo();
-
-			rulerInfo.Width = int.Parse(width);
-			rulerInfo.Height = int.Parse(height);
-			rulerInfo.IsVertical = bool.Parse(isVertical);
-			rulerInfo.Opacity = double.Parse(opacity);
-			rulerInfo.ShowToolTip = bool.Parse(showToolTip);
-			rulerInfo.IsLocked = bool.Parse(isLocked);
-			rulerInfo.TopMost = bool.Parse(topMost);
+			RulerInfo rulerInfo = new RulerInfo
+			{
+				Width = int.Parse(width),
+				Height = int.Parse(height),
+				IsVertical = bool.Parse(isVertical),
+				Opacity = double.Parse(opacity),
+				ShowToolTip = bool.Parse(showToolTip),
+				IsLocked = bool.Parse(isLocked),
+				TopMost = bool.Parse(topMost)
+			};
 
 			return rulerInfo;
 		}
 
 		public static RulerInfo GetDefaultRulerInfo()
 		{
-			RulerInfo rulerInfo = new RulerInfo();
-
-			rulerInfo.Width = 400;
-			rulerInfo.Height = 75;
-			rulerInfo.Opacity = 0.60;
-			rulerInfo.ShowToolTip = false;
-			rulerInfo.IsLocked = false;
-			rulerInfo.IsVertical = false;
-			rulerInfo.TopMost = false;
+			RulerInfo rulerInfo = new RulerInfo
+			{
+				Width = 400,
+				Height = 75,
+				Opacity = 0.60,
+				ShowToolTip = false,
+				IsLocked = false,
+				IsVertical = false,
+				TopMost = true
+			};
 
 			return rulerInfo;
 		}
