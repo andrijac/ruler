@@ -10,9 +10,9 @@ https://github.com/andrijac/ruler/tree/master/Bin
 
 Original project was developed by Jeff Key:
 
-- ~~http://weblogs.asp.net/jkey/archive/2004/09/01/224433.aspx~~
-- ~~http://www.sliver.com/dotnet/ruler/~~
-- http://ruler.codeplex.com/
+- http://ruler.codeplex.com/ :floppy_disk:
+- ~~http://weblogs.asp.net/jkey/archive/2004/09/01/224433.aspx~~ :skull:
+- ~~http://www.sliver.com/dotnet/ruler/~~ :skull:
 
 I wanted to add some features and to have it hosted on GitHub.
 
