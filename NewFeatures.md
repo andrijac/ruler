@@ -11,3 +11,5 @@
 - **Set size dialog** - to set exact size I want ruler to be, not to try to adjust it with keyboard or mouse pixel by pixel.
 
 <img src="https://github.com/andrijac/ruler/raw/master/img/setsize.gif">
+
+*Gifs are made using LICEcap http://www.cockos.com/licecap/*
