@@ -6,7 +6,7 @@ Fork of small utility application for Windows called Ruler.
 <img src="https://github.com/andrijac/ruler/raw/master/img/ruler.gif">
 
 Download working version:
-https://github.com/andrijac/ruler/tree/master/Bin/Debug
+https://github.com/andrijac/ruler/tree/master/Bin
 
 Original project was developed by Jeff Key:
 
