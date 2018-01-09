@@ -16,6 +16,8 @@ Original project was developed by Jeff Key:
 
 I wanted to add some features and to have it hosted on GitHub.
 
+Support for .NET 2.0 is kept. :thumbsup:
+
 <a name="newfeatures" href="#newfeatures">#</a>New features:
 
 - **Duplicate ruler** - often I need 2 rulers, with exactly same properties (TopMost, Show tool tip etc.) so there is now quick way to do it.
@@ -30,6 +32,9 @@ I wanted to add some features and to have it hosted on GitHub.
 
 <img src="https://github.com/andrijac/ruler/raw/master/img/setsize.gif">
 
-Support for .NET 2.0 is kept.
+###Ruler shortcuts:
+
+- **Space** and **Double click** will toggle direction of ruler. 
+- **Arrow keys** move ruler around
 
 *Gifs are made using LICEcap http://www.cockos.com/licecap/*

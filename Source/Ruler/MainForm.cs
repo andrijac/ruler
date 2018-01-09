@@ -17,16 +17,16 @@ namespace Ruler
 
 		#endregion ResizeRegion enum
 
-		private ToolTip _toolTip = new ToolTip();
-		private Point _offset;
-		private Rectangle _mouseDownRect;
-		private int _resizeBorderWidth = 5;
-		private Point _mouseDownPoint;
-		private ResizeRegion _resizeRegion = ResizeRegion.None;
-		private ContextMenu _menu = new ContextMenu();
-		private MenuItem _verticalMenuItem;
-		private MenuItem _toolTipMenuItem;
-		private MenuItem _lockedMenuItem;
+		private ToolTip toolTip = new ToolTip();
+		private Point offset;
+		private Rectangle mouseDownRect;
+		private int resizeBorderWidth = 5;
+		private Point mouseDownPoint;
+		private ResizeRegion resizeRegion = ResizeRegion.None;
+		private ContextMenu contextMenu = new ContextMenu();
+		private MenuItem verticalMenuItem;
+		private MenuItem toolTipMenuItem;
+		private MenuItem lockedMenuItem;
 
 		public MainForm()
 		{
@@ -42,8 +42,8 @@ namespace Ruler
 
 		public bool IsVertical
 		{
-			get { return this._verticalMenuItem.Checked; }
-			set { this._verticalMenuItem.Checked = value; }
+			get { return this.verticalMenuItem.Checked; }
+			set { this.verticalMenuItem.Checked = value; }
 		}
 
 		public bool IsLocked
@@ -56,16 +56,26 @@ namespace Ruler
 		{
 			get
 			{
-				return this._toolTipMenuItem.Checked;
+				return this.toolTipMenuItem.Checked;
 			}
 			set
 			{
-				this._toolTipMenuItem.Checked = value;
+				this.toolTipMenuItem.Checked = value;
 
 				if (value)
 				{
 					this.SetToolTip();
 				}
+			}
+		}
+
+		protected override void OnMouseDoubleClick(MouseEventArgs e)
+		{
+			base.OnMouseDoubleClick(e);			
+
+			if (e.Button == MouseButtons.Left)
+			{
+				this.ChangeOrientation();
 			}
 		}
 
@@ -83,11 +93,11 @@ namespace Ruler
 			this.Text = "Ruler";
 			this.BackColor = Color.White;
 
-			rulerInfo.CopyInto(this);
+			RulerInfo.CopyInto(rulerInfo, this);
 
 			this.FormBorderStyle = FormBorderStyle.None;
 
-			this.ContextMenu = _menu;
+			this.ContextMenu = contextMenu;
 			this.Font = new Font("Tahoma", 10);
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
@@ -97,18 +107,17 @@ namespace Ruler
 		{
 			RulerInfo rulerInfo = new RulerInfo();
 
-			this.CopyInto(rulerInfo);
+			RulerInfo.CopyInto(this, rulerInfo);
 
 			return rulerInfo;
 		}
 
-		private void SetUpMenu()
-		{
+		private void SetUpMenu(){
 			this.AddMenuItem("Stay On Top");
-			this._verticalMenuItem = this.AddMenuItem("Vertical");
-			this._toolTipMenuItem = this.AddMenuItem("Tool Tip");
+			this.verticalMenuItem = this.AddMenuItem("Vertical");
+			this.toolTipMenuItem = this.AddMenuItem("Tool Tip");
 			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
-			this._lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
+			this.lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
 			this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
 			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
 			this.AddMenuItem("-");
@@ -146,7 +155,7 @@ namespace Ruler
 		private void LockHandler(object sender, EventArgs e)
 		{
 			this.IsLocked = !this.IsLocked;
-			this._lockedMenuItem.Checked = this.IsLocked;
+			this.lockedMenuItem.Checked = this.IsLocked;
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
@@ -157,8 +166,11 @@ namespace Ruler
 
 			ProcessStartInfo startInfo = new ProcessStartInfo(exe, rulerInfo.ConvertToParameters());
 
-			Process process = new Process();
-			process.StartInfo = startInfo;
+			Process process = new Process
+			{
+				StartInfo = startInfo
+			};
+
 			process.Start();
 		}
 
@@ -172,49 +184,49 @@ namespace Ruler
 			MenuItem mi = new MenuItem(text);
 			mi.Click += new EventHandler(handler);
 			mi.Shortcut = shortcut;
-			_menu.MenuItems.Add(mi);
+			this.contextMenu.MenuItems.Add(mi);
 
 			return mi;
 		}
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
-			_offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
-			_mouseDownPoint = MousePosition;
-			_mouseDownRect = ClientRectangle;
+			this.offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
+			this.mouseDownPoint = MousePosition;
+			this.mouseDownRect = ClientRectangle;
 
 			base.OnMouseDown(e);
 		}
 
 		protected override void OnMouseUp(MouseEventArgs e)
 		{
-			_resizeRegion = ResizeRegion.None;
+			this.resizeRegion = ResizeRegion.None;
 			base.OnMouseUp(e);
 		}
 
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
-			if (_resizeRegion != ResizeRegion.None)
+			if (this.resizeRegion != ResizeRegion.None)
 			{
-				HandleResize();
+				this.HandleResize();
 				return;
 			}
 
 			Point clientCursorPos = PointToClient(MousePosition);
 			Rectangle resizeInnerRect = ClientRectangle;
-			resizeInnerRect.Inflate(-_resizeBorderWidth, -_resizeBorderWidth);
+			resizeInnerRect.Inflate(-resizeBorderWidth, -resizeBorderWidth);
 
 			bool inResizableArea = ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
 
 			if (inResizableArea)
 			{
-				ResizeRegion resizeRegion = GetResizeRegion(clientCursorPos);
-				SetResizeCursor(resizeRegion);
+				ResizeRegion resizeRegion = this.GetResizeRegion(clientCursorPos);
+				this.SetResizeCursor(resizeRegion);
 
 				if (e.Button == MouseButtons.Left)
 				{
-					_resizeRegion = resizeRegion;
-					HandleResize();
+					this.resizeRegion = resizeRegion;
+					this.HandleResize();
 				}
 			}
 			else
@@ -223,7 +235,7 @@ namespace Ruler
 
 				if (e.Button == MouseButtons.Left)
 				{
-					Location = new Point(MousePosition.X - _offset.X, MousePosition.Y - _offset.Y);
+					Location = new Point(MousePosition.X - offset.X, MousePosition.Y - offset.Y);
 				}
 			}
 
@@ -242,7 +254,7 @@ namespace Ruler
 
 		private void SetToolTip()
 		{
-			_toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", Width, Height));
+			toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", Width, Height));
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e)
@@ -253,11 +265,11 @@ namespace Ruler
 				case Keys.Left:
 				case Keys.Up:
 				case Keys.Down:
-					HandleMoveResizeKeystroke(e);
+					this.HandleMoveResizeKeystroke(e);
 					break;
 
 				case Keys.Space:
-					ChangeOrientation();
+					this.ChangeOrientation();
 					break;
 			}
 
@@ -272,16 +284,16 @@ namespace Ruler
 				{
 					if (e.Shift)
 					{
-						Width += 1;
+						this.Width += 1;
 					}
 					else
 					{
-						Left += 1;
+						this.Left += 1;
 					}
 				}
 				else
 				{
-					Left += 5;
+					this.Left += 5;
 				}
 			}
 			else if (e.KeyCode == Keys.Left)
@@ -290,16 +302,16 @@ namespace Ruler
 				{
 					if (e.Shift)
 					{
-						Width -= 1;
+						this.Width -= 1;
 					}
 					else
 					{
-						Left -= 1;
+						this.Left -= 1;
 					}
 				}
 				else
 				{
-					Left -= 5;
+					this.Left -= 5;
 				}
 			}
 			else if (e.KeyCode == Keys.Up)
@@ -308,16 +320,16 @@ namespace Ruler
 				{
 					if (e.Shift)
 					{
-						Height -= 1;
+						this.Height -= 1;
 					}
 					else
 					{
-						Top -= 1;
+						this.Top -= 1;
 					}
 				}
 				else
 				{
-					Top -= 5;
+					this.Top -= 5;
 				}
 			}
 			else if (e.KeyCode == Keys.Down)
@@ -326,16 +338,16 @@ namespace Ruler
 				{
 					if (e.Shift)
 					{
-						Height += 1;
+						this.Height += 1;
 					}
 					else
 					{
-						Top += 1;
+						this.Top += 1;
 					}
 				}
 				else
 				{
-					Top += 5;
+					this.Top += 5;
 				}
 			}
 		}
@@ -347,24 +359,24 @@ namespace Ruler
 				return;
 			}
 
-			switch (_resizeRegion)
+			switch (this.resizeRegion)
 			{
 				case ResizeRegion.E:
 					{
-						int diff = MousePosition.X - _mouseDownPoint.X;
-						Width = _mouseDownRect.Width + diff;
+						int diff = MousePosition.X - this.mouseDownPoint.X;
+						Width = this.mouseDownRect.Width + diff;
 						break;
 					}
 				case ResizeRegion.S:
 					{
-						int diff = MousePosition.Y - _mouseDownPoint.Y;
-						Height = _mouseDownRect.Height + diff;
+						int diff = MousePosition.Y - this.mouseDownPoint.Y;
+						Height = this.mouseDownRect.Height + diff;
 						break;
 					}
 				case ResizeRegion.SE:
 					{
-						Width = _mouseDownRect.Width + MousePosition.X - _mouseDownPoint.X;
-						Height = _mouseDownRect.Height + MousePosition.Y - _mouseDownPoint.Y;
+						Width = this.mouseDownRect.Width + MousePosition.X - this.mouseDownPoint.X;
+						Height = this.mouseDownRect.Height + MousePosition.Y - this.mouseDownPoint.Y;
 						break;
 					}
 			}
@@ -376,42 +388,42 @@ namespace Ruler
 			{
 				case ResizeRegion.N:
 				case ResizeRegion.S:
-					Cursor = Cursors.SizeNS;
+					this.Cursor = Cursors.SizeNS;
 					break;
 
 				case ResizeRegion.E:
 				case ResizeRegion.W:
-					Cursor = Cursors.SizeWE;
+					this.Cursor = Cursors.SizeWE;
 					break;
 
 				case ResizeRegion.NW:
 				case ResizeRegion.SE:
-					Cursor = Cursors.SizeNWSE;
+					this.Cursor = Cursors.SizeNWSE;
 					break;
 
 				default:
-					Cursor = Cursors.SizeNESW;
+					this.Cursor = Cursors.SizeNESW;
 					break;
 			}
 		}
 
 		private ResizeRegion GetResizeRegion(Point clientCursorPos)
 		{
-			if (clientCursorPos.Y <= _resizeBorderWidth)
+			if (clientCursorPos.Y <= this.resizeBorderWidth)
 			{
-				if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.NW;
-				else if (clientCursorPos.X >= Width - _resizeBorderWidth) return ResizeRegion.NE;
+				if (clientCursorPos.X <= this.resizeBorderWidth) return ResizeRegion.NW;
+				else if (clientCursorPos.X >= Width - this.resizeBorderWidth) return ResizeRegion.NE;
 				else return ResizeRegion.N;
 			}
-			else if (clientCursorPos.Y >= Height - _resizeBorderWidth)
+			else if (clientCursorPos.Y >= Height - this.resizeBorderWidth)
 			{
-				if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.SW;
-				else if (clientCursorPos.X >= Width - _resizeBorderWidth) return ResizeRegion.SE;
+				if (clientCursorPos.X <= this.resizeBorderWidth) return ResizeRegion.SW;
+				else if (clientCursorPos.X >= Width - this.resizeBorderWidth) return ResizeRegion.SE;
 				else return ResizeRegion.S;
 			}
 			else
 			{
-				if (clientCursorPos.X <= _resizeBorderWidth) return ResizeRegion.W;
+				if (clientCursorPos.X <= this.resizeBorderWidth) return ResizeRegion.W;
 				else return ResizeRegion.E;
 			}
 		}
@@ -453,7 +465,7 @@ namespace Ruler
 					if (i % 100 == 0)
 					{
 						tickHeight = 15;
-						DrawTickLabel(g, i.ToString(), i, formHeight, tickHeight);
+						this.DrawTickLabel(g, i.ToString(), i, formHeight, tickHeight);
 					}
 					else if (i % 10 == 0)
 					{
@@ -481,10 +493,10 @@ namespace Ruler
 		private void DrawTickLabel(Graphics g, string text, int xPos, int formHeight, int height)
 		{
 			// Top
-			g.DrawString(text, Font, Brushes.Black, xPos, height);
+			g.DrawString(text, this.Font, Brushes.Black, xPos, height);
 
 			// Bottom
-			g.DrawString(text, Font, Brushes.Black, xPos, formHeight - height - Font.Height);
+			g.DrawString(text, this.Font, Brushes.Black, xPos, formHeight - height - this.Font.Height);
 		}
 
 		private static void Main(params string[] args)
@@ -509,9 +521,9 @@ namespace Ruler
 		private void OpacityMenuHandler(object sender, EventArgs e)
 		{
 			MenuItem mi = (MenuItem)sender;
-			UncheckMenuItem(mi.Parent);
+			this.UncheckMenuItem(mi.Parent);
 			mi.Checked = true;
-			Opacity = double.Parse(mi.Text.Replace("%", "")) / 100;
+			this.Opacity = double.Parse(mi.Text.Replace("%", "")) / 100;
 		}
 
 		private void UncheckMenuItem(Menu parent)
@@ -537,24 +549,24 @@ namespace Ruler
 			switch (mi.Text)
 			{
 				case "Exit":
-					Close();
+					this.Close();
 					break;
 
 				case "Tool Tip":
-					ShowToolTip = !ShowToolTip;
+					this.ShowToolTip = !ShowToolTip;
 					break;
 
 				case "Vertical":
-					ChangeOrientation();
+					this.ChangeOrientation();
 					break;
 
 				case "Stay On Top":
 					mi.Checked = !mi.Checked;
-					TopMost = mi.Checked;
+					this.TopMost = mi.Checked;
 					break;
 
 				case "About...":
-					string message = string.Format("Ruler v{0} by Jeff Key\nwww.sliver.com\nIcon by Kristen Magee @ www.kbecca.com", Application.ProductVersion);
+					string message = string.Format("Original Ruler implemented by Jeff Key\nwww.sliver.com\nruler.codeplex.com\nIcon by Kristen Magee @ www.kbecca.com.\nMaintained by Andrija Cacanovic\nHosted on \nhttps://github.com/andrijac/ruler.", Application.ProductVersion);
 					MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 					break;
 
@@ -566,7 +578,7 @@ namespace Ruler
 
 		private void ChangeOrientation()
 		{
-			this.IsVertical = !IsVertical;
+			this.IsVertical = !this.IsVertical;
 			int width = Width;
 			this.Width = Height;
 			this.Height = width;

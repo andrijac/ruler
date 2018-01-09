@@ -99,20 +99,16 @@ namespace Ruler
 
 			return rulerInfo;
 		}
-	}
 
-	public static class IRulerInfoExtentension
-	{
-		public static void CopyInto<T>(this IRulerInfo ruler, T targetInstance)
-			where T : IRulerInfo
+		public static void CopyInto(IRulerInfo source, IRulerInfo targetInstance)			
 		{
-			targetInstance.Width = ruler.Width;
-			targetInstance.Height = ruler.Height;
-			targetInstance.IsVertical = ruler.IsVertical;
-			targetInstance.Opacity = ruler.Opacity;
-			targetInstance.ShowToolTip = ruler.ShowToolTip;
-			targetInstance.IsLocked = ruler.IsLocked;
-			targetInstance.TopMost = ruler.TopMost;
+			targetInstance.Width = source.Width;
+			targetInstance.Height = source.Height;
+			targetInstance.IsVertical = source.IsVertical;
+			targetInstance.Opacity = source.Opacity;
+			targetInstance.ShowToolTip = source.ShowToolTip;
+			targetInstance.IsLocked = source.IsLocked;
+			targetInstance.TopMost = source.TopMost;
 		}
-	}
+	}	
 }

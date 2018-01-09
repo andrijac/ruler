@@ -110,7 +110,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExtensionSupport.cs" />
     <Compile Include="IRulerInfo.cs" />
     <Compile Include="RulerInfo.cs" />
     <Compile Include="SetSizeForm.cs">
