@@ -17,19 +17,27 @@ namespace Ruler
 
 		#endregion ResizeRegion enum
 
-		private ToolTip toolTip = new ToolTip();
+		private ToolTip toolTip;
 		private Point offset;
 		private Rectangle mouseDownRect;
-		private int resizeBorderWidth = 5;
+		private readonly int resizeBorderWidth;
 		private Point mouseDownPoint;
-		private ResizeRegion resizeRegion = ResizeRegion.None;
-		private ContextMenu contextMenu = new ContextMenu();
+		private ResizeRegion resizeRegion;
+		private ContextMenu contextMenu;
 		private MenuItem verticalMenuItem;
 		private MenuItem toolTipMenuItem;
 		private MenuItem lockedMenuItem;
 
 		public MainForm()
 		{
+			this.toolTip = new ToolTip();
+			this.toolTip.AutoPopDelay = 10000;
+			this.toolTip.InitialDelay = 1;
+
+			this.resizeRegion = ResizeRegion.None;
+			this.contextMenu = new ContextMenu();
+			this.resizeBorderWidth = 5;
+
 			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
 
 			this.Init(rulerInfo);
@@ -66,12 +74,16 @@ namespace Ruler
 				{
 					this.SetToolTip();
 				}
+				else
+				{
+					this.RemoveToolTip();
+				}
 			}
 		}
 
 		protected override void OnMouseDoubleClick(MouseEventArgs e)
 		{
-			base.OnMouseDoubleClick(e);			
+			base.OnMouseDoubleClick(e);
 
 			if (e.Button == MouseButtons.Left)
 			{
@@ -86,7 +98,7 @@ namespace Ruler
 
 			ResourceManager resources = new ResourceManager(typeof(MainForm));
 			this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
-		    this.Opacity = rulerInfo.Opacity;
+			this.Opacity = rulerInfo.Opacity;
 
 			this.SetUpMenu();
 
@@ -112,7 +124,8 @@ namespace Ruler
 			return rulerInfo;
 		}
 
-		private void SetUpMenu(){
+		private void SetUpMenu()
+		{
 			this.AddMenuItem("Stay On Top");
 			this.verticalMenuItem = this.AddMenuItem("Vertical");
 			this.toolTipMenuItem = this.AddMenuItem("Tool Tip");
@@ -255,6 +268,11 @@ namespace Ruler
 		private void SetToolTip()
 		{
 			toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", Width, Height));
+		}
+
+		private void RemoveToolTip()
+		{
+			toolTip.RemoveAll();
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e)
