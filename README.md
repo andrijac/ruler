@@ -4,11 +4,12 @@ Simple on-screen pixel ruler.
 
 <br />
 <a href="http://www.softpedia.com/progDownload/Ruler-andrijac-Download-256095.html"><img alt="download page" src="https://raw.githubusercontent.com/andrijac/ruler/master/img/softpedia_download_large_shadow.png" /></a>
-
+<br />
+<br />
 <img src="https://github.com/andrijac/ruler/raw/master/img/ruler.gif">
 
-Binaries:
-https://github.com/andrijac/ruler/tree/master/Bin
+**Releases**
+https://github.com/andrijac/ruler/releases
 
 ### Legacy
 Ruler is fork of small utility application originally developed by Jeff Key:
