@@ -204,6 +204,10 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
+            if (IsLocked)
+            {
+                this.IsLocked = false;
+            }
 			this.offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
 			this.mouseDownPoint = MousePosition;
 			this.mouseDownRect = ClientRectangle;
@@ -213,8 +217,10 @@ namespace Ruler
 
 		protected override void OnMouseUp(MouseEventArgs e)
 		{
-			this.resizeRegion = ResizeRegion.None;
+            this.IsLocked = false;
+            this.resizeRegion = ResizeRegion.None;
 			base.OnMouseUp(e);
+           
 		}
 
 		protected override void OnMouseMove(MouseEventArgs e)
@@ -244,8 +250,9 @@ namespace Ruler
 			}
 			else
 			{
-				Cursor = Cursors.Default;
-
+                this.IsLocked = true;
+                Cursor = Cursors.Default;
+                
 				if (e.Button == MouseButtons.Left)
 				{
 					Location = new Point(MousePosition.X - offset.X, MousePosition.Y - offset.Y);
@@ -253,6 +260,7 @@ namespace Ruler
 			}
 
 			base.OnMouseMove(e);
+           
 		}
 
 		protected override void OnResize(EventArgs e)
