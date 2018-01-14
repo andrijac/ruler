@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Resources;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
+using System.IO;
  
 
 
@@ -189,18 +190,27 @@ namespace Ruler
 
         private void DuplicateHandler(object sender, EventArgs e)
         {
-            string exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
-
-            RulerInfo rulerInfo = this.GetRulerInfo();
-
-            ProcessStartInfo startInfo = new ProcessStartInfo(exe, rulerInfo.ConvertToParameters());
-
-            Process process = new Process
+            try
             {
-                StartInfo = startInfo
-            };
+                string exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
 
-            process.Start();
+                RulerInfo rulerInfo = this.GetRulerInfo();
+
+                ProcessStartInfo startInfo = new ProcessStartInfo(exe, rulerInfo.ConvertToParameters());
+
+                Process process = new Process
+                {
+                    StartInfo = startInfo
+                };
+
+                process.Start();
+            }
+            catch(Exception ex)
+                {
+                var fi = File.CreateText(Directory.GetCurrentDirectory() + "\\error.txt");
+                    fi.Write(ex.ToString());
+                fi.Close();
+                    }
         }
 
         private MenuItem AddMenuItem(string text)
