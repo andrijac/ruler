@@ -20,7 +20,7 @@ namespace Ruler
 		private ToolTip toolTip;
 		private Point offset;
 		private Rectangle mouseDownRect;
-		private readonly int resizeBorderWidth;
+		private int resizeBorderWidth;
 		private Point mouseDownPoint;
 		private ResizeRegion resizeRegion;
 		private ContextMenu contextMenu;
@@ -30,13 +30,7 @@ namespace Ruler
 
 		public MainForm()
 		{
-			this.toolTip = new ToolTip();
-			this.toolTip.AutoPopDelay = 10000;
-			this.toolTip.InitialDelay = 1;
-
-			this.resizeRegion = ResizeRegion.None;
-			this.contextMenu = new ContextMenu();
-			this.resizeBorderWidth = 5;
+			this.InitLocalVars();
 
 			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
 
@@ -45,6 +39,8 @@ namespace Ruler
 
 		public MainForm(RulerInfo rulerInfo)
 		{
+			this.InitLocalVars();
+
 			this.Init(rulerInfo);
 		}
 
@@ -89,6 +85,17 @@ namespace Ruler
 			{
 				this.ChangeOrientation();
 			}
+		}
+
+		private void InitLocalVars()
+		{
+			this.toolTip = new ToolTip();
+			this.toolTip.AutoPopDelay = 10000;
+			this.toolTip.InitialDelay = 1;
+
+			this.resizeRegion = ResizeRegion.None;
+			this.contextMenu = new ContextMenu();
+			this.resizeBorderWidth = 5;
 		}
 
 		private void Init(RulerInfo rulerInfo)
