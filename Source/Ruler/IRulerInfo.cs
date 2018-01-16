@@ -47,5 +47,10 @@ namespace Ruler
 			get;
 			set;
 		}
+        int Rotation
+        {
+            get;
+            set;
+        }
 	}
 }

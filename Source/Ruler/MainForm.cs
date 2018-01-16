@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Resources;
 using System.Windows.Forms;
 
@@ -77,7 +78,19 @@ namespace Ruler
 			}
 		}
 
-		protected override void OnMouseDoubleClick(MouseEventArgs e)
+        public int Rotation
+        {
+            get;
+            set;
+        }
+        public int PreviousRotationAngle
+        {
+            get;
+            set;
+        }
+            
+
+        protected override void OnMouseDoubleClick(MouseEventArgs e)
 		{
 			base.OnMouseDoubleClick(e);
 
@@ -137,7 +150,8 @@ namespace Ruler
 			this.verticalMenuItem = this.AddMenuItem("Vertical");
 			this.toolTipMenuItem = this.AddMenuItem("Tool Tip");
 			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
-			this.lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
+            MenuItem rotationMenuItem = this.AddMenuItem("Rotation");
+            this.lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
 			this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
 			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
 			this.AddMenuItem("-");
@@ -152,9 +166,57 @@ namespace Ruler
 				subMenu.Click += new EventHandler(OpacityMenuHandler);
 				opacityMenuItem.MenuItems.Add(subMenu);
 			}
+
+            for (int i = 0; i <= 270; i += 90)
+            {
+                MenuItem rotationAngle = new MenuItem(i.ToString());
+                if (i == Rotation)
+                {
+                    rotationAngle.Checked = true;
+                }
+                else
+                {
+                    rotationAngle.Checked = false;
+                }
+                rotationAngle.Click += new EventHandler(rotationAngle_Click);
+                rotationMenuItem.MenuItems.Add(rotationAngle);
+                
+
+            }
 		}
 
-		private void SetWidthHeightHandler(object sender, EventArgs e)
+        private void rotationAngle_Click(object sender, EventArgs e)
+        {
+            MenuItem mi = (MenuItem)sender;
+            this.UncheckMenuItem(mi.Parent);
+            Rotation = int.Parse(mi.Text);
+            mi.Checked = true;
+            if (Rotation == 90 || Rotation == 270)
+            {
+                if (!IsVertical)
+                {
+                    this.IsVertical = true;
+                    int width = Width;
+                    this.Width = Height;
+                    this.Height = width;
+                    
+                }
+            }
+            else
+            {
+                if (IsVertical)
+                {
+                    this.IsVertical = false;
+                    int width = Width;
+                    this.Width = Height;
+                    this.Height = width;
+                }
+            }
+            this.Invalidate();
+            
+        }
+
+        private void SetWidthHeightHandler(object sender, EventArgs e)
 		{
 			SetSizeForm form = new SetSizeForm(this.Width, this.Height);
 
@@ -211,6 +273,7 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
+            this.IsLocked = false;
 			this.offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
 			this.mouseDownPoint = MousePosition;
 			this.mouseDownRect = ClientRectangle;
@@ -220,6 +283,7 @@ namespace Ruler
 
 		protected override void OnMouseUp(MouseEventArgs e)
 		{
+            this.IsLocked = false;
 			this.resizeRegion = ResizeRegion.None;
 			base.OnMouseUp(e);
 		}
@@ -251,6 +315,7 @@ namespace Ruler
 			}
 			else
 			{
+                this.IsLocked = true;
 				Cursor = Cursors.Default;
 
 				if (e.Button == MouseButtons.Left)
@@ -455,23 +520,58 @@ namespace Ruler
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			Graphics graphics = e.Graphics;
+            Graphics graphics = e.Graphics;
+            int height = Height;
+            int width = Width;
+            switch (Rotation)
+            {
+                case 0:
+                    DrawRuler(graphics, width, height);
+                    base.OnPaint(e);
+                    break;
+                case 90:
 
-			int height = Height;
-			int width = Width;
+                    IsVertical = true;
+                    graphics.RotateTransform(90);
+                    graphics.TranslateTransform(0, -Width + 1);
 
-			if (IsVertical)
-			{
-				graphics.RotateTransform(90);
-				graphics.TranslateTransform(0, -Width + 1);
-				height = Width;
-				width = Height;
-			}
 
-			DrawRuler(graphics, width, height);
+                    height = Width;
+                    width = Height;
+                    DrawRuler(graphics, width, height);
+                    base.OnPaint(e);
 
-			base.OnPaint(e);
-		}
+                    break;
+                case 180:
+                    GraphicsContainer gc = graphics.BeginContainer();
+                    graphics.ScaleTransform(-1.0F, 1.0F);
+                    graphics.TranslateTransform(-(float)width, 0.0F);
+                    DrawRuler(graphics, width, height);
+                    base.OnPaint(e);
+                    graphics.EndContainer(gc);
+                    break;
+                case 270:
+                    IsVertical = true;
+                    graphics.RotateTransform(90);
+                    graphics.TranslateTransform(0, -Width + 1);
+                    height = Width;
+                    width = Height; ;
+                    GraphicsContainer gcs = graphics.BeginContainer();
+                    graphics.ScaleTransform(-1.0F, -1.0F);
+                    graphics.TranslateTransform(-(float)width, -(float)height);
+                    DrawRuler(graphics, width, height);
+                    base.OnPaint(e);
+                    graphics.EndContainer(gcs);
+                    break;
+                default:
+                    break;
+                
+
+
+            }
+                     
+        
+        }
 
 		private void DrawRuler(Graphics g, int formWidth, int formHeight)
 		{
