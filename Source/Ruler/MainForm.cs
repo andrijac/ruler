@@ -28,6 +28,7 @@ namespace Ruler
 		private MenuItem verticalMenuItem;
 		private MenuItem toolTipMenuItem;
 		private MenuItem lockedMenuItem;
+        private Boolean previouslocked;
 
 		public MainForm()
 		{
@@ -126,7 +127,15 @@ namespace Ruler
 			this.BackColor = Color.White;
 
 			RulerInfo.CopyInto(rulerInfo, this);
-
+            if (this.IsLocked)
+            {
+                previouslocked = true;
+            }
+            else
+            {
+                previouslocked = false;
+            }
+           
 			this.FormBorderStyle = FormBorderStyle.None;
 
 			this.ContextMenu = contextMenu;
@@ -237,6 +246,7 @@ namespace Ruler
 		private void LockHandler(object sender, EventArgs e)
 		{
 			this.IsLocked = !this.IsLocked;
+            this.previouslocked = this.IsLocked;
 			this.lockedMenuItem.Checked = this.IsLocked;
 		}
 
@@ -273,8 +283,15 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
-            this.IsLocked = false;
-			this.offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
+            if (this.previouslocked)
+            {
+                this.IsLocked = true;
+            }
+            else
+            {
+                this.IsLocked = false;
+            }
+         	this.offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
 			this.mouseDownPoint = MousePosition;
 			this.mouseDownRect = ClientRectangle;
 
@@ -283,7 +300,15 @@ namespace Ruler
 
 		protected override void OnMouseUp(MouseEventArgs e)
 		{
-            this.IsLocked = false;
+            if (this.previouslocked)
+            {
+                this.IsLocked = true;
+            }
+            else
+            {
+                this.IsLocked = false;
+            }
+                 
 			this.resizeRegion = ResizeRegion.None;
 			base.OnMouseUp(e);
 		}
@@ -521,8 +546,8 @@ namespace Ruler
 		protected override void OnPaint(PaintEventArgs e)
 		{
             Graphics graphics = e.Graphics;
-            int height = Height;
-            int width = Width;
+            int height = this.Height;
+            int width = this.Width;
             switch (Rotation)
             {
                 case 0:
@@ -704,6 +729,14 @@ namespace Ruler
 		private void ChangeOrientation()
 		{
 			this.IsVertical = !this.IsVertical;
+            if (Rotation == 90)
+            {
+                Rotation = 0;
+            }
+            else
+            {
+                Rotation = 90;
+            }
 			int width = Width;
 			this.Width = Height;
 			this.Height = width;
