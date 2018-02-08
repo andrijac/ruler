@@ -27,7 +27,7 @@ namespace Ruler
 		private MenuItem verticalMenuItem;
 		private MenuItem toolTipMenuItem;
 		private MenuItem lockedMenuItem;
-        private Size MinSize;
+		private Size MinSize;
 
 		public MainForm()
 		{
@@ -98,8 +98,8 @@ namespace Ruler
 			this.contextMenu = new ContextMenu();
 			this.resizeBorderWidth = 5;
 
-            this.MinSize.Width = 10;
-            this.MinSize.Height = 10;
+			this.MinSize.Width = 10;
+			this.MinSize.Height = 10;
 		}
 
 		private void Init(RulerInfo rulerInfo)
@@ -143,7 +143,7 @@ namespace Ruler
 			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
 			this.lockedMenuItem = this.AddMenuItem("Lock Resizing", Shortcut.None, this.LockHandler);
 			this.AddMenuItem("Set Size...", Shortcut.None, this.SetWidthHeightHandler);
-            this.AddMenuItem("Set Minimum Size...", Shortcut.None, this.SetMinWidthHeightHandler);
+			this.AddMenuItem("Set Minimum Size...", Shortcut.None, this.SetMinWidthHeightHandler);
 			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
 			this.AddMenuItem("-");
 			this.AddMenuItem("About...");
@@ -177,23 +177,23 @@ namespace Ruler
 			}
 		}
 
-        private void SetMinWidthHeightHandler(object sender, EventArgs e)
-        {
-            var form = new SetSizeForm("Set Minimum Size", this.MinSize.Width, this.MinSize.Height);
+		private void SetMinWidthHeightHandler(object sender, EventArgs e)
+		{
+			var form = new SetSizeForm("Set Minimum Size", this.MinSize.Width, this.MinSize.Height);
 
-            if (this.TopMost)
-            {
-                form.TopMost = true;
-            }
+			if (this.TopMost)
+			{
+				form.TopMost = true;
+			}
 
-            if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                Size size = form.GetNewSize();
+			if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			{
+				Size size = form.GetNewSize();
 
-                this.MinSize.Width = size.Width;
-                this.MinSize.Height = size.Height;
-            }
-        }
+				this.MinSize.Width = size.Width;
+				this.MinSize.Height = size.Height;
+			}
+		}
 
 		private void LockHandler(object sender, EventArgs e)
 		{
@@ -412,13 +412,13 @@ namespace Ruler
 				case ResizeRegion.E:
 					{
 						int diff = MousePosition.X - this.mouseDownPoint.X;
-                        Width = Math.Max(this.mouseDownRect.Width + diff, MinSize.Width);
+						Width = Math.Max(this.mouseDownRect.Width + diff, MinSize.Width);
 						break;
 					}
 				case ResizeRegion.S:
 					{
 						int diff = MousePosition.Y - this.mouseDownPoint.Y;
-                        Height = Math.Max(this.mouseDownRect.Height + diff, MinSize.Height);
+						Height = Math.Max(this.mouseDownRect.Height + diff, MinSize.Height);
 						break;
 					}
 				case ResizeRegion.SE:
