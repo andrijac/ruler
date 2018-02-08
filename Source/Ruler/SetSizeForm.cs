@@ -17,7 +17,7 @@ namespace Ruler
 		{
 			this.InitializeComponent();
 
-            this.Text = title;
+			this.Text = title;
 
 			this.originalWidth = initWidth;
 			this.originalHeight = initHeight;
