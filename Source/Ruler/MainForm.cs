@@ -27,6 +27,7 @@ namespace Ruler
 		private MenuItem verticalMenuItem;
 		private MenuItem toolTipMenuItem;
 		private MenuItem lockedMenuItem;
+		private Size MinSize;
 
 		public MainForm()
 		{
@@ -51,18 +52,6 @@ namespace Ruler
 		}
 
 		public bool IsLocked
-		{
-			get;
-			set;
-		}
-
-		public int MinWidth
-		{
-			get;
-			set;
-		}
-
-		public int MinHeight
 		{
 			get;
 			set;
@@ -108,6 +97,9 @@ namespace Ruler
 			this.resizeRegion = ResizeRegion.None;
 			this.contextMenu = new ContextMenu();
 			this.resizeBorderWidth = 5;
+
+			this.MinSize.Width = 10;
+			this.MinSize.Height = 10;
 		}
 
 		private void Init(RulerInfo rulerInfo)
@@ -132,23 +124,6 @@ namespace Ruler
 			this.Font = new Font("Tahoma", 10);
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
-			
-			Application.ApplicationExit += Application_ApplicationExit;
-		}
-
-		private void Application_ApplicationExit(object sender, EventArgs e)
-		{
-			Properties.Settings.Default.TopMost = this.TopMost;
-			Properties.Settings.Default.IsVertical = this.IsVertical;
-			Properties.Settings.Default.ShowToolTip = this.ShowToolTip;
-			Properties.Settings.Default.Opacity = this.Opacity;
-			Properties.Settings.Default.IsLocked = this.IsLocked;
-			Properties.Settings.Default.Width = this.Width;
-			Properties.Settings.Default.Height = this.Height;
-			Properties.Settings.Default.MinWidth = this.MinWidth;
-			Properties.Settings.Default.MinHeight = this.MinHeight;
-
-			Properties.Settings.Default.Save();
 		}
 
 		private RulerInfo GetRulerInfo()
@@ -204,7 +179,7 @@ namespace Ruler
 
 		private void SetMinWidthHeightHandler(object sender, EventArgs e)
 		{
-			var form = new SetSizeForm("Set Minimum Size", this.MinWidth, this.MinHeight);
+			var form = new SetSizeForm("Set Minimum Size", this.MinSize.Width, this.MinSize.Height);
 
 			if (this.TopMost)
 			{
@@ -215,8 +190,8 @@ namespace Ruler
 			{
 				Size size = form.GetNewSize();
 
-				this.MinWidth = size.Width;
-				this.MinHeight = size.Height;
+				this.MinSize.Width = size.Width;
+				this.MinSize.Height = size.Height;
 			}
 		}
 
@@ -437,19 +412,19 @@ namespace Ruler
 				case ResizeRegion.E:
 					{
 						int diff = MousePosition.X - this.mouseDownPoint.X;
-						Width = Math.Max(this.mouseDownRect.Width + diff, MinWidth);
+						Width = Math.Max(this.mouseDownRect.Width + diff, MinSize.Width);
 						break;
 					}
 				case ResizeRegion.S:
 					{
 						int diff = MousePosition.Y - this.mouseDownPoint.Y;
-						Height = Math.Max(this.mouseDownRect.Height + diff, MinHeight);
+						Height = Math.Max(this.mouseDownRect.Height + diff, MinSize.Height);
 						break;
 					}
 				case ResizeRegion.SE:
 					{
-						Width = Math.Max(this.mouseDownRect.Width + MousePosition.X - this.mouseDownPoint.X, MinWidth);
-						Height = Math.Max(this.mouseDownRect.Height + MousePosition.Y - this.mouseDownPoint.Y, MinHeight);
+						Width = Math.Max(this.mouseDownRect.Width + MousePosition.X - this.mouseDownPoint.X, MinSize.Width);
+						Height = Math.Max(this.mouseDownRect.Height + MousePosition.Y - this.mouseDownPoint.Y, MinSize.Height);
 						break;
 					}
 			}

@@ -57,21 +57,9 @@ namespace Ruler
 			set;
 		}
 
-		public int MinWidth
-		{
-			get;
-			set;
-		}
-
-		public int MinHeight
-		{
-			get;
-			set;
-		}
-
 		public string ConvertToParameters()
 		{
-			return string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8}", this.Width, this.Height, this.IsVertical, this.Opacity, this.ShowToolTip, this.IsLocked, this.TopMost, this.MinWidth, this.MinHeight);
+			return string.Format("{0} {1} {2} {3} {4} {5} {6}", this.Width, this.Height, this.IsVertical, this.Opacity, this.ShowToolTip, this.IsLocked, this.TopMost);
 		}
 
 		public static RulerInfo CovertToRulerInfo(string[] args)
@@ -83,8 +71,6 @@ namespace Ruler
 			string showToolTip = args[4];
 			string isLocked = args[5];
 			string topMost = args[6];
-			string minWidth = args[7];
-			string minHeight = args[8];
 
 			RulerInfo rulerInfo = new RulerInfo
 			{
@@ -94,9 +80,7 @@ namespace Ruler
 				Opacity = double.Parse(opacity),
 				ShowToolTip = bool.Parse(showToolTip),
 				IsLocked = bool.Parse(isLocked),
-				TopMost = bool.Parse(topMost),
-				MinWidth = int.Parse(minWidth),
-				MinHeight = int.Parse(minHeight)
+				TopMost = bool.Parse(topMost)
 			};
 
 			return rulerInfo;
@@ -106,15 +90,13 @@ namespace Ruler
 		{
 			RulerInfo rulerInfo = new RulerInfo
 			{
-				Width = Properties.Settings.Default.Width,
-				Height = Properties.Settings.Default.Height,
-				Opacity = Properties.Settings.Default.Opacity,
-				ShowToolTip = Properties.Settings.Default.ShowToolTip,
-				IsLocked = Properties.Settings.Default.IsLocked,
-				IsVertical = Properties.Settings.Default.IsVertical,
-				TopMost = Properties.Settings.Default.TopMost,
-				MinHeight = Properties.Settings.Default.MinHeight,
-				MinWidth = Properties.Settings.Default.MinWidth
+				Width = 400,
+				Height = 75,
+				Opacity = 0.60,
+				ShowToolTip = false,
+				IsLocked = false,
+				IsVertical = false,
+				TopMost = true
 			};
 
 			return rulerInfo;
@@ -129,8 +111,6 @@ namespace Ruler
 			targetInstance.ShowToolTip = source.ShowToolTip;
 			targetInstance.IsLocked = source.IsLocked;
 			targetInstance.TopMost = source.TopMost;
-			targetInstance.MinWidth = source.MinWidth;
-			targetInstance.MinHeight = source.MinHeight;
 		}
 	}	
 }
