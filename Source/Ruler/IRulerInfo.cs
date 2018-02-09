@@ -18,6 +18,18 @@ namespace Ruler
 			set;
 		}
 
+		int MinWidth
+		{
+			get;
+			set;
+		}
+
+		int MinHeight
+		{
+			get;
+			set;
+		}
+
 		bool IsVertical
 		{
 			get;
