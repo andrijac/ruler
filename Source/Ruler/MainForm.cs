@@ -32,7 +32,7 @@ namespace Ruler
 		{
 			this.InitLocalVars();
 
-			RulerInfo rulerInfo = RulerInfo.GetRulerInfoFromSettings();
+			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
 
 			this.Init(rulerInfo);
 		}
@@ -124,7 +124,7 @@ namespace Ruler
 			this.Text = "Ruler";
 			this.BackColor = Color.White;
 
-			InitRuler(rulerInfo);
+			RulerInfo.CopyInto(rulerInfo, this);
 
 			this.FormBorderStyle = FormBorderStyle.None;
 
@@ -134,11 +134,6 @@ namespace Ruler
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 			
 			Application.ApplicationExit += Application_ApplicationExit;
-		}
-
-		private void InitRuler(RulerInfo rulerInfo)
-		{
-			RulerInfo.CopyInto(rulerInfo, this);
 		}
 
 		private void Application_ApplicationExit(object sender, EventArgs e)
@@ -175,8 +170,6 @@ namespace Ruler
 			this.AddMenuItem("Set Size...", Shortcut.None, this.SetWidthHeightHandler);
 			this.AddMenuItem("Set Minimum Size...", Shortcut.None, this.SetMinWidthHeightHandler);
 			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
-			this.AddMenuItem("-");
-			this.AddMenuItem("Reset to Defaults");
 			this.AddMenuItem("-");
 			this.AddMenuItem("About...");
 			this.AddMenuItem("-");
@@ -643,10 +636,6 @@ namespace Ruler
 				case "Stay On Top":
 					mi.Checked = !mi.Checked;
 					this.TopMost = mi.Checked;
-					break;
-
-				case "Reset to Defaults":
-					InitRuler(RulerInfo.GetDefaultRulerInfo());
 					break;
 
 				case "About...":
