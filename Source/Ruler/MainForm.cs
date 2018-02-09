@@ -32,7 +32,7 @@ namespace Ruler
 		{
 			this.InitLocalVars();
 
-			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
+			RulerInfo rulerInfo = RulerInfo.GetRulerInfoFromSettings();
 
 			this.Init(rulerInfo);
 		}
@@ -51,6 +51,18 @@ namespace Ruler
 		}
 
 		public bool IsLocked
+		{
+			get;
+			set;
+		}
+
+		public int MinWidth
+		{
+			get;
+			set;
+		}
+
+		public int MinHeight
 		{
 			get;
 			set;
@@ -112,7 +124,7 @@ namespace Ruler
 			this.Text = "Ruler";
 			this.BackColor = Color.White;
 
-			RulerInfo.CopyInto(rulerInfo, this);
+			InitRuler(rulerInfo);
 
 			this.FormBorderStyle = FormBorderStyle.None;
 
@@ -120,6 +132,28 @@ namespace Ruler
 			this.Font = new Font("Tahoma", 10);
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+			
+			Application.ApplicationExit += Application_ApplicationExit;
+		}
+
+		private void InitRuler(RulerInfo rulerInfo)
+		{
+			RulerInfo.CopyInto(rulerInfo, this);
+		}
+
+		private void Application_ApplicationExit(object sender, EventArgs e)
+		{
+			Properties.Settings.Default.TopMost = this.TopMost;
+			Properties.Settings.Default.IsVertical = this.IsVertical;
+			Properties.Settings.Default.ShowToolTip = this.ShowToolTip;
+			Properties.Settings.Default.Opacity = this.Opacity;
+			Properties.Settings.Default.IsLocked = this.IsLocked;
+			Properties.Settings.Default.Width = this.Width;
+			Properties.Settings.Default.Height = this.Height;
+			Properties.Settings.Default.MinWidth = this.MinWidth;
+			Properties.Settings.Default.MinHeight = this.MinHeight;
+
+			Properties.Settings.Default.Save();
 		}
 
 		private RulerInfo GetRulerInfo()
@@ -137,9 +171,12 @@ namespace Ruler
 			this.verticalMenuItem = this.AddMenuItem("Vertical");
 			this.toolTipMenuItem = this.AddMenuItem("Tool Tip");
 			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
-			this.lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
-			this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
+			this.lockedMenuItem = this.AddMenuItem("Lock Resizing", Shortcut.None, this.LockHandler);
+			this.AddMenuItem("Set Size...", Shortcut.None, this.SetWidthHeightHandler);
+			this.AddMenuItem("Set Minimum Size...", Shortcut.None, this.SetMinWidthHeightHandler);
 			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
+			this.AddMenuItem("-");
+			this.AddMenuItem("Reset to Defaults");
 			this.AddMenuItem("-");
 			this.AddMenuItem("About...");
 			this.AddMenuItem("-");
@@ -156,7 +193,7 @@ namespace Ruler
 
 		private void SetWidthHeightHandler(object sender, EventArgs e)
 		{
-			SetSizeForm form = new SetSizeForm(this.Width, this.Height);
+			var form = new SetSizeForm("Set Size", this.Width, this.Height);
 
 			if (this.TopMost)
 			{
@@ -169,6 +206,24 @@ namespace Ruler
 
 				this.Width = size.Width;
 				this.Height = size.Height;
+			}
+		}
+
+		private void SetMinWidthHeightHandler(object sender, EventArgs e)
+		{
+			var form = new SetSizeForm("Set Minimum Size", this.MinWidth, this.MinHeight);
+
+			if (this.TopMost)
+			{
+				form.TopMost = true;
+			}
+
+			if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			{
+				Size size = form.GetNewSize();
+
+				this.MinWidth = size.Width;
+				this.MinHeight = size.Height;
 			}
 		}
 
@@ -389,19 +444,19 @@ namespace Ruler
 				case ResizeRegion.E:
 					{
 						int diff = MousePosition.X - this.mouseDownPoint.X;
-						Width = this.mouseDownRect.Width + diff;
+						Width = Math.Max(this.mouseDownRect.Width + diff, MinWidth);
 						break;
 					}
 				case ResizeRegion.S:
 					{
 						int diff = MousePosition.Y - this.mouseDownPoint.Y;
-						Height = this.mouseDownRect.Height + diff;
+						Height = Math.Max(this.mouseDownRect.Height + diff, MinHeight);
 						break;
 					}
 				case ResizeRegion.SE:
 					{
-						Width = this.mouseDownRect.Width + MousePosition.X - this.mouseDownPoint.X;
-						Height = this.mouseDownRect.Height + MousePosition.Y - this.mouseDownPoint.Y;
+						Width = Math.Max(this.mouseDownRect.Width + MousePosition.X - this.mouseDownPoint.X, MinWidth);
+						Height = Math.Max(this.mouseDownRect.Height + MousePosition.Y - this.mouseDownPoint.Y, MinHeight);
 						break;
 					}
 			}
@@ -588,6 +643,10 @@ namespace Ruler
 				case "Stay On Top":
 					mi.Checked = !mi.Checked;
 					this.TopMost = mi.Checked;
+					break;
+
+				case "Reset to Defaults":
+					InitRuler(RulerInfo.GetDefaultRulerInfo());
 					break;
 
 				case "About...":
