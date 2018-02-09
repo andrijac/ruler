@@ -106,6 +106,24 @@ namespace Ruler
 		{
 			RulerInfo rulerInfo = new RulerInfo
 			{
+				Width = 400,
+				Height = 75,
+				Opacity = 0.60,
+				ShowToolTip = false,
+				IsLocked = false,
+				IsVertical = false,
+				TopMost = true,
+				MinHeight = 10,
+				MinWidth = 10
+			};
+
+			return rulerInfo;
+		}
+
+		public static RulerInfo GetRulerInfoFromSettings()
+		{
+			RulerInfo rulerInfo = new RulerInfo
+			{
 				Width = Properties.Settings.Default.Width,
 				Height = Properties.Settings.Default.Height,
 				Opacity = Properties.Settings.Default.Opacity,
