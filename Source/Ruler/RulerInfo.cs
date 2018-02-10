@@ -56,10 +56,15 @@ namespace Ruler
 			get;
 			set;
 		}
+		public int Rotation
+		{
+			get;
+			set;
+		}
 
 		public string ConvertToParameters()
 		{
-			return string.Format("{0} {1} {2} {3} {4} {5} {6}", this.Width, this.Height, this.IsVertical, this.Opacity, this.ShowToolTip, this.IsLocked, this.TopMost);
+			return string.Format("{0} {1} {2} {3} {4} {5} {6} {7}", this.Width, this.Height, this.IsVertical, this.Opacity, this.ShowToolTip, this.IsLocked, this.TopMost,this.Rotation);
 		}
 
 		public static RulerInfo CovertToRulerInfo(string[] args)
@@ -71,6 +76,7 @@ namespace Ruler
 			string showToolTip = args[4];
 			string isLocked = args[5];
 			string topMost = args[6];
+			string rotation = args[7];
 
 			RulerInfo rulerInfo = new RulerInfo
 			{
@@ -80,7 +86,8 @@ namespace Ruler
 				Opacity = double.Parse(opacity),
 				ShowToolTip = bool.Parse(showToolTip),
 				IsLocked = bool.Parse(isLocked),
-				TopMost = bool.Parse(topMost)
+				TopMost = bool.Parse(topMost),
+				Rotation = int.Parse(rotation)
 			};
 
 			return rulerInfo;
@@ -96,7 +103,8 @@ namespace Ruler
 				ShowToolTip = false,
 				IsLocked = false,
 				IsVertical = false,
-				TopMost = true
+				TopMost = true,
+				Rotation = 0
 			};
 
 			return rulerInfo;
@@ -111,6 +119,7 @@ namespace Ruler
 			targetInstance.ShowToolTip = source.ShowToolTip;
 			targetInstance.IsLocked = source.IsLocked;
 			targetInstance.TopMost = source.TopMost;
+			targetInstance.Rotation = source.Rotation;
 		}
 	}	
 }
