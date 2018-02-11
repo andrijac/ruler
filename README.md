@@ -24,8 +24,9 @@ Support for .NET 2.0 is kept. :thumbsup:
 
 ### Ruler shortcuts:
 
-- **Space** and **Double click**: will toggle direction of Ruler. 
+- **Space** and **Double click**: will toggle direction of Ruler 
 - **Arrow keys**: move Ruler
+- **Ctrl** + **Shift** + **Arrow keys**: resize Ruler
 
 ### Command line parameters (optional):
 In current implementation, you can either not use parameters (just start app) or use all parameters (you cannot used parameters selectively).
