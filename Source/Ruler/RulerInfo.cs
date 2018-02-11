@@ -93,7 +93,7 @@ namespace Ruler
 				Width = 400,
 				Height = 75,
 				Opacity = 0.60,
-				ShowToolTip = false,
+				ShowToolTip = true,
 				IsLocked = false,
 				IsVertical = false,
 				TopMost = true
