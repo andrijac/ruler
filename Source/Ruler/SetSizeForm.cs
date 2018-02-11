@@ -13,9 +13,11 @@ namespace Ruler
 		private int originalWidth;
 		private int originalHeight;
 
-		public SetSizeForm(int initWidth, int initHeight)
+		public SetSizeForm(string title, int initWidth, int initHeight)
 		{
 			this.InitializeComponent();
+
+			this.Text = title;
 
 			this.originalWidth = initWidth;
 			this.originalHeight = initHeight;
