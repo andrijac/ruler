@@ -28,6 +28,12 @@ Support for .NET 2.0 is kept. :thumbsup:
 - **Arrow keys**: move Ruler
 - **Ctrl** + **Shift** + **Arrow keys**: resize Ruler
 
+### Contributions
+If want to contribute to project, please follow the rules:
+1. **Zero-Warning policy**. There should be no C# compiler warnings in PR. :pray:
+2. **Use StyleCop**. Use StyleCop Visual Studio Extension (by Chris Dahlberg) to check for StyleCop warnings https://marketplace.visualstudio.com/items?itemName=ChrisDahlberg.StyleCop. Zero-warning policy extends to StyleCop warnings. :cop:
+3. Keep in mind that Ruler should be simple tool. It should be disposable, easy to run, easy to close, easy to run in multiple instances. For now, I still refuse to add any kind of additional dependency to project like persistent storage for Ruler settings (which are still, at the moment, few), having a Ruler icon in system tray etc. for sake of keeping Ruler simple. Since Ruler can run multiple instances, features mentioned would add unnecessary complexity to project. :speech_balloon:
+
 ### Command line parameters (optional):
 In current implementation, you can either not use parameters (just start app) or use all parameters (you cannot used parameters selectively).
 Parameters are intended to be used internally to duplicate Ruler by passing configuration to new instance, but you can use them to save prefered Ruler configuration too
