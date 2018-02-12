@@ -114,6 +114,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IRulerInfo.cs" />
+    <Compile Include="MenuItemEnum.cs" />
+    <Compile Include="MenuItemHolder.cs" />
     <Compile Include="RulerInfo.cs" />
     <Compile Include="SetSizeForm.cs">
       <SubType>Form</SubType>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Resources;
@@ -17,6 +18,8 @@ namespace Ruler
 
 		#endregion ResizeRegion enum
 
+		#region Fields
+
 		private ToolTip toolTip;
 		private Point offset;
 		private Rectangle mouseDownRect;
@@ -24,47 +27,133 @@ namespace Ruler
 		private Point mouseDownPoint;
 		private ResizeRegion resizeRegion;
 		private ContextMenu contextMenu;
-		private MenuItem verticalMenuItem;
-		private MenuItem toolTipMenuItem;
-		private MenuItem lockedMenuItem;
+		private List<MenuItemHolder> menuItemList;
+
+		#endregion
+
+		#region Init
+
+		private static void Main(params string[] args)
+		{
+			Application.EnableVisualStyles();
+			Application.SetCompatibleTextRenderingDefault(false);
+
+			MainForm mainForm;
+
+			if (args.Length == 0)
+			{
+				mainForm = new MainForm();
+			}
+			else
+			{
+				mainForm = new MainForm(RulerInfo.CovertToRulerInfo(args));
+			}
+
+			Application.Run(mainForm);
+		}
 
 		public MainForm()
+			:this(RulerInfo.GetDefaultRulerInfo())
 		{
-			this.InitLocalVars();
-
-			RulerInfo rulerInfo = RulerInfo.GetDefaultRulerInfo();
-
-			this.Init(rulerInfo);
 		}
 
 		public MainForm(RulerInfo rulerInfo)
 		{
-			this.InitLocalVars();
-
 			this.Init(rulerInfo);
+		}		
+
+		private void Init(RulerInfo rulerInfo)
+		{
+			// Set fields
+			this.toolTip = new ToolTip();
+			this.toolTip.AutoPopDelay = 10000;
+			this.toolTip.InitialDelay = 1;
+
+			this.resizeRegion = ResizeRegion.None;
+			this.contextMenu = new ContextMenu();
+			this.resizeBorderWidth = 5;
+
+			// Form setup ------------------
+			this.SetStyle(ControlStyles.ResizeRedraw, true);
+			this.UpdateStyles();
+
+			ResourceManager resources = new ResourceManager(typeof(MainForm));
+			this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
+			this.Opacity = rulerInfo.Opacity;
+			this.FormBorderStyle = FormBorderStyle.None;
+			this.Font = new Font("Tahoma", 10);
+			this.Text = "Ruler";
+			this.BackColor = Color.White;
+
+			// Create menu
+			this.CreateMenuItems(rulerInfo);		
+
+			RulerInfo.CopyInto(rulerInfo, this);			
+
+			this.ContextMenu = contextMenu;
+
+			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 		}
 
+		private void CreateMenuItems(RulerInfo rulerInfo)
+		{
+			var list = new List<MenuItemHolder>()
+			{
+				new MenuItemHolder(MenuItemEnum.TopMost, "Stay On Top", this.TopMostHandler, rulerInfo.TopMost),
+				new MenuItemHolder(MenuItemEnum.Vertical, "Vertical", this.VerticalHandler, rulerInfo.IsVertical),
+				new MenuItemHolder(MenuItemEnum.ShowToolTip, "Tool Tip", this.ShowToolTipHandler, rulerInfo.ShowToolTip),
+				new MenuItemHolder(MenuItemEnum.Opacity, "Opacity", null, false),
+				new MenuItemHolder(MenuItemEnum.LockResize, "Lock Resizing", this.LockResizeHandler, rulerInfo.IsLocked),
+				new MenuItemHolder(MenuItemEnum.SetSize, "Set size...", this.SetSizeHandler, false),
+				new MenuItemHolder(MenuItemEnum.Duplicate, "Duplicate", this.DuplicateHandler, false),
+				MenuItemHolder.Separator,
+				new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
+				MenuItemHolder.Separator,
+				new MenuItemHolder(MenuItemEnum.Exit, "Exit", this.ExitHandler, false)
+			};
+
+
+			// Build opacity menu
+			MenuItem opacityMenuItem = list.Find(m => m.MenuItemEnum == MenuItemEnum.Opacity).MenuItem;
+
+			for (int i = 10; i <= 100; i += 10)
+			{
+				MenuItem subMenu = new MenuItem(i + "%", this.OpacityMenuHandler);
+				subMenu.Checked = i == rulerInfo.Opacity * 100;
+				opacityMenuItem.MenuItems.Add(subMenu);
+			}
+
+			// Build main context menu
+			list.ForEach(mh => this.contextMenu.MenuItems.Add(mh.MenuItem));
+
+			this.menuItemList = list;
+		}
+
+		#endregion
+
+		#region Properties
+		
 		public bool IsVertical
 		{
-			get { return this.verticalMenuItem.Checked; }
-			set { this.verticalMenuItem.Checked = value; }
+			get { return this.FindMenuItem(MenuItemEnum.Vertical).Checked; }
+			set { this.FindMenuItem(MenuItemEnum.Vertical).Checked = value; }
 		}
 
 		public bool IsLocked
 		{
-			get;
-			set;
+			get { return this.FindMenuItem(MenuItemEnum.LockResize).Checked; }
+			set { this.FindMenuItem(MenuItemEnum.LockResize).Checked = value; }
 		}
 
 		public bool ShowToolTip
 		{
 			get
 			{
-				return this.toolTipMenuItem.Checked;
+				return this.FindMenuItem(MenuItemEnum.ShowToolTip).Checked;
 			}
 			set
 			{
-				this.toolTipMenuItem.Checked = value;
+				this.FindMenuItem(MenuItemEnum.ShowToolTip).Checked = value;
 
 				if (value)
 				{
@@ -77,50 +166,9 @@ namespace Ruler
 			}
 		}
 
-		protected override void OnMouseDoubleClick(MouseEventArgs e)
-		{
-			base.OnMouseDoubleClick(e);
+		#endregion
 
-			if (e.Button == MouseButtons.Left)
-			{
-				this.ChangeOrientation();
-			}
-		}
-
-		private void InitLocalVars()
-		{
-			this.toolTip = new ToolTip();
-			this.toolTip.AutoPopDelay = 10000;
-			this.toolTip.InitialDelay = 1;
-
-			this.resizeRegion = ResizeRegion.None;
-			this.contextMenu = new ContextMenu();
-			this.resizeBorderWidth = 5;
-		}
-
-		private void Init(RulerInfo rulerInfo)
-		{
-			this.SetStyle(ControlStyles.ResizeRedraw, true);
-			this.UpdateStyles();
-
-			ResourceManager resources = new ResourceManager(typeof(MainForm));
-			this.Icon = ((Icon)(resources.GetObject("$this.Icon")));
-			this.Opacity = rulerInfo.Opacity;
-
-			this.SetUpMenu();
-
-			this.Text = "Ruler";
-			this.BackColor = Color.White;
-
-			RulerInfo.CopyInto(rulerInfo, this);
-
-			this.FormBorderStyle = FormBorderStyle.None;
-
-			this.ContextMenu = contextMenu;
-			this.Font = new Font("Tahoma", 10);
-
-			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
-		}
+		#region Helpers
 
 		private RulerInfo GetRulerInfo()
 		{
@@ -131,30 +179,34 @@ namespace Ruler
 			return rulerInfo;
 		}
 
-		private void SetUpMenu()
+		private MenuItem FindMenuItem(MenuItemEnum menuItemEnum)
 		{
-			this.AddMenuItem("Stay On Top");
-			this.verticalMenuItem = this.AddMenuItem("Vertical");
-			this.toolTipMenuItem = this.AddMenuItem("Tool Tip");
-			MenuItem opacityMenuItem = this.AddMenuItem("Opacity");
-			this.lockedMenuItem = this.AddMenuItem("Lock resizing", Shortcut.None, this.LockHandler);
-			this.AddMenuItem("Set size...", Shortcut.None, this.SetWidthHeightHandler);
-			this.AddMenuItem("Duplicate", Shortcut.None, this.DuplicateHandler);
-			this.AddMenuItem("-");
-			this.AddMenuItem("About...");
-			this.AddMenuItem("-");
-			this.AddMenuItem("Exit");
-
-			for (int i = 10; i <= 100; i += 10)
-			{
-				MenuItem subMenu = new MenuItem(i + "%");
-				subMenu.Checked = i == Opacity * 100;
-				subMenu.Click += new EventHandler(OpacityMenuHandler);
-				opacityMenuItem.MenuItems.Add(subMenu);
-			}
+			return this.menuItemList.Find(mih => mih.MenuItemEnum == menuItemEnum).MenuItem;
 		}
 
-		private void SetWidthHeightHandler(object sender, EventArgs e)
+		private void ChangeOrientation()
+		{
+			this.IsVertical = !this.IsVertical;
+			int width = Width;
+			this.Width = Height;
+			this.Height = width;
+		}
+
+		private void SetToolTip()
+		{
+			this.toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", this.Width, this.Height));
+		}
+
+		private void RemoveToolTip()
+		{
+			this.toolTip.RemoveAll();
+		}
+
+		#endregion
+
+		#region Menu Item Handlers
+
+		private void SetSizeHandler(object sender, EventArgs e)
 		{
 			SetSizeForm form = new SetSizeForm(this.Width, this.Height);
 
@@ -172,10 +224,9 @@ namespace Ruler
 			}
 		}
 
-		private void LockHandler(object sender, EventArgs e)
+		private void LockResizeHandler(object sender, EventArgs e)
 		{
-			this.IsLocked = !this.IsLocked;
-			this.lockedMenuItem.Checked = this.IsLocked;
+			this.IsLocked = !this.IsLocked;			
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
@@ -194,26 +245,67 @@ namespace Ruler
 			process.Start();
 		}
 
-		private MenuItem AddMenuItem(string text)
+		private void OpacityMenuHandler(object sender, EventArgs e)
 		{
-			return AddMenuItem(text, Shortcut.None, this.MenuHandler);
+			MenuItem opacityMenuItem = (MenuItem)sender;
+
+			foreach (MenuItem menuItem in opacityMenuItem.Parent.MenuItems)
+			{
+				menuItem.Checked = false;
+			}
+
+			opacityMenuItem.Checked = true;
+			this.Opacity = double.Parse(opacityMenuItem.Text.Replace("%", "")) / 100;
 		}
 
-		private MenuItem AddMenuItem(string text, Shortcut shortcut, EventHandler handler)
+		private void ShowToolTipHandler(object sender, EventArgs e)
 		{
-			MenuItem mi = new MenuItem(text);
-			mi.Click += new EventHandler(handler);
-			mi.Shortcut = shortcut;
-			this.contextMenu.MenuItems.Add(mi);
+			this.ShowToolTip = !this.ShowToolTip;
+		}
 
-			return mi;
+		private void ExitHandler(object sender, EventArgs e)
+		{
+			this.Close();
+		}
+
+		private void VerticalHandler(object sender, EventArgs e)
+		{
+			this.ChangeOrientation();
+		}
+
+		private void TopMostHandler(object sender, EventArgs e)
+		{
+			MenuItem mi = (MenuItem)sender;
+
+			mi.Checked = !mi.Checked;
+			this.TopMost = mi.Checked;
+		}
+
+		private void AboutHandler(object sender, EventArgs e)
+		{
+			string message = string.Format("Original Ruler implemented by Jeff Key\nwww.sliver.com\nruler.codeplex.com\nIcon by Kristen Magee @ www.kbecca.com.\nMaintained by Andrija Cacanovic\nHosted on \nhttps://github.com/andrijac/ruler", Application.ProductVersion);
+			MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
+		}
+
+		#endregion
+
+		#region Input
+
+		protected override void OnMouseDoubleClick(MouseEventArgs e)
+		{
+			base.OnMouseDoubleClick(e);
+
+			if (e.Button == MouseButtons.Left)
+			{
+				this.ChangeOrientation();
+			}
 		}
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
-			this.offset = new Point(MousePosition.X - Location.X, MousePosition.Y - Location.Y);
-			this.mouseDownPoint = MousePosition;
-			this.mouseDownRect = ClientRectangle;
+			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
+			this.mouseDownPoint = Control.MousePosition;
+			this.mouseDownRect = this.ClientRectangle;
 
 			base.OnMouseDown(e);
 		}
@@ -232,11 +324,11 @@ namespace Ruler
 				return;
 			}
 
-			Point clientCursorPos = PointToClient(MousePosition);
-			Rectangle resizeInnerRect = ClientRectangle;
+			Point clientCursorPos = this.PointToClient(MousePosition);
+			Rectangle resizeInnerRect = this.ClientRectangle;
 			resizeInnerRect.Inflate(-resizeBorderWidth, -resizeBorderWidth);
 
-			bool inResizableArea = ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
+			bool inResizableArea = this.ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
 
 			if (inResizableArea)
 			{
@@ -251,11 +343,11 @@ namespace Ruler
 			}
 			else
 			{
-				Cursor = Cursors.Default;
+				this.Cursor = Cursors.Default;
 
 				if (e.Button == MouseButtons.Left)
 				{
-					Location = new Point(MousePosition.X - offset.X, MousePosition.Y - offset.Y);
+					this.Location = new Point(MousePosition.X - offset.X, MousePosition.Y - offset.Y);
 				}
 			}
 
@@ -264,22 +356,13 @@ namespace Ruler
 
 		protected override void OnResize(EventArgs e)
 		{
+			// ToolTip needs to be set again on resize to refresh new size values inside ToolTip
 			if (this.ShowToolTip)
 			{
 				this.SetToolTip();
 			}
 
 			base.OnResize(e);
-		}
-
-		private void SetToolTip()
-		{
-			toolTip.SetToolTip(this, string.Format("Width: {0} pixels\nHeight: {1} pixels", Width, Height));
-		}
-
-		private void RemoveToolTip()
-		{
-			toolTip.RemoveAll();
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e)
@@ -453,6 +536,10 @@ namespace Ruler
 			}
 		}
 
+		#endregion
+
+		#region Paint
+
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			Graphics graphics = e.Graphics;
@@ -468,18 +555,18 @@ namespace Ruler
 				width = Height;
 			}
 
-			DrawRuler(graphics, width, height);
+			DrawRuler(graphics, width, height, this.Font);
 
 			base.OnPaint(e);
 		}
 
-		private void DrawRuler(Graphics g, int formWidth, int formHeight)
+		private static void DrawRuler(Graphics g, int formWidth, int formHeight, Font font)
 		{
 			// Border
 			g.DrawRectangle(Pens.Black, 0, 0, formWidth - 1, formHeight - 1);
 
 			// Width
-			g.DrawString(formWidth + " pixels", Font, Brushes.Black, 10, (formHeight / 2) - (Font.Height / 2));
+			g.DrawString(formWidth + " pixels", font, Brushes.Black, 10, (formHeight / 2) - (font.Height / 2));
 
 			// Ticks
 			for (int i = 0; i < formWidth; i++)
@@ -490,7 +577,7 @@ namespace Ruler
 					if (i % 100 == 0)
 					{
 						tickHeight = 15;
-						this.DrawTickLabel(g, i.ToString(), i, formHeight, tickHeight);
+						DrawTickLabel(g, i.ToString(), i, formHeight, tickHeight, font);
 					}
 					else if (i % 10 == 0)
 					{
@@ -515,98 +602,15 @@ namespace Ruler
 			g.DrawLine(Pens.Black, xPos, formHeight, xPos, formHeight - tickHeight);
 		}
 
-		private void DrawTickLabel(Graphics g, string text, int xPos, int formHeight, int height)
+		private static void DrawTickLabel(Graphics g, string text, int xPos, int formHeight, int height, Font font)
 		{
 			// Top
-			g.DrawString(text, this.Font, Brushes.Black, xPos, height);
+			g.DrawString(text, font, Brushes.Black, xPos, height);
 
 			// Bottom
-			g.DrawString(text, this.Font, Brushes.Black, xPos, formHeight - height - this.Font.Height);
+			g.DrawString(text, font, Brushes.Black, xPos, formHeight - height - font.Height);
 		}
 
-		private static void Main(params string[] args)
-		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-
-			MainForm mainForm;
-
-			if (args.Length == 0)
-			{
-				mainForm = new MainForm();
-			}
-			else
-			{
-				mainForm = new MainForm(RulerInfo.CovertToRulerInfo(args));
-			}
-
-			Application.Run(mainForm);
-		}
-
-		private void OpacityMenuHandler(object sender, EventArgs e)
-		{
-			MenuItem mi = (MenuItem)sender;
-			this.UncheckMenuItem(mi.Parent);
-			mi.Checked = true;
-			this.Opacity = double.Parse(mi.Text.Replace("%", "")) / 100;
-		}
-
-		private void UncheckMenuItem(Menu parent)
-		{
-			if (parent == null || parent.MenuItems == null)
-			{
-				return;
-			}
-
-			for (int i = 0; i < parent.MenuItems.Count; i++)
-			{
-				if (parent.MenuItems[i].Checked)
-				{
-					parent.MenuItems[i].Checked = false;
-				}
-			}
-		}
-
-		private void MenuHandler(object sender, EventArgs e)
-		{
-			MenuItem mi = (MenuItem)sender;
-
-			switch (mi.Text)
-			{
-				case "Exit":
-					this.Close();
-					break;
-
-				case "Tool Tip":
-					this.ShowToolTip = !ShowToolTip;
-					break;
-
-				case "Vertical":
-					this.ChangeOrientation();
-					break;
-
-				case "Stay On Top":
-					mi.Checked = !mi.Checked;
-					this.TopMost = mi.Checked;
-					break;
-
-				case "About...":
-					string message = string.Format("Original Ruler implemented by Jeff Key\nwww.sliver.com\nruler.codeplex.com\nIcon by Kristen Magee @ www.kbecca.com.\nMaintained by Andrija Cacanovic\nHosted on \nhttps://github.com/andrijac/ruler", Application.ProductVersion);
-					MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-					break;
-
-				default:
-					MessageBox.Show("Unknown menu item.");
-					break;
-			}
-		}
-
-		private void ChangeOrientation()
-		{
-			this.IsVertical = !this.IsVertical;
-			int width = Width;
-			this.Width = Height;
-			this.Height = width;
-		}
+		#endregion
 	}
 }
