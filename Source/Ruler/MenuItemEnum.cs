@@ -15,8 +15,7 @@ namespace Ruler
 		Duplicate,
 		About,
 		Exit,
+		RulerInfo,
 		Separator
-	}
-
-	
+	}	
 }

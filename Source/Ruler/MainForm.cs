@@ -29,10 +29,17 @@ namespace Ruler
 		private ContextMenu contextMenu;
 		private List<MenuItemHolder> menuItemList;
 
+		private bool isVertical;
+		private bool isLocked;
+		private bool showToolTip;
+
+		private readonly RulerInfo initRulerInfo;
+
 		#endregion
 
 		#region Init
 
+		[STAThread]
 		private static void Main(params string[] args)
 		{
 			Application.EnableVisualStyles();
@@ -55,12 +62,19 @@ namespace Ruler
 		public MainForm()
 			:this(RulerInfo.GetDefaultRulerInfo())
 		{
-		}
+		}		
 
 		public MainForm(RulerInfo rulerInfo)
 		{
-			this.Init(rulerInfo);
-		}		
+			this.initRulerInfo = rulerInfo;			
+		}
+
+		protected override void OnLoad(EventArgs e)
+		{
+			base.OnLoad(e);
+
+			this.Init(this.initRulerInfo);
+		}
 
 		private void Init(RulerInfo rulerInfo)
 		{
@@ -109,10 +123,17 @@ namespace Ruler
 				MenuItemHolder.Separator,
 				new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
 				MenuItemHolder.Separator,
+#if DEBUG
+				new MenuItemHolder(MenuItemEnum.RulerInfo, "Get RulerInfo", (s, ea) => {
+					string parameters = this.GetRulerInfo().ConvertToParameters();
+					Clipboard.SetText(parameters);
+					MessageBox.Show(string.Concat("Copied to clipboard:", Environment.NewLine, parameters));
+				}, false),
+				MenuItemHolder.Separator,
+#endif
 				new MenuItemHolder(MenuItemEnum.Exit, "Exit", this.ExitHandler, false)
 			};
-
-
+			
 			// Build opacity menu
 			MenuItem opacityMenuItem = list.Find(m => m.MenuItemEnum == MenuItemEnum.Opacity).MenuItem;
 
@@ -132,28 +153,34 @@ namespace Ruler
 		#endregion
 
 		#region Properties
-		
+
 		public bool IsVertical
 		{
-			get { return this.FindMenuItem(MenuItemEnum.Vertical).Checked; }
-			set { this.FindMenuItem(MenuItemEnum.Vertical).Checked = value; }
+			get { return this.isVertical; }
+			set
+			{
+				this.isVertical = value;
+				this.UpdateMenuItem(MenuItemEnum.Vertical, value);				
+			}
 		}
 
 		public bool IsLocked
 		{
-			get { return this.FindMenuItem(MenuItemEnum.LockResize).Checked; }
-			set { this.FindMenuItem(MenuItemEnum.LockResize).Checked = value; }
+			get { return this.isLocked; }
+			set
+			{
+				this.isLocked = value;
+				this.UpdateMenuItem(MenuItemEnum.LockResize, value);
+			}
 		}
 
 		public bool ShowToolTip
 		{
-			get
-			{
-				return this.FindMenuItem(MenuItemEnum.ShowToolTip).Checked;
-			}
+			get { return this.showToolTip; }
 			set
 			{
-				this.FindMenuItem(MenuItemEnum.ShowToolTip).Checked = value;
+				this.showToolTip = value;
+				this.UpdateMenuItem(MenuItemEnum.ShowToolTip, value);
 
 				if (value)
 				{
@@ -166,7 +193,7 @@ namespace Ruler
 			}
 		}
 
-		#endregion
+#endregion
 
 		#region Helpers
 
@@ -179,9 +206,19 @@ namespace Ruler
 			return rulerInfo;
 		}
 
-		private MenuItem FindMenuItem(MenuItemEnum menuItemEnum)
+		private MenuItemHolder FindMenuItem(MenuItemEnum menuItemEnum)
 		{
-			return this.menuItemList.Find(mih => mih.MenuItemEnum == menuItemEnum).MenuItem;
+			return this.menuItemList.Find(mih => mih.MenuItemEnum == menuItemEnum);
+		}
+
+		private void UpdateMenuItem(MenuItemEnum menuItemEnum, bool isChecked)
+		{
+			MenuItemHolder menuItemHolder = this.FindMenuItem(menuItemEnum);
+
+			if (menuItemHolder != null)
+			{
+				menuItemHolder.MenuItem.Checked = isChecked;
+			}
 		}
 
 		private void ChangeOrientation()
@@ -202,7 +239,7 @@ namespace Ruler
 			this.toolTip.RemoveAll();
 		}
 
-		#endregion
+#endregion
 
 		#region Menu Item Handlers
 
@@ -287,7 +324,7 @@ namespace Ruler
 			MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
 
-		#endregion
+#endregion
 
 		#region Input
 
@@ -347,7 +384,7 @@ namespace Ruler
 
 				if (e.Button == MouseButtons.Left)
 				{
-					this.Location = new Point(MousePosition.X - offset.X, MousePosition.Y - offset.Y);
+					this.Location = new Point(Control.MousePosition.X - offset.X, Control.MousePosition.Y - offset.Y);
 				}
 			}
 
@@ -471,20 +508,20 @@ namespace Ruler
 			{
 				case ResizeRegion.E:
 					{
-						int diff = MousePosition.X - this.mouseDownPoint.X;
-						Width = this.mouseDownRect.Width + diff;
+						int diff = Control.MousePosition.X - this.mouseDownPoint.X;
+						this.Width = this.mouseDownRect.Width + diff;
 						break;
 					}
 				case ResizeRegion.S:
 					{
 						int diff = MousePosition.Y - this.mouseDownPoint.Y;
-						Height = this.mouseDownRect.Height + diff;
+						this.Height = this.mouseDownRect.Height + diff;
 						break;
 					}
 				case ResizeRegion.SE:
 					{
-						Width = this.mouseDownRect.Width + MousePosition.X - this.mouseDownPoint.X;
-						Height = this.mouseDownRect.Height + MousePosition.Y - this.mouseDownPoint.Y;
+						this.Width = this.mouseDownRect.Width + Control.MousePosition.X - this.mouseDownPoint.X;
+						this.Height = this.mouseDownRect.Height + Control.MousePosition.Y - this.mouseDownPoint.Y;
 						break;
 					}
 			}
@@ -536,7 +573,7 @@ namespace Ruler
 			}
 		}
 
-		#endregion
+#endregion
 
 		#region Paint
 
@@ -544,15 +581,15 @@ namespace Ruler
 		{
 			Graphics graphics = e.Graphics;
 
-			int height = Height;
-			int width = Width;
+			int height = this.Height;
+			int width = this.Width;
 
 			if (IsVertical)
 			{
 				graphics.RotateTransform(90);
 				graphics.TranslateTransform(0, -Width + 1);
-				height = Width;
-				width = Height;
+				height = this.Width;
+				width = this.Height;
 			}
 
 			DrawRuler(graphics, width, height, this.Font);
@@ -574,6 +611,7 @@ namespace Ruler
 				if (i % 2 == 0)
 				{
 					int tickHeight;
+
 					if (i % 100 == 0)
 					{
 						tickHeight = 15;
@@ -611,6 +649,6 @@ namespace Ruler
 			g.DrawString(text, font, Brushes.Black, xPos, formHeight - height - font.Height);
 		}
 
-		#endregion
+#endregion
 	}
 }
