@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Ruler
+﻿namespace Ruler
 {
 	public class RulerInfo : IRulerInfo
 	{
@@ -102,7 +98,7 @@ namespace Ruler
 			return rulerInfo;
 		}
 
-		public static void CopyInto(IRulerInfo source, IRulerInfo targetInstance)			
+		public static void CopyInto(IRulerInfo source, IRulerInfo targetInstance)
 		{
 			targetInstance.Width = source.Width;
 			targetInstance.Height = source.Height;
@@ -112,5 +108,5 @@ namespace Ruler
 			targetInstance.IsLocked = source.IsLocked;
 			targetInstance.TopMost = source.TopMost;
 		}
-	}	
+	}
 }

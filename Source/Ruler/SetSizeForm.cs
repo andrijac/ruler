@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace Ruler
@@ -40,10 +36,11 @@ namespace Ruler
 			int width;
 			int height;
 
-			Size size = new Size();
-
-			size.Width = int.TryParse(this.txtWidth.Text, out width) ? width : originalWidth;
-			size.Height = int.TryParse(this.txtHeight.Text, out height) ? height : originalHeight;
+			Size size = new Size
+			{
+				Width = int.TryParse(this.txtWidth.Text, out width) ? width : this.originalWidth,
+				Height = int.TryParse(this.txtHeight.Text, out height) ? height : this.originalHeight
+			};
 
 			return size;
 		}

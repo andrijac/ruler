@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Ruler
+﻿namespace Ruler
 {
 	public enum MenuItemEnum
 	{
@@ -17,5 +13,5 @@ namespace Ruler
 		Exit,
 		RulerInfo,
 		Separator
-	}	
+	}
 }
