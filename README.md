@@ -31,7 +31,7 @@ Support for .NET 2.0 is kept. :thumbsup:
 ### Contributions
 If you want to contribute to project, please follow the rules:
 1. **Zero-Warning policy**. There should be no C# compiler warnings in PR. :pray:
-2. **Use StyleCop** Visual Studio Extension (by Chris Dahlberg) to check for StyleCop warnings https://marketplace.visualstudio.com/items?itemName=ChrisDahlberg.StyleCop. Zero-warning policy extends to StyleCop warnings. :cop:
+2. **Use StyleCop** Visual Studio Extension (by Chris Dahlberg) to check for StyleCop warnings https://marketplace.visualstudio.com/items?itemName=ChrisDahlberg.StyleCop. Zero-warning policy extends to StyleCop warnings. :cop: Custom StyleCop rules file is part of repository and it should be picked up by StyleCop in Visual Studio once you run it.
 3. Keep in mind that **Ruler should be simple tool**. It should be disposable, easy to run, easy to close, easy to run in multiple instances. For now, I still refuse to add any kind of additional dependency to project like persistent storage for Ruler settings (which are still, at the moment, few), having a Ruler icon in system tray etc. for sake of keeping Ruler simple. Since Ruler can run multiple instances, features mentioned would add unnecessary complexity to project. :speech_balloon:
 
 ### Command line parameters (optional):
