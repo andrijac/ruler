@@ -122,6 +122,7 @@
     </Compile>
     <Compile Include="SetSizeForm.Designer.cs">
       <DependentUpon>SetSizeForm.cs</DependentUpon>
+      <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
     <Content Include="app.ico" />
     <Compile Include="AssemblyInfo.cs">
