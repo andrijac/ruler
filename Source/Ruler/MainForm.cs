@@ -137,7 +137,7 @@ namespace Ruler
 				new MenuItemHolder(MenuItemEnum.Duplicate, "Duplicate", this.DuplicateHandler, false),
 				MenuItemHolder.Separator,
 				new MenuItemHolder(MenuItemEnum.Reset,"Reset To Default",this.ResetToDefaulHandler,false),
-                MenuItemHolder.Separator,
+				MenuItemHolder.Separator,
 				new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
 				MenuItemHolder.Separator,
 #if DEBUG
