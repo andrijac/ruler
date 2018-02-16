@@ -136,7 +136,7 @@ namespace Ruler
 				new MenuItemHolder(MenuItemEnum.SetSize, "Set size...", this.SetSizeHandler, false),
 				new MenuItemHolder(MenuItemEnum.Duplicate, "Duplicate", this.DuplicateHandler, false),
 				MenuItemHolder.Separator,
-				new MenuItemHolder(MenuItemEnum.Reset,"Reset To Default",this.ResetToDefaulHandler,false),
+				new MenuItemHolder(MenuItemEnum.Reset, "Reset To Default", this.ResetToDefaulHandler, false),
 				MenuItemHolder.Separator,
 				new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
 				MenuItemHolder.Separator,
@@ -359,6 +359,7 @@ namespace Ruler
 			string message = string.Format("Original Ruler implemented by Jeff Key\nwww.sliver.com\nruler.codeplex.com\nIcon by Kristen Magee @ www.kbecca.com.\nMaintained by Andrija Cacanovic\nHosted on \nhttps://github.com/andrijac/ruler", Application.ProductVersion);
 			MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
+
 		private void ResetToDefaulHandler(object sender, EventArgs e)
 		{
 			RulerInfo.CopyInto(RulerInfo.GetDefaultRulerInfo(), this);
