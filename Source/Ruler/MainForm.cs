@@ -31,6 +31,7 @@ namespace Ruler
 		private bool isVertical;
 		private bool isLocked;
 		private bool showToolTip;
+        private bool previouslyLocked;
 
 		private readonly RulerInfo initRulerInfo;
 
@@ -94,12 +95,14 @@ namespace Ruler
 
 		private void Init(RulerInfo rulerInfo)
 		{
-			// Set fields
-			this.toolTip = new ToolTip();
-			this.toolTip.AutoPopDelay = 10000;
-			this.toolTip.InitialDelay = 1;
+            // Set fields
+            this.toolTip = new ToolTip
+            {
+                AutoPopDelay = 10000,
+                InitialDelay = 1
+            };
 
-			this.resizeRegion = ResizeRegion.None;
+            this.resizeRegion = ResizeRegion.None;
 			this.resizeBorderWidth = 5;
 
 			// Form setup ------------------
@@ -118,6 +121,7 @@ namespace Ruler
 			this.CreateMenuItems(rulerInfo);
 
 			RulerInfo.CopyInto(rulerInfo, this);
+            this.previouslyLocked = this.isLocked ? true : false;
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 		}
@@ -150,9 +154,11 @@ namespace Ruler
 
 			for (int i = 10; i <= 100; i += 10)
 			{
-				MenuItem subMenu = new MenuItem(i + "%", this.OpacityMenuHandler);
-				subMenu.Checked = i == rulerInfo.Opacity * 100;
-				opacityMenuItem.MenuItems.Add(subMenu);
+                MenuItem subMenu = new MenuItem(i + "%", this.OpacityMenuHandler)
+                {
+                    Checked = i == rulerInfo.Opacity * 100
+                };
+                opacityMenuItem.MenuItems.Add(subMenu);
 			}
 
 			// Build main context menu
@@ -298,6 +304,7 @@ namespace Ruler
 		private void LockResizeHandler(object sender, EventArgs e)
 		{
 			this.IsLocked = !this.IsLocked;
+            this.previouslyLocked = this.isLocked;
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
@@ -374,6 +381,7 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
+            this.isLocked = this.previouslyLocked ? true : false;
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
@@ -414,6 +422,7 @@ namespace Ruler
 			}
 			else
 			{
+                this.isLocked = true;
 				this.Cursor = Cursors.Default;
 
 				if (e.Button == MouseButtons.Left)
