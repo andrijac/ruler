@@ -121,7 +121,7 @@ namespace Ruler
 			this.CreateMenuItems(rulerInfo);
 
 			RulerInfo.CopyInto(rulerInfo, this);
-			this.previouslyLocked = this.isLocked ? true : false;
+			this.previouslyLocked = this.isLocked;
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 		}
@@ -381,7 +381,7 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
-			this.isLocked = this.previouslyLocked ? true : false;
+			this.isLocked = this.previouslyLocked;
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
