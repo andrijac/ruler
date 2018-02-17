@@ -136,6 +136,8 @@ namespace Ruler
 				new MenuItemHolder(MenuItemEnum.SetSize, "Set size...", this.SetSizeHandler, false),
 				new MenuItemHolder(MenuItemEnum.Duplicate, "Duplicate", this.DuplicateHandler, false),
 				MenuItemHolder.Separator,
+				new MenuItemHolder(MenuItemEnum.Reset, "Reset To Default", this.ResetToDefaulHandler, false),
+				MenuItemHolder.Separator,
 				new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
 				MenuItemHolder.Separator,
 #if DEBUG
@@ -358,6 +360,10 @@ namespace Ruler
 			MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
 
+		private void ResetToDefaulHandler(object sender, EventArgs e)
+		{
+			RulerInfo.CopyInto(RulerInfo.GetDefaultRulerInfo(), this);
+		}
 		#endregion Menu Item Handlers
 
 		#region Input
