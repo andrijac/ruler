@@ -2,13 +2,15 @@ ruler
 =====
 Simple on-screen pixel ruler.
 
-<br />
+[<img src="https://andrijac.visualstudio.com/_apis/public/build/definitions/e1a573e5-0959-4685-8cce-05da5e128d6a/1/badge"/>](https://andrijac.visualstudio.com/ruler/_build/index?definitionId=e1a573e5-0959-4685-8cce-05da5e128d6a)
+
 <a href="http://www.softpedia.com/progDownload/Ruler-andrijac-Download-256095.html"><img alt="download page" src="https://raw.githubusercontent.com/andrijac/ruler/master/img/softpedia_download_large_shadow.png" /></a>
 <br />
-<br />
+
 <img src="https://github.com/andrijac/ruler/raw/master/img/ruler.gif">
 
-**Releases**
+
+### Releases
 https://github.com/andrijac/ruler/releases
 
 ### Legacy
@@ -22,17 +24,18 @@ Support for .NET 2.0 is kept. :thumbsup:
 
 **<a name="newfeatures" href="https://github.com/andrijac/ruler/blob/master/NewFeatures.md">Added features in this fork.</a>**
 
-### Ruler shortcuts:
-
-- **Space** and **Double click**: will toggle direction of Ruler 
-- **Arrow keys**: move Ruler
-- **Ctrl** + **Shift** + **Arrow keys**: resize Ruler
-
 ### Contributions
 If you want to contribute to project, please follow the rules:
 1. **Zero-Warning policy**. There should be no C# compiler warnings in PR. :pray:
 2. **Use StyleCop** Visual Studio Extension (by Chris Dahlberg) to check for StyleCop warnings https://marketplace.visualstudio.com/items?itemName=ChrisDahlberg.StyleCop. Zero-warning policy extends to StyleCop warnings. :cop: Custom StyleCop rules file is part of repository and it should be picked up by StyleCop in Visual Studio once you run it.
 3. Keep in mind that **Ruler should be simple tool**. It should be disposable, easy to run, easy to close, easy to run in multiple instances. For now, I still refuse to add any kind of additional dependency to project like persistent storage for Ruler settings (which are still, at the moment, few), having a Ruler icon in system tray etc. for sake of keeping Ruler simple. Since Ruler can run multiple instances, features mentioned would add unnecessary complexity to project. :speech_balloon:
+4. Use **Visual Studio 2017** with latest updates. :coffee:
+
+### Ruler shortcuts:
+
+- **Space** and **Double click**: will toggle direction of Ruler 
+- **Arrow keys**: move Ruler
+- **Ctrl** + **Shift** + **Arrow keys**: resize Ruler
 
 ### Command line parameters (optional):
 In current implementation, you can either not use parameters (just start app) or use all parameters (you cannot used parameters selectively).

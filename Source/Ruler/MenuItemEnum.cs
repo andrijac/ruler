@@ -9,6 +9,7 @@
 		LockResize,
 		SetSize,
 		Duplicate,
+		Reset,
 		About,
 		Exit,
 		RulerInfo,
