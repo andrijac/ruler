@@ -31,9 +31,10 @@ namespace Ruler
 		private bool isVertical;
 		private bool isLocked;
 		private bool showToolTip;
-		private bool previouslyLocked;
 
 		private readonly RulerInfo initRulerInfo;
+
+		private bool doLockRulerResizeOnMove;
 
 		#endregion Fields
 
@@ -121,7 +122,7 @@ namespace Ruler
 			this.CreateMenuItems(rulerInfo);
 
 			RulerInfo.CopyInto(rulerInfo, this);
-			this.previouslyLocked = this.isLocked;
+			this.doLockRulerResizeOnMove = false;
 
 			this.SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
 		}
@@ -306,7 +307,6 @@ namespace Ruler
 		private void LockResizeHandler(object sender, EventArgs e)
 		{
 			this.IsLocked = !this.IsLocked;
-			this.previouslyLocked = this.isLocked;
 		}
 
 		private void DuplicateHandler(object sender, EventArgs e)
@@ -371,6 +371,7 @@ namespace Ruler
 		{
 			RulerInfo.CopyInto(RulerInfo.GetDefaultRulerInfo(), this);
 		}
+
 		#endregion Menu Item Handlers
 
 		#region Input
@@ -387,10 +388,12 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
-			this.isLocked = this.previouslyLocked;
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
+
+			bool inResizableArea = this.GetIsInResizableArea();
+			this.doLockRulerResizeOnMove = !inResizableArea;
 
 			base.OnMouseDown(e);
 		}
@@ -398,6 +401,8 @@ namespace Ruler
 		protected override void OnMouseUp(MouseEventArgs e)
 		{
 			this.resizeRegion = ResizeRegion.None;
+			this.doLockRulerResizeOnMove = false;
+
 			base.OnMouseUp(e);
 		}
 
@@ -410,10 +415,8 @@ namespace Ruler
 			}
 
 			Point clientCursorPos = this.PointToClient(MousePosition);
-			Rectangle resizeInnerRect = this.ClientRectangle;
-			resizeInnerRect.Inflate(-this.resizeBorderWidth, -this.resizeBorderWidth);
 
-			bool inResizableArea = this.ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
+			bool inResizableArea = this.GetIsInResizableArea();
 
 			if (inResizableArea)
 			{
@@ -428,7 +431,6 @@ namespace Ruler
 			}
 			else
 			{
-				this.isLocked = true;
 				this.Cursor = Cursors.Default;
 
 				if (e.Button == MouseButtons.Left)
@@ -548,7 +550,7 @@ namespace Ruler
 
 		private void HandleResize()
 		{
-			if (this.IsLocked)
+			if (this.IsLocked || this.doLockRulerResizeOnMove)
 			{
 				return;
 			}
@@ -648,6 +650,17 @@ namespace Ruler
 			}
 		}
 
+		private bool GetIsInResizableArea()
+		{
+			Point clientCursorPos = this.PointToClient(MousePosition);
+			Rectangle resizeInnerRect = this.ClientRectangle;
+			resizeInnerRect.Inflate(-this.resizeBorderWidth, -this.resizeBorderWidth);
+
+			bool inResizableArea = this.ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
+
+			return inResizableArea;
+		}
+
 		#endregion Input
 
 		#region Paint
@@ -725,5 +738,24 @@ namespace Ruler
 		}
 
 		#endregion Paint
+
+		#region Diagnostics
+
+		private static void DebugWrite(params object[] values)
+		{
+#if DEBUG
+			string value = string.Empty;
+
+			foreach (object o in values)
+			{
+				value += o == null ? "null" : o.ToString();
+				value += " ";
+			}
+
+			Debug.WriteLine(value);
+#endif
+		}
+
+		#endregion Diagnostics
 	}
 }
