@@ -111,7 +111,7 @@ namespace Ruler
 			this.UpdateStyles();
 
 			ResourceManager resources = new ResourceManager(typeof(MainForm));
-			this.Icon = (Icon)resources.GetObject("$this.Icon");
+			this.Icon = Ruler.Resource1.app;
 			this.Opacity = rulerInfo.Opacity;
 			this.FormBorderStyle = FormBorderStyle.None;
 			this.Font = new Font("Tahoma", 10);
