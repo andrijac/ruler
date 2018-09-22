@@ -474,76 +474,50 @@ namespace Ruler
 
 		private void HandleMoveResizeKeystroke(KeyEventArgs e)
 		{
+			int amount = e.Shift ? 1 : 5;
+
 			if (e.KeyCode == Keys.Right)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Width += 1;
-					}
-					else
-					{
-						this.Left += 1;
-					}
+					this.Width += amount;
 				}
 				else
 				{
-					this.Left += 5;
+					this.Left += amount;
 				}
 			}
 			else if (e.KeyCode == Keys.Left)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Width -= 1;
-					}
-					else
-					{
-						this.Left -= 1;
-					}
+					this.Width -= amount;
 				}
 				else
 				{
-					this.Left -= 5;
+					this.Left -= amount;
 				}
 			}
 			else if (e.KeyCode == Keys.Up)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Height -= 1;
-					}
-					else
-					{
-						this.Top -= 1;
-					}
+					this.Height -= amount;
 				}
 				else
 				{
-					this.Top -= 5;
+					this.Top -= amount;
 				}
 			}
 			else if (e.KeyCode == Keys.Down)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Height += 1;
-					}
-					else
-					{
-						this.Top += 1;
-					}
+					this.Height += amount;
 				}
 				else
 				{
-					this.Top += 5;
+					this.Top += amount;
 				}
 			}
 		}

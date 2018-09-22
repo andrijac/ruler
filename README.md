@@ -34,8 +34,8 @@ If you want to contribute to project, please follow the rules:
 ### Ruler shortcuts:
 
 - **Space** and **Double click**: will toggle direction of Ruler 
-- **Arrow keys**: move Ruler
-- **Ctrl** + **Shift** + **Arrow keys**: resize Ruler
+- **Arrow keys**: move Ruler (+ **Shift** for small step)
+- **Ctrl** + **Arrow keys**: resize Ruler (+ **Shift** for small step)
 
 ### Command line parameters (optional):
 In current implementation, you can either not use parameters (just start app) or use all parameters (you cannot used parameters selectively).
