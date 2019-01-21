@@ -370,7 +370,15 @@ namespace Ruler
 
 		private void AboutHandler(object sender, EventArgs e)
 		{
-			string message = string.Format("Original Ruler implemented by Jeff Key\nwww.sliver.com\nruler.codeplex.com\nIcon by Kristen Magee @ www.kbecca.com.\nMaintained by Andrija Cacanovic\nHosted on \nhttps://github.com/andrijac/ruler", Application.ProductVersion);
+			string message = string.Format(
+				"Original Ruler implemented by Jeff Key\n" +
+				"www.sliver.com\n" +
+				"ruler.codeplex.com\n" +
+				"Icon by Kristen Magee @ www.kbecca.com.\n" +
+				"Maintained by Andrija Cacanovic\n" +
+				"Hosted on \n" +
+				"https://github.com/andrijac/ruler",
+				Application.ProductVersion);
 			MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
 
