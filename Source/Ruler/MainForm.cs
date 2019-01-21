@@ -542,30 +542,39 @@ namespace Ruler
 				return;
 			}
 
+			int diffX = Control.MousePosition.X - this.mouseDownPoint.X;
+			int diffY = Control.MousePosition.Y - this.mouseDownPoint.Y;
+
+			// New location and size.
+			int x = 0, y = 0, width = 0, height = 0;
+			BoundsSpecified bounds = BoundsSpecified.None;
+
 			switch (this.resizeRegion)
 			{
 				case ResizeRegion.E:
 					{
-						int diff = Control.MousePosition.X - this.mouseDownPoint.X;
-						this.Width = this.mouseDownRect.Width + diff;
+						width = this.mouseDownRect.Width + diffX;
+						bounds = BoundsSpecified.Width;
 						break;
 					}
 
 				case ResizeRegion.S:
 					{
-						int diff = MousePosition.Y - this.mouseDownPoint.Y;
-						this.Height = this.mouseDownRect.Height + diff;
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.Height;
 						break;
 					}
 
 				case ResizeRegion.SE:
 					{
-						int width = this.mouseDownRect.Width + Control.MousePosition.X - this.mouseDownPoint.X;
-						int height = this.mouseDownRect.Height + Control.MousePosition.Y - this.mouseDownPoint.Y;
-						this.SetBounds(0, 0, width, height, BoundsSpecified.Size);
+						width = this.mouseDownRect.Width + diffX;
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.Size;
 						break;
 					}
 			}
+
+			this.SetBounds(x, y, width, height, bounds);
 		}
 
 		private void SetResizeCursor(ResizeRegion region)
