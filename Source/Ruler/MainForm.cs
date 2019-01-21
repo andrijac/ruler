@@ -576,18 +576,18 @@ namespace Ruler
 						break;
 					}
 
-				case ResizeRegion.S:
-					{
-						height = this.mouseDownRect.Height + diffY;
-						bounds = BoundsSpecified.Height;
-						break;
-					}
-
 				case ResizeRegion.SE:
 					{
 						width = this.mouseDownRect.Width + diffX;
 						height = this.mouseDownRect.Height + diffY;
 						bounds = BoundsSpecified.Size;
+						break;
+					}
+
+				case ResizeRegion.S:
+					{
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.Height;
 						break;
 					}
 			}
