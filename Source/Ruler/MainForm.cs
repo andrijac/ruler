@@ -77,15 +77,18 @@ namespace Ruler
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.SuspendLayout();
-			//
-			// MainForm
-			//
-			this.ClientSize = new System.Drawing.Size(0, 0);
-			this.Name = "Ruler";
-			this.Opacity = 0D;
-			this.ResumeLayout(false);
-		}
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.SuspendLayout();
+            // 
+            // MainForm
+            // 
+            this.ClientSize = new System.Drawing.Size(120, 0);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.ClientSize = new System.Drawing.Size(0, 0);
+            this.Name = "Ruler";
+            this.Opacity = 0D;
+            this.ResumeLayout(false);
+        }
 
 		protected override void OnLoad(EventArgs e)
 		{
@@ -474,76 +477,50 @@ namespace Ruler
 
 		private void HandleMoveResizeKeystroke(KeyEventArgs e)
 		{
+			int amount = e.Shift ? 1 : 5;
+
 			if (e.KeyCode == Keys.Right)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Width += 1;
-					}
-					else
-					{
-						this.Left += 1;
-					}
+					this.Width += amount;
 				}
 				else
 				{
-					this.Left += 5;
+					this.Left += amount;
 				}
 			}
 			else if (e.KeyCode == Keys.Left)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Width -= 1;
-					}
-					else
-					{
-						this.Left -= 1;
-					}
+					this.Width -= amount;
 				}
 				else
 				{
-					this.Left -= 5;
+					this.Left -= amount;
 				}
 			}
 			else if (e.KeyCode == Keys.Up)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Height -= 1;
-					}
-					else
-					{
-						this.Top -= 1;
-					}
+					this.Height -= amount;
 				}
 				else
 				{
-					this.Top -= 5;
+					this.Top -= amount;
 				}
 			}
 			else if (e.KeyCode == Keys.Down)
 			{
 				if (e.Control)
 				{
-					if (e.Shift)
-					{
-						this.Height += 1;
-					}
-					else
-					{
-						this.Top += 1;
-					}
+					this.Height += amount;
 				}
 				else
 				{
-					this.Top += 5;
+					this.Top += amount;
 				}
 			}
 		}
@@ -756,6 +733,6 @@ namespace Ruler
 #endif
 		}
 
-		#endregion Diagnostics
-	}
+        #endregion Diagnostics
+    }
 }
