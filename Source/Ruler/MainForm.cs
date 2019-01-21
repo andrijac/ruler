@@ -377,7 +377,8 @@ namespace Ruler
 				"Icon by Kristen Magee @ www.kbecca.com.\n" +
 				"Maintained by Andrija Cacanovic\n" +
 				"Hosted on \n" +
-				"https://github.com/andrijac/ruler",
+				"https://github.com/andrijac/ruler\n" +
+				"Version {0}",
 				Application.ProductVersion);
 			MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
