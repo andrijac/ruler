@@ -25,8 +25,7 @@ namespace Ruler
 		private Rectangle mouseDownRect;
 		private int resizeBorderWidth;
 		private Point mouseDownPoint;
-        private bool isMouseDown;
-        private bool isMouseResizeCommand;
+		private bool isMouseResizeCommand;
 		private ResizeRegion resizeRegion;
 		private List<MenuItemHolder> menuItemList;
 
@@ -108,8 +107,7 @@ namespace Ruler
 				InitialDelay = 1
 			};
 
-            this.isMouseDown = false;
-            this.isMouseResizeCommand = false;
+			this.isMouseResizeCommand = false;
 			this.resizeRegion = ResizeRegion.None;
 			this.resizeBorderWidth = 5;
 
@@ -397,27 +395,25 @@ namespace Ruler
 
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
-            this.isMouseDown = true;
-            bool inResizableArea = this.GetIsInResizableArea();
-            if (inResizableArea)
-            {
-                isMouseResizeCommand = true;
-            }
+			bool inResizableArea = this.GetIsInResizableArea();
+			if (inResizableArea)
+			{
+				isMouseResizeCommand = true;
+			}
 
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
-			
+
 			this.doLockRulerResizeOnMove = !inResizableArea;
-            
+
 			base.OnMouseDown(e);
 		}
 
 		protected override void OnMouseUp(MouseEventArgs e)
 		{
-            this.isMouseDown = false;
-            this.isMouseResizeCommand = false;
-            this.resizeRegion = ResizeRegion.None;
+			this.isMouseResizeCommand = false;
+			this.resizeRegion = ResizeRegion.None;
 			this.doLockRulerResizeOnMove = false;
 
 			base.OnMouseUp(e);
