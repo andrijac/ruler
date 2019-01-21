@@ -561,11 +561,30 @@ namespace Ruler
 						break;
 					}
 
+				case ResizeRegion.NW:
+					{
+						x = this.mouseDownFormLocation.X + diffX;
+						y = this.mouseDownFormLocation.Y + diffY;
+						width = this.mouseDownRect.Width - diffX;
+						height = this.mouseDownRect.Height - diffY;
+						bounds = BoundsSpecified.All;
+						break;
+					}
+
 				case ResizeRegion.N:
 					{
 						y = this.mouseDownFormLocation.Y + diffY;
 						height = this.mouseDownRect.Height - diffY;
 						bounds = BoundsSpecified.Y | BoundsSpecified.Height;
+						break;
+					}
+
+				case ResizeRegion.NE:
+					{
+						y = this.mouseDownFormLocation.Y + diffY;
+						height = this.mouseDownRect.Height - diffY;
+						width = this.mouseDownRect.Width + diffX;
+						bounds = BoundsSpecified.Y | BoundsSpecified.Height | BoundsSpecified.Width;
 						break;
 					}
 
@@ -588,6 +607,15 @@ namespace Ruler
 					{
 						height = this.mouseDownRect.Height + diffY;
 						bounds = BoundsSpecified.Height;
+						break;
+					}
+
+				case ResizeRegion.SW:
+					{
+						x = this.mouseDownFormLocation.X + diffX;
+						width = this.mouseDownRect.Width - diffX;
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.X | BoundsSpecified.Width | BoundsSpecified.Height;
 						break;
 					}
 			}
