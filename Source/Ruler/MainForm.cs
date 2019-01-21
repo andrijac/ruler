@@ -77,18 +77,18 @@ namespace Ruler
 		/// </summary>
 		private void InitializeComponent()
 		{
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.SuspendLayout();
-            // 
-            // MainForm
-            // 
-            this.ClientSize = new System.Drawing.Size(120, 0);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.ClientSize = new System.Drawing.Size(0, 0);
-            this.Name = "Ruler";
-            this.Opacity = 0D;
-            this.ResumeLayout(false);
-        }
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+			this.SuspendLayout();
+			//
+			// MainForm
+			//
+			this.ClientSize = new System.Drawing.Size(120, 0);
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+			this.ClientSize = new System.Drawing.Size(0, 0);
+			this.Name = "Ruler";
+			this.Opacity = 0D;
+			this.ResumeLayout(false);
+		}
 
 		protected override void OnLoad(EventArgs e)
 		{
@@ -120,6 +120,8 @@ namespace Ruler
 			this.Font = new Font("Tahoma", 10);
 			this.Text = "Ruler";
 			this.BackColor = Color.White;
+
+			this.TopMost = rulerInfo.TopMost;
 
 			// Create menu
 			this.CreateMenuItems(rulerInfo);
@@ -733,6 +735,6 @@ namespace Ruler
 #endif
 		}
 
-        #endregion Diagnostics
-    }
+		#endregion Diagnostics
+	}
 }
