@@ -24,6 +24,7 @@ namespace Ruler
 		private Point offset;
 		private Rectangle mouseDownRect;
 		private int resizeBorderWidth;
+		private Point mouseDownFormLocation;
 		private Point mouseDownPoint;
 		private bool isMouseResizeCommand;
 		private ResizeRegion resizeRegion;
@@ -404,6 +405,7 @@ namespace Ruler
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
+			this.mouseDownFormLocation = this.Location;
 
 			this.doLockRulerResizeOnMove = !inResizableArea;
 
@@ -551,6 +553,22 @@ namespace Ruler
 
 			switch (this.resizeRegion)
 			{
+				case ResizeRegion.W:
+					{
+						x = this.mouseDownFormLocation.X + diffX;
+						width = this.mouseDownRect.Width - diffX;
+						bounds = BoundsSpecified.X | BoundsSpecified.Width;
+						break;
+					}
+
+				case ResizeRegion.N:
+					{
+						y = this.mouseDownFormLocation.Y + diffY;
+						height = this.mouseDownRect.Height - diffY;
+						bounds = BoundsSpecified.Y | BoundsSpecified.Height;
+						break;
+					}
+
 				case ResizeRegion.E:
 					{
 						width = this.mouseDownRect.Width + diffX;
