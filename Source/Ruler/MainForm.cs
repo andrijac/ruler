@@ -560,8 +560,9 @@ namespace Ruler
 
 				case ResizeRegion.SE:
 					{
-						this.Width = this.mouseDownRect.Width + Control.MousePosition.X - this.mouseDownPoint.X;
-						this.Height = this.mouseDownRect.Height + Control.MousePosition.Y - this.mouseDownPoint.Y;
+						int width = this.mouseDownRect.Width + Control.MousePosition.X - this.mouseDownPoint.X;
+						int height = this.mouseDownRect.Height + Control.MousePosition.Y - this.mouseDownPoint.Y;
+						this.SetBounds(0, 0, width, height, BoundsSpecified.Size);
 						break;
 					}
 			}
