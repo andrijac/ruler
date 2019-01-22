@@ -21,7 +21,6 @@ namespace Ruler
 		#region Fields
 
 		private ToolTip toolTip;
-		private Point offset;
 		private Rectangle mouseDownRect;
 		private int resizeBorderWidth;
 		private Point mouseDownFormLocation;
@@ -411,7 +410,6 @@ namespace Ruler
 				this.isMouseResizeCommand = true;
 			}
 
-			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
 			this.mouseDownFormLocation = this.Location;
@@ -459,7 +457,9 @@ namespace Ruler
 
 				if (e.Button == MouseButtons.Left)
 				{
-					this.Location = new Point(Control.MousePosition.X - this.offset.X, Control.MousePosition.Y - this.offset.Y);
+					int dx = Control.MousePosition.X - this.mouseDownPoint.X;
+					int dy = Control.MousePosition.Y - this.mouseDownPoint.Y;
+					this.Location = new Point(this.mouseDownFormLocation.X + dx, this.mouseDownFormLocation.Y + dy);
 				}
 			}
 
