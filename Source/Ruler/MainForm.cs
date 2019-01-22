@@ -24,6 +24,7 @@ namespace Ruler
 		private Point offset;
 		private Rectangle mouseDownRect;
 		private int resizeBorderWidth;
+		private Point mouseDownFormLocation;
 		private Point mouseDownPoint;
 		private bool isMouseResizeCommand;
 		private ResizeRegion resizeRegion;
@@ -413,6 +414,7 @@ namespace Ruler
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
+			this.mouseDownFormLocation = this.Location;
 
 			this.doLockRulerResizeOnMove = !inResizableArea;
 
@@ -551,29 +553,83 @@ namespace Ruler
 				return;
 			}
 
+			int diffX = Control.MousePosition.X - this.mouseDownPoint.X;
+			int diffY = Control.MousePosition.Y - this.mouseDownPoint.Y;
+
+			// New location and size.
+			int x = 0, y = 0, width = 0, height = 0;
+			BoundsSpecified bounds = BoundsSpecified.None;
+
 			switch (this.resizeRegion)
 			{
-				case ResizeRegion.E:
+				case ResizeRegion.W:
 					{
-						int diff = Control.MousePosition.X - this.mouseDownPoint.X;
-						this.Width = this.mouseDownRect.Width + diff;
+						x = this.mouseDownFormLocation.X + diffX;
+						width = this.mouseDownRect.Width - diffX;
+						bounds = BoundsSpecified.X | BoundsSpecified.Width;
 						break;
 					}
 
-				case ResizeRegion.S:
+				case ResizeRegion.NW:
 					{
-						int diff = MousePosition.Y - this.mouseDownPoint.Y;
-						this.Height = this.mouseDownRect.Height + diff;
+						x = this.mouseDownFormLocation.X + diffX;
+						y = this.mouseDownFormLocation.Y + diffY;
+						width = this.mouseDownRect.Width - diffX;
+						height = this.mouseDownRect.Height - diffY;
+						bounds = BoundsSpecified.All;
+						break;
+					}
+
+				case ResizeRegion.N:
+					{
+						y = this.mouseDownFormLocation.Y + diffY;
+						height = this.mouseDownRect.Height - diffY;
+						bounds = BoundsSpecified.Y | BoundsSpecified.Height;
+						break;
+					}
+
+				case ResizeRegion.NE:
+					{
+						y = this.mouseDownFormLocation.Y + diffY;
+						height = this.mouseDownRect.Height - diffY;
+						width = this.mouseDownRect.Width + diffX;
+						bounds = BoundsSpecified.Y | BoundsSpecified.Height | BoundsSpecified.Width;
+						break;
+					}
+
+				case ResizeRegion.E:
+					{
+						width = this.mouseDownRect.Width + diffX;
+						bounds = BoundsSpecified.Width;
 						break;
 					}
 
 				case ResizeRegion.SE:
 					{
-						this.Width = this.mouseDownRect.Width + Control.MousePosition.X - this.mouseDownPoint.X;
-						this.Height = this.mouseDownRect.Height + Control.MousePosition.Y - this.mouseDownPoint.Y;
+						width = this.mouseDownRect.Width + diffX;
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.Size;
+						break;
+					}
+
+				case ResizeRegion.S:
+					{
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.Height;
+						break;
+					}
+
+				case ResizeRegion.SW:
+					{
+						x = this.mouseDownFormLocation.X + diffX;
+						width = this.mouseDownRect.Width - diffX;
+						height = this.mouseDownRect.Height + diffY;
+						bounds = BoundsSpecified.X | BoundsSpecified.Width | BoundsSpecified.Height;
 						break;
 					}
 			}
+
+			this.SetBounds(x, y, width, height, bounds);
 		}
 
 		private void SetResizeCursor(ResizeRegion region)
