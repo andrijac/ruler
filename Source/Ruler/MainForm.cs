@@ -85,7 +85,7 @@ namespace Ruler
 			// MainForm
 			//
 			this.ClientSize = new System.Drawing.Size(120, 0);
-			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+			this.Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
 			this.ClientSize = new System.Drawing.Size(0, 0);
 			this.Name = "Ruler";
 			this.Opacity = 0D;
@@ -408,7 +408,7 @@ namespace Ruler
 			bool inResizableArea = this.GetIsInResizableArea();
 			if (inResizableArea)
 			{
-				isMouseResizeCommand = true;
+				this.isMouseResizeCommand = true;
 			}
 
 			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
