@@ -457,9 +457,7 @@ namespace Ruler
 
 				if (e.Button == MouseButtons.Left)
 				{
-					int dx = Control.MousePosition.X - this.mouseDownPoint.X;
-					int dy = Control.MousePosition.Y - this.mouseDownPoint.Y;
-					this.Location = new Point(this.mouseDownFormLocation.X + dx, this.mouseDownFormLocation.Y + dy);
+					this.HandleMove();
 				}
 			}
 
@@ -494,6 +492,13 @@ namespace Ruler
 			}
 
 			base.OnKeyDown(e);
+		}
+
+		private void HandleMove()
+		{
+			int dx = Control.MousePosition.X - this.mouseDownPoint.X;
+			int dy = Control.MousePosition.Y - this.mouseDownPoint.Y;
+			this.Location = new Point(this.mouseDownFormLocation.X + dx, this.mouseDownFormLocation.Y + dy);
 		}
 
 		private void HandleMoveResizeKeystroke(KeyEventArgs e)
