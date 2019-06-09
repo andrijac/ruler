@@ -264,9 +264,8 @@ namespace Ruler
 		private void ChangeOrientation()
 		{
 			this.IsVertical = !this.IsVertical;
-			int width = this.Width;
-			this.Width = this.Height;
-			this.Height = width;
+			this.Size = new Size(this.Height, this.Width);
+			this.Invalidate();
 		}
 
 		private void SetToolTip()
