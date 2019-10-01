@@ -31,18 +31,12 @@ namespace Ruler
 			this.DialogResult = System.Windows.Forms.DialogResult.OK;
 		}
 
-		public Size GetNewSize()
-		{
-			int width;
-			int height;
-
-			Size size = new Size
+		public Size GetNewSize() 
+            => new Size
 			{
-				Width = int.TryParse(this.txtWidth.Text, out width) ? width : this.originalWidth,
-				Height = int.TryParse(this.txtHeight.Text, out height) ? height : this.originalHeight
+				Width = int.TryParse(this.txtWidth.Text, out int width) ? width : this.originalWidth,
+				Height = int.TryParse(this.txtHeight.Text, out int height) ? height : this.originalHeight
 			};
-
-			return size;
-		}
+		
 	}
 }
