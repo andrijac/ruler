@@ -18,6 +18,14 @@ namespace Ruler
 
 			this.txtWidth.Text = initWidth.ToString();
 			this.txtHeight.Text = initHeight.ToString();
+
+			this.txtHeight.GotFocus += this.HandleTextBoxFocus;
+			this.txtWidth.GotFocus += this.HandleTextBoxFocus;
+		}
+
+		private void HandleTextBoxFocus(object sender, EventArgs e)
+		{
+			((TextBox)sender).SelectAll();
 		}
 
 		private void BtnCancelClick(object sender, EventArgs e)
