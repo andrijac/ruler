@@ -490,6 +490,10 @@ namespace Ruler
 				case Keys.Space:
 					this.ChangeOrientation();
 					break;
+
+				case Keys.ControlKey | Keys.S:
+					SetSizeHandler(this, EventArgs.Empty);
+					break;
 			}
 
 			base.OnKeyDown(e);

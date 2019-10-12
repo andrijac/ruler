@@ -20,7 +20,13 @@ Ruler is fork of small utility application originally developed by Jeff Key:
 - ~~http://weblogs.asp.net/jkey/archive/2004/09/01/224433.aspx~~ :skull:
 - ~~http://www.sliver.com/dotnet/ruler/~~ :skull:
 
-Support for .NET 2.0 is kept. :thumbsup:
+
+### .NET version support
+~~Support for .NET 2.0 is kept.~~
+Last version with .NET 2.0 support is 1.6.
+https://github.com/andrijac/ruler/releases/tag/1.6.0.0
+
+Onward, Ruler will target .NET 4.6 which is deployed with Windows 10.
 
 **<a name="newfeatures" href="https://github.com/andrijac/ruler/blob/master/NewFeatures.md">Added features in this fork.</a>**
 
@@ -29,13 +35,14 @@ If you want to contribute to project, please follow the rules:
 1. **Zero-Warning policy**. There should be no C# compiler warnings in PR. :pray:
 2. **Use StyleCop** Visual Studio Extension (by Chris Dahlberg) to check for StyleCop warnings https://marketplace.visualstudio.com/items?itemName=ChrisDahlberg.StyleCop. Zero-warning policy extends to StyleCop warnings. :cop: Custom StyleCop rules file is part of repository and it should be picked up by StyleCop in Visual Studio once you run it.
 3. Keep in mind that **Ruler should be simple tool**. It should be disposable, easy to run, easy to close, easy to run in multiple instances. For now, I still refuse to add any kind of additional dependency to project like persistent storage for Ruler settings (which are still, at the moment, few), having a Ruler icon in system tray etc. for sake of keeping Ruler simple. Since Ruler can run multiple instances, features mentioned would add unnecessary complexity to project. :speech_balloon:
-4. Use **Visual Studio 2017** with latest updates. :coffee:
+4. Use **Visual Studio ~~2017~~ 2019** with latest updates. :coffee:
 
 ### Ruler shortcuts:
 
 - **Space** and **Double click**: will toggle direction of Ruler 
 - **Arrow keys**: move Ruler (+ **Shift** for small step)
 - **Ctrl** + **Arrow keys**: resize Ruler (+ **Shift** for small step)
+- **Ctrl** + **S**: open resize form
 
 ### Command line parameters (optional):
 In current implementation, you can either not use parameters (just start app) or use all parameters (you cannot used parameters selectively).
