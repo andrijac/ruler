@@ -6,8 +6,8 @@ namespace Ruler
 {
 	public partial class SetSizeForm : Form
 	{
-		private int originalWidth;
-		private int originalHeight;
+		private readonly int originalWidth;
+		private readonly int originalHeight;
 
 		public SetSizeForm(int initWidth, int initHeight)
 		{
@@ -30,13 +30,13 @@ namespace Ruler
 
 		private void BtnCancelClick(object sender, EventArgs e)
 		{
-			this.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+			this.DialogResult = DialogResult.Cancel;
 			this.Close();
 		}
 
 		private void BtnOkClick(object sender, EventArgs e)
 		{
-			this.DialogResult = System.Windows.Forms.DialogResult.OK;
+			this.DialogResult = DialogResult.OK;
 		}
 
 		public Size GetNewSize() 
