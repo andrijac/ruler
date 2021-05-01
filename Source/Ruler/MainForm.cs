@@ -496,7 +496,7 @@ namespace Ruler
 					break;
 
 				case Keys.Escape:
-					this.Close();
+					ExitHandler(this, EventArgs.Empty);
 					break;
 			}
 
