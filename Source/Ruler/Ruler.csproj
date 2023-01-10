@@ -118,6 +118,11 @@
     <Compile Include="IRulerInfo.cs" />
     <Compile Include="MenuItemEnum.cs" />
     <Compile Include="MenuItemHolder.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="RulerInfo.cs" />
     <Compile Include="SetSizeForm.cs">
       <SubType>Form</SubType>
@@ -143,6 +148,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

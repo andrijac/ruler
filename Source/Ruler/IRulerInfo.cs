@@ -1,4 +1,6 @@
-﻿namespace Ruler
+﻿using System.Drawing;
+
+namespace Ruler
 {
 	public interface IRulerInfo
 	{
@@ -39,6 +41,16 @@
 		}
 
 		bool TopMost
+		{
+			get;
+			set;
+		}
+		Point FormLocation
+		{
+			get;
+			set;
+		}
+		Size FormSize
 		{
 			get;
 			set;
