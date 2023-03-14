@@ -494,6 +494,10 @@ namespace Ruler
 				case Keys.ControlKey | Keys.S:
 					SetSizeHandler(this, EventArgs.Empty);
 					break;
+
+				case Keys.Escape:
+					ExitHandler(this, EventArgs.Empty);
+					break;
 			}
 
 			base.OnKeyDown(e);
