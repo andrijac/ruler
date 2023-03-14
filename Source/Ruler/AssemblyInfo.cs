@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("Ruler")]
 [assembly: AssemblyDescription("Simple on-screen pixel ruler. Original author Jeff Key.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Jeff Key")]
+[assembly: AssemblyCompany("Andrija Cacanovic")]
 [assembly: AssemblyProduct("Ruler")]
-[assembly: AssemblyCopyright("Copyright © 2004-7, Jeff Key")]
+[assembly: AssemblyCopyright("Copyright © 2023, Andrija Cacanovic")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
