@@ -64,7 +64,6 @@ namespace Ruler
                         break;
                     case SaveTypes.location:
                         ruler = RulerInfo.GetSavedLocation();
-                        ruler.DisplayedLocation = new Point(5000, 3400);
                         mainForm = new MainForm(ruler);
                         break;
                     case SaveTypes.size:
