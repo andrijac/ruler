@@ -55,5 +55,6 @@ namespace Ruler
             get;
             set;
         }
+
     }
 }

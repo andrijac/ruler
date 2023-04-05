@@ -130,5 +130,17 @@ namespace Ruler {
                 this["locked"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\"\"")]
+        public string screen {
+            get {
+                return ((string)(this["screen"]));
+            }
+            set {
+                this["screen"] = value;
+            }
+        }
     }
 }

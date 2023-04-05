@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace Ruler
 {
@@ -66,6 +67,7 @@ namespace Ruler
             set;
         }
 
+
         public string ConvertToParameters()
         {
             return string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8}", this.Width, this.Height, this.IsVertical, this.Opacity, this.ShowToolTip, this.IsLocked, this.TopMost, this.DisplayedLocation, this.SaveType);
@@ -115,7 +117,7 @@ namespace Ruler
                 Height = 75,
                 Opacity = 0.60,
                 ShowToolTip = true,
-                IsLocked = false,  
+                IsLocked = false,
                 IsVertical = false,
                 TopMost = true,
                 DisplayedLocation = new Point(0, 0),
@@ -229,6 +231,24 @@ namespace Ruler
             ri.SaveType = saveTypes;
             return ri;
 
+        }
+        public static Screen GetScreen(string devicename)
+        {
+            Screen screen = null;
+            bool isfound = false;
+            foreach (Screen item in Screen.AllScreens)
+            {
+                if (item.DeviceName == devicename)
+                {
+                    isfound = true;
+                    screen = item;
+                }
+            }
+            if (isfound)
+            {
+                return screen;
+            }
+            return Screen.PrimaryScreen;
         }
 
 

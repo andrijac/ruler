@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Net.Configuration;
 using System.Resources;
-using System.Runtime.Serialization;
 using System.Windows.Forms;
 
 namespace Ruler
@@ -36,7 +34,6 @@ namespace Ruler
         private bool showToolTip;
         private Point displayLocation;
         private SaveTypes saveType;
-
         private readonly RulerInfo initRulerInfo;
 
         private bool doLockRulerResizeOnMove;
@@ -67,6 +64,7 @@ namespace Ruler
                         break;
                     case SaveTypes.location:
                         ruler = RulerInfo.GetSavedLocation();
+                        ruler.DisplayedLocation = new Point(5000, 3400);
                         mainForm = new MainForm(ruler);
                         break;
                     case SaveTypes.size:
@@ -77,7 +75,7 @@ namespace Ruler
                         mainForm = new MainForm();
                         break;
                 }
-                
+
             }
             else
             {
@@ -115,6 +113,7 @@ namespace Ruler
             this.Name = "Ruler";
             this.Opacity = 0D;
             this.ResumeLayout(false);
+
         }
 
         protected override void OnLoad(EventArgs e)
@@ -132,15 +131,19 @@ namespace Ruler
                 AutoPopDelay = 10000,
                 InitialDelay = 1
             };
+            this.Width = rulerInfo.Width;
+            this.Height = rulerInfo.Height;
             this.Location = rulerInfo.DisplayedLocation;
             this.isMouseResizeCommand = false;
             this.resizeRegion = ResizeRegion.None;
             this.resizeBorderWidth = 5;
-            this.Width = rulerInfo.Width;
-            this.Height = rulerInfo.Height;
-            
-            
-            
+            if (!isWindowVisible(this.Bounds))
+            {
+                this.Location = (Screen.PrimaryScreen).Bounds.Location;
+            }
+
+
+
 
             // Form setup ------------------
             this.SetStyle(ControlStyles.ResizeRedraw, true);
@@ -186,7 +189,7 @@ namespace Ruler
                 MenuItemHolder.Separator,
 #endif
                 new MenuItemHolder(MenuItemEnum.Save,"Save Settings?",this.SaveHandler,false),
-				new MenuItemHolder(MenuItemEnum.Exit, "Exit", this.ExitHandler, false)
+                new MenuItemHolder(MenuItemEnum.Exit, "Exit", this.ExitHandler, false)
             };
 
             // Build opacity menu
@@ -290,13 +293,14 @@ namespace Ruler
         {
             get
             {
-                return saveType;
+                return this.saveType;
             }
             set
             {
-                saveType = value;
+                this.saveType = value;
             }
         }
+
 
         #endregion Properties
 
@@ -342,7 +346,7 @@ namespace Ruler
         {
             this.toolTip.RemoveAll();
         }
-       
+
         #endregion Helpers
 
         #region Menu Item Handlers
@@ -536,7 +540,7 @@ namespace Ruler
             this.mouseDownPoint = Control.MousePosition;
             this.mouseDownRect = this.ClientRectangle;
             this.mouseDownFormLocation = this.Location;
-            
+
 
             this.doLockRulerResizeOnMove = !inResizableArea;
 
@@ -842,6 +846,15 @@ namespace Ruler
             bool inResizableArea = this.ClientRectangle.Contains(clientCursorPos) && !resizeInnerRect.Contains(clientCursorPos);
 
             return inResizableArea;
+        }
+        public static bool isWindowVisible(Rectangle rect)
+        {
+            foreach (Screen screen in Screen.AllScreens)
+            {
+                if (screen.Bounds.IntersectsWith(rect))
+                    return true;
+            }
+            return false;
         }
 
         #endregion Input
