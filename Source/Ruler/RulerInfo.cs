@@ -141,7 +141,7 @@ namespace Ruler
         {
             Settings.Default.Reset();
             Settings.Default["location"] = form.Location;
-            Settings.Default["savetype"] = form.SaveType;
+            Settings.Default["savetype"] = form.SaveType.ToString();
             Settings.Default.Save();
             Settings.Default.Reload();
 
@@ -151,7 +151,7 @@ namespace Ruler
             Settings.Default.Reset();
             Settings.Default["width"] = form.Width;
             Settings.Default["height"] = form.Height;
-            Settings.Default["savetype"] = form.SaveType;
+            Settings.Default["savetype"] = form.SaveType.ToString();
             Settings.Default.Save();
             Settings.Default.Reload();
         }
@@ -166,7 +166,7 @@ namespace Ruler
             Settings.Default["locked"] = form.IsLocked;
             Settings.Default["top"] = form.TopMost;
             Settings.Default["tip"] = form.ShowToolTip;
-            Settings.Default["savetype"] = form.SaveType;
+            Settings.Default["savetype"] = form.SaveType.ToString();
             Settings.Default.Save();
             Settings.Default.Reload();
 
@@ -176,7 +176,7 @@ namespace Ruler
 
             SaveTypes saveArgs;
             string saveType = (string)Settings.Default["savetype"];
-            if (!Enum.TryParse<SaveTypes>(savetype, true, out saveArgs))
+            if (!Enum.TryParse<SaveTypes>(saveType, true, out saveArgs))
             {
                 saveArgs = SaveTypes.none;
             }
@@ -211,7 +211,7 @@ namespace Ruler
         }
         public static RulerInfo GetSavedRulerInfor()
         {
-            RulerInfo ri = RulerInfo.GetSavedRulerInfor();
+            RulerInfo ri = RulerInfo.GetDefaultRulerInfo();
             ri.Width = (Settings.Default["width"] == null) ? ri.Width : (int)Settings.Default["width"];
             ri.Height = (Settings.Default["height"] == null) ? ri.Height : (int)Settings.Default["height"];
             ri.Opacity = (Settings.Default["opacity"] == null) ? ri.Opacity : (double)Settings.Default["opacity"];

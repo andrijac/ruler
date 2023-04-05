@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Net.Configuration;
 using System.Resources;
 using System.Runtime.Serialization;
 using System.Windows.Forms;
@@ -51,7 +52,7 @@ namespace Ruler
             Application.SetCompatibleTextRenderingDefault(false);
 
             MainForm mainForm;
-
+            RulerInfo ruler;
             if (args.Length == 0)
             {
                 SaveTypes types = RulerInfo.CheckSavedState();
@@ -61,15 +62,15 @@ namespace Ruler
                         mainForm = new MainForm();
                         break;
                     case SaveTypes.all:
-                        RulerInfo ruler = RulerInfo.GetSavedRulerInfor();
+                        ruler = RulerInfo.GetSavedRulerInfor();
                         mainForm = new MainForm(ruler);
                         break;
                     case SaveTypes.location:
-                        RulerInfo ruler = RulerInfo.GetSavedLocation();
+                        ruler = RulerInfo.GetSavedLocation();
                         mainForm = new MainForm(ruler);
                         break;
                     case SaveTypes.size:
-                        RulerInfo ruler = RulerInfo.SaveSize();
+                        ruler = RulerInfo.GetSavedSize();
                         mainForm = new MainForm(ruler);
                         break;
                     default:
@@ -131,15 +132,19 @@ namespace Ruler
                 AutoPopDelay = 10000,
                 InitialDelay = 1
             };
-
+            this.Location = rulerInfo.DisplayedLocation;
             this.isMouseResizeCommand = false;
             this.resizeRegion = ResizeRegion.None;
             this.resizeBorderWidth = 5;
+            this.Width = rulerInfo.Width;
+            this.Height = rulerInfo.Height;
+            
+            
+            
 
             // Form setup ------------------
             this.SetStyle(ControlStyles.ResizeRedraw, true);
             this.UpdateStyles();
-
             ResourceManager resources = new ResourceManager(typeof(MainForm));
             this.Icon = (Icon)resources.GetObject("$this.Icon");
             this.Opacity = rulerInfo.Opacity;
@@ -147,7 +152,6 @@ namespace Ruler
             this.Font = new Font("Tahoma", 10);
             this.Text = "Ruler";
             this.BackColor = Color.White;
-
             this.TopMost = rulerInfo.TopMost;
 
             // Create menu
@@ -198,16 +202,16 @@ namespace Ruler
             }
             MenuItem saveMenuItem = list.Find(m => m.MenuItemEnum == MenuItemEnum.Save).MenuItem;
             MenuItem noneMenuItem = new MenuItem("Do not Save", this.SaveHandler);
-            noneMenuItem.Checked = SaveTypes.None == rulerInfo.SaveType;
+            noneMenuItem.Checked = SaveTypes.none == rulerInfo.SaveType;
             saveMenuItem.MenuItems.Add(noneMenuItem);
             MenuItem locationMenuItem = new MenuItem("Save Location", this.SaveHandler);
-            locationMenuItem.Checked = SaveTypes.Location == rulerInfo.SaveType;
+            locationMenuItem.Checked = SaveTypes.location == rulerInfo.SaveType;
             saveMenuItem.MenuItems.Add(locationMenuItem);
             MenuItem sizeMenuItem = new MenuItem("Save Size", this.SaveHandler);
-            sizeMenuItem.Checked = SaveTypes.Size == rulerInfo.SaveType;
-            saveMenuItem.MenuItems.Add(saveMenuItem);
+            sizeMenuItem.Checked = SaveTypes.size == rulerInfo.SaveType;
+            saveMenuItem.MenuItems.Add(sizeMenuItem);
             MenuItem allMenuItem = new MenuItem("Save complete ruler", this.SaveHandler);
-            allMenuItem.Checked = SaveTypes.All == rulerInfo.SaveType;
+            allMenuItem.Checked = SaveTypes.all == rulerInfo.SaveType;
             saveMenuItem.MenuItems.Add(allMenuItem);
 
 
@@ -284,8 +288,14 @@ namespace Ruler
         }
         public SaveTypes SaveType
         {
-            get;
-            set;
+            get
+            {
+                return saveType;
+            }
+            set
+            {
+                saveType = value;
+            }
         }
 
         #endregion Properties
@@ -407,6 +417,28 @@ namespace Ruler
 
         private void ExitHandler(object sender, EventArgs e)
         {
+            switch (this.SaveType)
+            {
+                case SaveTypes.none:
+                    Settings.Default.Reset();
+                    Settings.Default.Save();
+                    Settings.Default.Reload();
+                    break;
+                case SaveTypes.all:
+                    RulerInfo.SaveAll(this);
+                    break;
+                case SaveTypes.location:
+                    RulerInfo.SaveLocaton(this);
+                    break;
+                case SaveTypes.size:
+                    RulerInfo.SaveSize(this);
+                    break;
+                default:
+                    Settings.Default.Reset();
+                    Settings.Default.Save();
+                    Settings.Default.Reload();
+                    break;
+            }
             this.Close();
         }
 
@@ -458,19 +490,19 @@ namespace Ruler
             switch (selected)
             {
                 case "Do not save":
-                    Settings.Default.Reset();
-                    Settings.Default.Save();
+                    this.SaveType = SaveTypes.none;
                     break;
                 case "Save Location":
-                    RulerInfo.SaveLocaton(this);
+                    this.SaveType = SaveTypes.location;
                     break;
                 case "Save Size":
-                    RulerInfo.SaveSize(this);
+                    this.SaveType = SaveTypes.size;
                     break;
                 case "Save complete ruler":
-                    RulerInfo.SaveAll(this);
+                    this.SaveType = SaveTypes.all;
                     break;
                 default:
+                    this.SaveType = SaveTypes.none;
                     break;
             }
 
