@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace Ruler
@@ -141,7 +142,7 @@ namespace Ruler
         }
         public static void SaveLocaton(MainForm form)
         {
-            Settings.Default.Reset();
+        //    Settings.Default.Reset();
             Settings.Default["location"] = form.Location;
             Settings.Default["savetype"] = form.SaveType.ToString();
             Settings.Default.Save();
@@ -159,6 +160,8 @@ namespace Ruler
         }
         public static void SaveAll(MainForm form)
         {
+            Settings.Default.Save();
+            Settings.Default.Reload();
             Settings.Default.Reset();
             Settings.Default["width"] = form.Width;
             Settings.Default["height"] = form.Height;
@@ -200,7 +203,7 @@ namespace Ruler
         public static RulerInfo GetSavedSize()
         {
             RulerInfo ri = RulerInfo.GetDefaultRulerInfo();
-            ri.Width = (Settings.Default["width"] == null) ? ri.Width : (int)Settings.Default["height"];
+            ri.Width = (Settings.Default["width"] == null) ? ri.Width : (int)Settings.Default["width"];
             ri.Height = (Settings.Default["height"] == null) ? ri.Height : (int)Settings.Default["height"];
             SaveTypes saveTypes;
             string saved = Settings.Default["savetype"] == null ? "none" : (string)Settings.Default["savetype"];

@@ -126,10 +126,11 @@
       <DependentUpon>SetSizeForm.cs</DependentUpon>
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
-    <Compile Include="Settings.Designer.cs">
+    <Compile Include="Settings.cs" />
+    <Compile Include="Settings.settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
+      <DependentUpon>Settings.settings.old</DependentUpon>
     </Compile>
     <Content Include="app.ico" />
     <Compile Include="AssemblyInfo.cs">
@@ -148,9 +149,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="Settings.settings">
+    <None Include="ruler.config" />
+    <None Include="Settings.settings.old">
       <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+      <LastGenOutput>Settings.settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>
