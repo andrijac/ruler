@@ -37,6 +37,7 @@ namespace Ruler
         private readonly RulerInfo initRulerInfo;
 
         private bool doLockRulerResizeOnMove;
+        private int staticMarkerDelta;
 
         #endregion Fields
 
@@ -155,7 +156,7 @@ namespace Ruler
             this.Text = "Ruler";
             this.BackColor = Color.White;
             this.TopMost = rulerInfo.TopMost;
-
+            this.staticMarkerDelta = 0;
             // Create menu
             this.CreateMenuItems(rulerInfo);
 
@@ -526,6 +527,33 @@ namespace Ruler
                 this.ChangeOrientation();
             }
         }
+        protected override void OnMouseClick(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+
+                if (this.isVertical)
+                {
+                    int delta = Control.MousePosition.Y - this.Location.Y;
+                    if ((delta < this.Height) && (delta > 0))
+                    {
+                        this.staticMarkerDelta = delta;
+                        this.Invalidate();
+                    }
+                }
+                else
+                {
+                    int delta = Control.MousePosition.X - this.Location.X;
+                    if ((delta < this.Width) && (delta > 0))
+                    {
+                        this.staticMarkerDelta = delta;
+                        this.Invalidate();
+                    }
+                }
+
+            }
+            base.OnMouseClick(e);
+        }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -875,18 +903,19 @@ namespace Ruler
                 width = this.Height;
             }
 
-            DrawRuler(graphics, width, height, this.Font);
+            DrawRuler(graphics, width, height, this.Font,this.staticMarkerDelta);
 
             base.OnPaint(e);
         }
 
-        private static void DrawRuler(Graphics g, int formWidth, int formHeight, Font font)
+        private static void DrawRuler(Graphics g, int formWidth, int formHeight, Font font,int staticMarker)
         {
+            float markerLoc = staticMarker;
             // Border
             g.DrawRectangle(Pens.Black, 0, 0, formWidth - 1, formHeight - 1);
 
             // Width
-            g.DrawString(formWidth + " pixels", font, Brushes.Black, 10, (formHeight / 2) - (font.Height / 2));
+            g.DrawString(markerLoc + " pixels", font, Brushes.Black, 10, (formHeight / 2) - (font.Height / 2));
 
             // Ticks
             for (int i = 0; i < formWidth; i++)
@@ -910,6 +939,10 @@ namespace Ruler
                     }
 
                     DrawTick(g, i, formHeight, tickHeight);
+                    if (i==staticMarker)
+                    {
+                        g.DrawLine(Pens.BlueViolet, i, 0,i, formHeight);
+                    }
                 }
             }
         }
