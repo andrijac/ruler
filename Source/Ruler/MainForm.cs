@@ -18,16 +18,28 @@ namespace Ruler
 
 		#endregion ResizeRegion enum
 
+		#region MovementLock enum
+
+		/// <summary>
+		/// Determines whether window movement is restricted to one direction.
+		/// </summary>
+		private enum MovementLock
+		{
+			None, Horizontal, Vertical
+		}
+
+		#endregion MovementLock enum
+
 		#region Fields
 
 		private ToolTip toolTip;
-		private Point offset;
 		private Rectangle mouseDownRect;
 		private int resizeBorderWidth;
 		private Point mouseDownFormLocation;
 		private Point mouseDownPoint;
 		private bool isMouseResizeCommand;
 		private ResizeRegion resizeRegion;
+		private MovementLock movementLock;
 		private List<MenuItemHolder> menuItemList;
 
 		private bool isVertical;
@@ -410,12 +422,12 @@ namespace Ruler
 				this.isMouseResizeCommand = true;
 			}
 
-			this.offset = new Point(Control.MousePosition.X - this.Location.X, Control.MousePosition.Y - this.Location.Y);
 			this.mouseDownPoint = Control.MousePosition;
 			this.mouseDownRect = this.ClientRectangle;
 			this.mouseDownFormLocation = this.Location;
 
 			this.doLockRulerResizeOnMove = !inResizableArea;
+			this.movementLock = MovementLock.None;
 
 			base.OnMouseDown(e);
 		}
@@ -458,7 +470,7 @@ namespace Ruler
 
 				if (e.Button == MouseButtons.Left)
 				{
-					this.Location = new Point(Control.MousePosition.X - this.offset.X, Control.MousePosition.Y - this.offset.Y);
+					this.HandleMove();
 				}
 			}
 
@@ -501,6 +513,45 @@ namespace Ruler
 			}
 
 			base.OnKeyDown(e);
+		}
+
+		private void HandleMove()
+		{
+			int dx = Control.MousePosition.X - this.mouseDownPoint.X;
+			int dy = Control.MousePosition.Y - this.mouseDownPoint.Y;
+			bool isSmallMovement = Math.Max(Math.Abs(dx), Math.Abs(dy)) <= 5;
+
+			if (Control.ModifierKeys == Keys.Shift)
+			{
+				// Don't lock the direction until the mouse position is far
+				// enough from the starting point to avoid locking to a wrong
+				// direction beacuse of initial small erroneous movements.
+				// In general, locking the direction avoids sudden jumps in the
+				// form's location when a user moves the mouse near the original
+				// position again.
+				if (this.movementLock == MovementLock.None && !isSmallMovement)
+				{
+					// Determine new locked movement direction.
+					this.movementLock = Math.Abs(dx) >= Math.Abs(dy) ? MovementLock.Horizontal : MovementLock.Vertical;
+				}
+
+				// Apply the movement lock.
+				if (this.movementLock == MovementLock.Horizontal)
+				{
+					dy = 0;
+				}
+				else if (this.movementLock == MovementLock.Vertical)
+				{
+					dx = 0;
+				}
+			}
+			else
+			{
+				// If a user has released Shift, go back to free movement.
+				this.movementLock = MovementLock.None;
+			}
+
+			this.Location = new Point(this.mouseDownFormLocation.X + dx, this.mouseDownFormLocation.Y + dy);
 		}
 
 		private void HandleMoveResizeKeystroke(KeyEventArgs e)
