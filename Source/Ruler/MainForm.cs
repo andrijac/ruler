@@ -7,6 +7,7 @@ using System.Windows.Forms;
 
 namespace Ruler
 {
+
     sealed public class MainForm : Form, IRulerInfo
     {
         #region ResizeRegion enum
@@ -184,6 +185,7 @@ namespace Ruler
                 MenuItemHolder.Separator,
                 new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
                 MenuItemHolder.Separator,
+
 #if DEBUG
 				new MenuItemHolder(MenuItemEnum.RulerInfo, "Copy RulerInfo", this.CopyRulerInfo, false),
                 MenuItemHolder.Separator,
@@ -361,6 +363,7 @@ namespace Ruler
         }
 
 #endif
+
 
         private void SetSizeHandler(object sender, EventArgs e)
         {
@@ -971,6 +974,7 @@ namespace Ruler
 
         private static void DebugWrite(params object[] values)
         {
+
 #if DEBUG
             string value = string.Empty;
 
