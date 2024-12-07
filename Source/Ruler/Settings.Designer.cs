@@ -12,7 +12,7 @@ namespace Ruler {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.10.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.11.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -25,13 +25,13 @@ namespace Ruler {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("400")]
-        public int width {
+        [global::System.Configuration.DefaultSettingValueAttribute("400, 75")]
+        public global::System.Drawing.Size size {
             get {
-                return ((int)(this["width"]));
+                return ((global::System.Drawing.Size)(this["size"]));
             }
             set {
-                this["width"] = value;
+                this["size"] = value;
             }
         }
         
@@ -49,13 +49,13 @@ namespace Ruler {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public double opacity {
+        [global::System.Configuration.DefaultSettingValueAttribute("400")]
+        public int width {
             get {
-                return ((double)(this["opacity"]));
+                return ((int)(this["width"]));
             }
             set {
-                this["opacity"] = value;
+                this["width"] = value;
             }
         }
         
@@ -68,18 +68,6 @@ namespace Ruler {
             }
             set {
                 this["location"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("None")]
-        public string savetype {
-            get {
-                return ((string)(this["savetype"]));
-            }
-            set {
-                this["savetype"] = value;
             }
         }
         
@@ -133,6 +121,18 @@ namespace Ruler {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("None")]
+        public string savetype {
+            get {
+                return ((string)(this["savetype"]));
+            }
+            set {
+                this["savetype"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("\"\"")]
         public string screen {
             get {
@@ -140,6 +140,18 @@ namespace Ruler {
             }
             set {
                 this["screen"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.6")]
+        public double opacity {
+            get {
+                return ((double)(this["opacity"]));
+            }
+            set {
+                this["opacity"] = value;
             }
         }
     }
