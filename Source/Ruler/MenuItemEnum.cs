@@ -10,6 +10,7 @@
 		SetSize,
 		Duplicate,
 		Reset,
+		Save,
 		About,
 		Exit,
 		RulerInfo,
