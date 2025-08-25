@@ -1,0 +1,30 @@
+﻿<Window x:Class="Ruler.Wpf.SetSizeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set Ruler Size"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Width:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox x:Name="txtWidth" Grid.Row="0" Grid.Column="1" Margin="5" Width="100"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Height:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox x:Name="txtHeight" Grid.Row="1" Grid.Column="1" Margin="5" Width="100"/>
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+            <Button x:Name="btnOk" Content="OK" Width="75" Margin="5" IsDefault="True"/>
+            <Button x:Name="btnCancel" Content="Cancel" Width="75" Margin="5" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
