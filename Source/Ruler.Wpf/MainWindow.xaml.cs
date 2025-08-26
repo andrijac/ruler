@@ -168,7 +168,7 @@ namespace Ruler.Wpf
             _viewModel.MouseLeftButtonDown(e.GetPosition(this), e.OriginalSource as FrameworkElement);
 
             // Now, check the ViewModel's IsMoving state to see if we should start dragging.
-            if (!_viewModel.IsLocked && _viewModel.IsMoving)
+            if (!_viewModel.IsLocked && !_viewModel.IsResizing)
             {
                 this.DragMove();
             }

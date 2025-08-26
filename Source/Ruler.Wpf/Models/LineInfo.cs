@@ -7,13 +7,13 @@ namespace Ruler.Wpf.Models
     /// This allows the ViewModel to generate drawing data without knowing
     /// about the specific UI elements.
     /// </summary>
-    public class LineInfo
+    public class LineInfo:RulerShapes
     {
         public double X1 { get; set; }
         public double Y1 { get; set; }
         public double X2 { get; set; }
         public double Y2 { get; set; }
-        public Brush Stroke { get; set; }
-        public double StrokeThickness { get; set; }
+        public Brush Stroke { get; set; } = new SolidColorBrush(Colors.Black);
+        public double Thickness { get; set; } = 1;
     }
 }

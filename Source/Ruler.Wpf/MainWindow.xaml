@@ -13,6 +13,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ruler.Wpf.Common"
+        xmlns:models ="clr-namespace:Ruler.Wpf.Models"
         mc:Ignorable="d"
         Title="Ruler"
         AllowsTransparency="True"
@@ -119,45 +120,47 @@
             that functionality will now be handled by the ItemsControl binding to RulerLabels.
             -->
         <Grid>
-            <!-- This ItemsControl binds to the RulerLines collection to draw the tick marks -->
-            <!-- Because this is placed first in the Grid, it will be in the back. -->
-            <ItemsControl ItemsSource="{Binding RulerLines}">
-                <!-- This template defines how each LineInfo object is rendered -->
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+            
+                <!-- Single ItemsControl to display both lines and labels -->
+            <ItemsControl ItemsSource="{Binding RulerTicks}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas Background="AliceBlue" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Resources>
+                    <DataTemplate DataType="{x:Type models:LineInfo}">
                         <Line X1="{Binding X1}" Y1="{Binding Y1}"
-                                  X2="{Binding X2}" Y2="{Binding Y2}"
-                                  Stroke="{Binding Stroke}"
-                                  StrokeThickness="{Binding StrokeThickness}" />
+                      X2="{Binding X2}" Y2="{Binding Y2}"
+                      Stroke="Black"
+                      StrokeThickness="{Binding Thickness}"/>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-                <!-- ItemsPanelTemplate ensures the items are placed within a Canvas -->
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <Canvas/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
 
-            <!-- This ItemsControl binds to the RulerLabels collection to draw the numbers -->
-            <!-- Because this is placed last in the Grid, it will be in the front. -->
-            <ItemsControl ItemsSource="{Binding RulerLabels}">
-                <!-- This template defines how each LabelInfo object is rendered -->
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <!-- DataTemplate for LabelInfo objects -->
+                    <DataTemplate DataType="{x:Type models:LabelInfo}">
                         <TextBlock Text="{Binding Text}"
-                                       FontSize="{Binding FontSize}"
-                                       Foreground="{Binding Foreground}"
-                                       Canvas.Left="{Binding X}"
-                                       Canvas.Top="{Binding Y}" />
+                           Canvas.Left="{Binding LabelX}"
+                           Canvas.Top="{Binding LabelY}"
+                           FontSize="{Binding FontSize}"
+                           Foreground="{Binding Foreground}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                                    <Style.Triggers>
+                                        <!-- Rotate the text 90 degrees when the ruler is vertical -->
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=DataContext.Orientation}" Value="Vertical">
+                                            <Setter Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <RotateTransform Angle="-90"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-                <!-- ItemsPanelTemplate ensures the items are placed within a Canvas -->
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <Canvas/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
+                </ItemsControl.Resources>
             </ItemsControl>
 
             <!-- This TextBlock will display the current size of the ruler -->
