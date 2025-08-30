@@ -7,7 +7,7 @@ namespace Ruler.Wpf.Models
     /// This allows the ViewModel to generate drawing data without knowing
     /// about the specific UI elements.
     /// </summary>
-    public class LineInfo:RulerShapes
+    public class LineInfo
     {
         public double X1 { get; set; }
         public double Y1 { get; set; }

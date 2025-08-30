@@ -23,7 +23,19 @@ namespace Ruler.Wpf.ViewModels
         // Collections for the ItemsControls to bind to
         public ObservableCollection<LineInfo> RulerLines { get; set; }
         public ObservableCollection<LabelInfo> RulerLabels { get; set; }
-        public ObservableCollection<RulerShapes> RulerTicks { get; set; } = new ObservableCollection<RulerShapes>();
+        private ObservableCollection<RulerTick> _rulerTicks;
+        public ObservableCollection<RulerTick> RulerTicks
+        {
+            get { return _rulerTicks; }
+            set
+            {
+                if (_rulerTicks != value)
+                {
+                    _rulerTicks = value;
+                    OnPropertyChanged(nameof(RulerTicks));
+                }
+            }
+        }
         private RulerOrientation _orientation;
       
         // State variables for mouse interaction
@@ -217,84 +229,132 @@ namespace Ruler.Wpf.ViewModels
         public void CalculateRulerItems()
         {
             // Clear the main collection that holds both lines and labels
-            RulerTicks.Clear();
+           // RulerTicks.Clear();
 
             // Check the orientation and generate points accordingly
             if (Orientation == RulerOrientation.Horizontal)
             {
-                // Generate horizontal lines and labels
-                for (int i = 0; i <= Length; i += 1)
+                RulerTicks = new ObservableCollection<RulerTick>();
+
+                for (int i = 0; i <= Length; i ++)
                 {
-                    // Major ticks (100mm)
-                    if (i % 100 == 0)
+                    if (i % 100 == 0) // Major tick every 100 units
                     {
-                        // Add top major tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 25, X1 = i, X2 = i, Thickness = 2 });
-                        // Add top major tick label
-                        RulerTicks.Add(new LabelInfo() { X = i, Y = 30, Text = i.ToString(), FontSize = 10 });
-                        // Add bottom major tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 25, X1 = i, X2 = i, Thickness = 2 });
-                        // Add bottom major tick label
-                        RulerTicks.Add(new LabelInfo() { X = i, Y = Height - 30, Text = i.ToString(), FontSize = 10 });
+                        RulerTicks.Add(new RulerTick { Label = i.ToString(), Position = i, TickSize = TickType.Major100 });
                     }
-                    // Half-inch ticks (50mm)
-                    else if (i % 50 == 0)
+                    else if (i % 50 == 0) // Tick every 50 units
                     {
-                        // Add top half-inch tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 18, X1 = i, X2 = i, Thickness = 1 });
-                        // Add bottom half-inch tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 18, X1 = i, X2 = i, Thickness = 1 });
+                        RulerTicks.Add(new RulerTick { Label = i.ToString(), Position = i, TickSize = TickType.Major50 });
                     }
-                    // Quarter-inch ticks (10mm)
-                    else if (i % 10 == 0)
+                    else if (i % 10 == 0) // Tick every 10 units
                     {
-                        // Add top quarter-inch tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 12, X1 = i, X2 = i, Thickness = 1 });
-                        // Add bottom quarter-inch tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 12, X1 = i, X2 = i, Thickness = 1 });
+                        RulerTicks.Add(new RulerTick { Label = string.Empty, Position = i, TickSize = TickType.Minor10 });
                     }
-                    // Smallest ticks
-                    else
+                    else if (i % 5 == 0) // Tick every 5 units
                     {
-                        // Add top smallest tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 6, X1 = i, X2 = i, Thickness = 1 });
-                        // Add bottom smallest tick line
-                        RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 6, X1 = i, X2 = i, Thickness = 1 });
+                        RulerTicks.Add(new RulerTick { Label = string.Empty, Position = i, TickSize = TickType.Minor5 });
+                    }
+                    else // Tick every 1 unit
+                    {
+                        RulerTicks.Add(new RulerTick { Label = string.Empty, Position = i, TickSize = TickType.Minor1 });
                     }
                 }
+                // Generate horizontal lines and labels
+                //for (int i = 0; i <= Length; i += 1)
+                //{
+                //    // Major ticks (100mm)
+                //    if (i % 100 == 0)
+                //    {
+                //        // Add top major tick line
+                //       // RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 25, X1 = i, X2 = i, Thickness = 2 });
+                //        // Add top major tick label
+                //        RulerTicks.Add(new LabelInfo() { X = i, Y = 30, Text = i.ToString(), FontSize = 10 });
+                //        // Add bottom major tick line
+                //    //    RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 25, X1 = i, X2 = i, Thickness = 2 });
+                //        // Add bottom major tick label
+                //        RulerTicks.Add(new LabelInfo() { X = i, Y = Height - 30, Text = i.ToString(), FontSize = 10 });
+                //    }
+                //    // Half-inch ticks (50mm)
+                //    else if (i % 50 == 0)
+                //    {
+                //        // Add top half-inch tick line
+                //    //    RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 18, X1 = i, X2 = i, Thickness = 1 });
+                //        // Add bottom half-inch tick line
+                //    //    RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 18, X1 = i, X2 = i, Thickness = 1 });
+                //    }
+                //    // Quarter-inch ticks (10mm)
+                //    else if (i % 10 == 0)
+                //    {
+                //        // Add top quarter-inch tick line
+                //   //     RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 12, X1 = i, X2 = i, Thickness = 1 });
+                //        // Add bottom quarter-inch tick line
+                //   //     RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 12, X1 = i, X2 = i, Thickness = 1 });
+                //    }
+                //    // Smallest ticks
+                //    else
+                //    {
+                //        // Add top smallest tick line
+                //   //     RulerTicks.Add(new LineInfo() { Y1 = 0, Y2 = 6, X1 = i, X2 = i, Thickness = 1 });
+                //        // Add bottom smallest tick line
+                //   //     RulerTicks.Add(new LineInfo() { Y1 = Height, Y2 = Height - 6, X1 = i, X2 = i, Thickness = 1 });
+                //    }
+                // }
             }
             else // Vertical orientation
             {
-                // Generate vertical lines and labels
                 for (int i = 0; i <= Length; i += 1)
                 {
-                    if (i % 100 == 0) // Major ticks (100mm)
+                    if (i % 100 == 0) // Major tick every 100 units
                     {
-                        // Add left major tick line
-                        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 25, Y2 = i, Thickness = 2 });
-                        // Add left major tick label
-                        RulerTicks.Add(new LabelInfo() { X = 30, Y = i, Text = i.ToString(), FontSize = 10 });
-                        // Add right major tick line
-                        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 25, Y2 = i, Thickness = 2 });
-                        // Add right major tick label
-                        RulerTicks.Add(new LabelInfo() { X = Width - 30, Y = i, Text = i.ToString(), FontSize = 10 });
+                        RulerTicks.Add(new RulerTick { Label = i.ToString(), Position = i, TickSize = TickType.Major100 });
                     }
-                    else if (i % 50 == 0) // Half-inch ticks (50mm)
+                    else if (i % 50 == 0) // Tick every 50 units
                     {
-                        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 18, Y2 = i, Thickness = 1 });
-                        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 18, Y2 = i, Thickness = 1 });
+                        RulerTicks.Add(new RulerTick { Label = i.ToString(), Position = i, TickSize = TickType.Major50 });
                     }
-                    else if (i % 10 == 0) // Quarter-inch ticks (10mm)
+                    else if (i % 10 == 0) // Tick every 10 units
                     {
-                        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 12, Y2 = i, Thickness = 1 });
-                        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 12, Y2 = i, Thickness = 1 });
+                        RulerTicks.Add(new RulerTick { Label = i.ToString(), Position = i, TickSize = TickType.Minor10 });
                     }
-                    else // Smallest ticks
+                    else if (i % 5 == 0) // Tick every 5 units
                     {
-                        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 6, Y2 = i, Thickness = 1 });
-                        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 6, Y2 = i, Thickness = 1 });
+                        RulerTicks.Add(new RulerTick { Label = string.Empty, Position = i, TickSize = TickType.Minor5 });
+                    }
+                    else // Tick every 1 unit
+                    {
+                        RulerTicks.Add(new RulerTick { Label = string.Empty, Position = i, TickSize = TickType.Minor1 });
                     }
                 }
+                // Generate vertical lines and labels
+                //for (int i = 0; i <= Length; i += 1)
+                //{
+                //    if (i % 100 == 0) // Major ticks (100mm)
+                //    {
+                //        // Add left major tick line
+                //        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 25, Y2 = i, Thickness = 2 });
+                //        // Add left major tick label
+                //        RulerTicks.Add(new LabelInfo() { X = 30, Y = i, Text = i.ToString(), FontSize = 10 });
+                //        // Add right major tick line
+                //        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 25, Y2 = i, Thickness = 2 });
+                //        // Add right major tick label
+                //        RulerTicks.Add(new LabelInfo() { X = Width - 30, Y = i, Text = i.ToString(), FontSize = 10 });
+                //    }
+                //    else if (i % 50 == 0) // Half-inch ticks (50mm)
+                //    {
+                //        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 18, Y2 = i, Thickness = 1 });
+                //        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 18, Y2 = i, Thickness = 1 });
+                //    }
+                //    else if (i % 10 == 0) // Quarter-inch ticks (10mm)
+                //    {
+                //        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 12, Y2 = i, Thickness = 1 });
+                //        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 12, Y2 = i, Thickness = 1 });
+                //    }
+                //    else // Smallest ticks
+                //    {
+                //        RulerTicks.Add(new LineInfo() { X1 = 0, Y1 = i, X2 = 6, Y2 = i, Thickness = 1 });
+                //        RulerTicks.Add(new LineInfo() { X1 = Width, Y1 = i, X2 = Width - 6, Y2 = i, Thickness = 1 });
+                //    }
+                //}
             }
             // Notify the UI that the collection has changed, allowing it to redraw
             OnPropertyChanged(nameof(RulerTicks));

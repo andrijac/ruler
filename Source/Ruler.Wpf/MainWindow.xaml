@@ -29,6 +29,7 @@
         MouseLeftButtonDown="Window_MouseLeftButtonDown" >
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="Bo olToVisibilityConverter" />
         <!-- Style to make menu items feel more modern -->
         <Style TargetType="MenuItem">
             <!-- Default background color -->
@@ -42,6 +43,24 @@
         </Style>
         <local:CenterConverter x:Key="CenterConverter" />
         <local:ValueToBooleanConverter x:Key="ValueToBooleanConverter" />
+        <Style x:Key="RulerLineStyle" TargetType="Rectangle">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Fill" Value="Black"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding TickSize}" Value="{x:Static local:TickType.Minor5}">
+                    <Setter Property="Height" Value="5"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TickSize}" Value="{x:Static local:TickType.Minor10}">
+                    <Setter Property="Height" Value="8"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TickSize}" Value="{x:Static local:TickType.Major50}">
+                    <Setter Property="Height" Value="12"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TickSize}" Value="{x:Static local:TickType.Major100}">
+                    <Setter Property="Height" Value="16"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>      
     </Window.Resources>
 
     <!-- This Border is the visual representation of the ruler -->
@@ -59,7 +78,7 @@
             <ContextMenu>
                 <MenuItem Header="Set Size..." Command="{Binding ShowSetSizeFormCommand}" />
                 <MenuItem Header="Opacity">
-                    <MenuItem Header="10%" Command="{Binding SetOpacityCommand}" CommandParameter="0.1" IsChecked="{Binding Opacity, Converter={StaticResource ValueToBooleanConverter}, ConverterParameter=0.05}" />
+                    <MenuItem Header="5%" Command="{Binding SetOpacityCommand}" CommandParameter="0.1" IsChecked="{Binding Opacity, Converter={StaticResource ValueToBooleanConverter}, ConverterParameter=0.05}" />
                     <MenuItem Header="10%" Command="{Binding SetOpacityCommand}" CommandParameter="0.1" IsChecked="{Binding Opacity, Converter={StaticResource ValueToBooleanConverter}, ConverterParameter=0.1}" />
                     <MenuItem Header="15%" Command="{Binding SetOpacityCommand}" CommandParameter="0.15" IsChecked="{Binding Opacity, Converter={StaticResource ValueToBooleanConverter}, ConverterParameter=0.15}" />
                     <MenuItem Header="20%" Command="{Binding SetOpacityCommand}" CommandParameter="0.2" IsChecked="{Binding Opacity, Converter={StaticResource ValueToBooleanConverter}, ConverterParameter=0.2}" />
@@ -119,58 +138,65 @@
             The TextBlock that previously displayed the size has been removed, as
             that functionality will now be handled by the ItemsControl binding to RulerLabels.
             -->
+        <!-- The main Grid for the rulers and content area. -->
         <Grid>
-            
-                <!-- Single ItemsControl to display both lines and labels -->
-            <ItemsControl ItemsSource="{Binding RulerTicks}">
+            <!-- Define the three rows for our layout. -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />
+                <!-- Fixed height for top ruler -->
+                <RowDefinition Height="*" />
+                <!-- Expands to fill available space -->
+                <RowDefinition Height="50" />
+                <!-- Fixed height for bottom ruler -->
+            </Grid.RowDefinitions>
+
+            <!-- Top Ruler -->
+            <ItemsControl Grid.Row="0" 
+                          ItemsSource="{Binding RulerTicks}"
+                          ItemTemplate="{StaticResource RulerTickTemplate}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Top"
+                          >
                 <ItemsControl.ItemsPanel>
+                    <!-- StackPanel lays out children horizontally. -->
                     <ItemsPanelTemplate>
-                        <Canvas Background="AliceBlue" />
+                        <StackPanel Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
-                <ItemsControl.Resources>
-                    <DataTemplate DataType="{x:Type models:LineInfo}">
-                        <Line X1="{Binding X1}" Y1="{Binding Y1}"
-                      X2="{Binding X2}" Y2="{Binding Y2}"
-                      Stroke="Black"
-                      StrokeThickness="{Binding Thickness}"/>
-                    </DataTemplate>
-
-                    <!-- DataTemplate for LabelInfo objects -->
-                    <DataTemplate DataType="{x:Type models:LabelInfo}">
-                        <TextBlock Text="{Binding Text}"
-                           Canvas.Left="{Binding LabelX}"
-                           Canvas.Top="{Binding LabelY}"
-                           FontSize="{Binding FontSize}"
-                           Foreground="{Binding Foreground}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                                    <Style.Triggers>
-                                        <!-- Rotate the text 90 degrees when the ruler is vertical -->
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=DataContext.Orientation}" Value="Vertical">
-                                            <Setter Property="RenderTransform">
-                                                <Setter.Value>
-                                                    <RotateTransform Angle="-90"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </DataTemplate>
-                </ItemsControl.Resources>
             </ItemsControl>
 
-            <!-- This TextBlock will display the current size of the ruler -->
-            <TextBlock Text="{Binding SizeText}"
-                  HorizontalAlignment="Center"
-                  VerticalAlignment="Center"
-                  FontSize="12"
-                  FontWeight="Bold"
-                  Foreground="Black"
-                  />
+            <!-- Main Content Area with Size Labels -->
+            <Grid Grid.Row="1" Background="White">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FormattedWidth}" 
+                               FontSize="16" FontWeight="Bold" 
+                               Margin="0,0,0,5"
+                               HorizontalAlignment="Center"
+                               />
+                    <TextBlock Text="{Binding FormattedHeight}" 
+                               FontSize="16" FontWeight="Bold" 
+                               HorizontalAlignment="Center"
+                               />
+                </StackPanel>
+            </Grid>
+
+            <!-- Bottom Ruler -->
+            <ItemsControl Grid.Row="2"
+                          ItemsSource="{Binding RulerTicks}"
+                          ItemTemplate="{StaticResource RulerTickTemplate}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Bottom"
+                          RenderTransformOrigin="0.5, 0.5">
+                <ItemsControl.RenderTransform>
+                    <ScaleTransform ScaleY="-1"/>
+                </ItemsControl.RenderTransform>
+                <ItemsControl.ItemsPanel>
+                    <!-- StackPanel lays out children horizontally. -->
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
         </Grid>
     </Border>
 </Window>
