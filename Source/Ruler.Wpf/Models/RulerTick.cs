@@ -12,7 +12,7 @@ namespace Ruler.Wpf.Models
     {
         public string Label { get; set; }
         public double Position { get; set; }
-        public TickType TickSize { get; set; }
+        public double TickSize { get; set; }
         public bool HasLabel => !string.IsNullOrEmpty(Label);
     }
 }
