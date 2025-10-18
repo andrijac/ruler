@@ -34,8 +34,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Ruler.Wpf.App</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
@@ -60,6 +64,7 @@
     <Compile Include="Common\CenterConverter.cs" />
     <Compile Include="Common\DialogService.cs" />
     <Compile Include="Common\IDialogService.cs" />
+    <Compile Include="Common\NativeMethods.cs" />
     <Compile Include="Common\Orientation.cs" />
     <Compile Include="Common\SaveTypes.cs" />
     <Compile Include="Common\Settings.Designer.cs">
@@ -72,15 +77,21 @@
     <Compile Include="Models\IRulerInfo.cs" />
     <Compile Include="Models\LabelInfo.cs" />
     <Compile Include="Models\LineInfo.cs" />
+    <Compile Include="Models\ResizeRegion.cs" />
     <Compile Include="Models\RulerDataTemplateSelector.cs" />
     <Compile Include="Models\RulerInfo.cs" />
     <Compile Include="Models\RulerTick.cs" />
     <Compile Include="Models\RulerTicks.cs" />
     <Compile Include="Models\RulerShapes.cs" />
+    <Compile Include="Persistence\CommandLineRulerFactory.cs" />
+    <Compile Include="Persistence\SingleRulerPersistenceService.cs" />
+    <Compile Include="Persistence\Strategy\IPersistenceStrategy.cs" />
+    <Compile Include="Persistence\Strategy\SettingsPersistenceStrategy.cs" />
     <Compile Include="SetSizeWindow.xaml.cs">
       <DependentUpon>SetSizeWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\RulerViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

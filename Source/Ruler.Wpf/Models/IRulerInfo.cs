@@ -7,13 +7,13 @@ namespace Ruler.Wpf.Models
 {
     public interface IRulerInfo
     {
-        int Width
+        double Width
         {
             get;
             set;
         }
 
-        int Height
+        double Height
         {
             get;
             set;

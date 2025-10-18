@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Ruler.Wpf.Models;
 
 namespace Ruler.Wpf.Common
 {
@@ -14,6 +15,9 @@ namespace Ruler.Wpf.Common
     /// </summary>
     public interface IDialogService
     {
-        Size? ShowSetSizeDialog();
+        Size ShowSetSizeDialog(double width,double height);
+        void AddRuler(Window rulerWindow);
+        IReadOnlyList<Window> OpenRulers { get; }
+        void ShowNewRuler(RulerInfo initialInfo);
     }
 }

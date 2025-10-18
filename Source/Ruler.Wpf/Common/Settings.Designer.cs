@@ -38,9 +38,9 @@ namespace Ruler.Wpf.Common {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("75")]
-        public int height {
+        public double height {
             get {
-                return ((int)(this["height"]));
+                return ((double)(this["height"]));
             }
             set {
                 this["height"] = value;
@@ -50,9 +50,9 @@ namespace Ruler.Wpf.Common {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("400")]
-        public int width {
+        public double width {
             get {
-                return ((int)(this["width"]));
+                return ((double)(this["width"]));
             }
             set {
                 this["width"] = value;

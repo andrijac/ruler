@@ -14,6 +14,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ruler.Wpf.Common"
         xmlns:models ="clr-namespace:Ruler.Wpf.Models"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="Ruler"
         AllowsTransparency="True"
@@ -26,7 +27,7 @@
         Top="{Binding DisplayedLocation.Y}"
         Opacity="{Binding Opacity}"
         Topmost="{Binding TopMost}"
-        MouseLeftButtonDown="Window_MouseLeftButtonDown" >
+        MouseLeftButtonDown="MainWindow_MouseLeftButtonDown" >
 
     <Window.Resources>
         <DataTemplate x:Key="TopHorizontalRulerTickTemplate">
@@ -77,71 +78,83 @@
             </Grid>
         </DataTemplate>
     </Window.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
+    <Window.ContextMenu >
+        <ContextMenu Background="#444">
+            <MenuItem Header="Always on Top" IsCheckable="True" IsChecked="{Binding TopMost}" Command="{Binding ToggleTopMostCommand}"/>
+            <MenuItem Header="Change Orientation" Command="{Binding ToggleVerticalCommand}"/>
+            <MenuItem Header="Tool Tip" IsCheckable="True" IsChecked="{Binding ShowToolTip}" Command="{Binding ToggleToolTipCommand}"/>
+            <MenuItem Header="Lock Resize" IsCheckable="True" IsChecked="{Binding IsLocked}" Command="{Binding ToggleLockCommand}" />
+            <MenuItem Header="Duplicate Ruler" Command="{Binding DuplicateCommand}"/>
+            <MenuItem Header="Reset to Defaults" Command="{Binding ResetToDefaultCommand}" />
+            <MenuItem Header="Set Size" Command="{Binding ShowSetSizeFormCommand}" />
+            <Separator/>
+            <MenuItem Header="Opacity">
+                <MenuItem Header="5%" Foreground="Red" Command="{Binding SetOpacityCommand}" CommandParameter="0.05" IsCheckable="True" IsChecked="{Binding IsOpacity5Percent}"/>
+                <MenuItem Header="10%" Command="{Binding SetOpacityCommand}" CommandParameter="0.1" IsCheckable="True" IsChecked="{Binding IsOpacity10Percent}"/>
+                <MenuItem Header="15%" Command="{Binding SetOpacityCommand}" CommandParameter="0.15" IsCheckable="True" IsChecked="{Binding IsOpacity15Percent}"/>
+                <MenuItem Header="20%" Command="{Binding SetOpacityCommand}" CommandParameter="0.2" IsCheckable="True" IsChecked="{Binding IsOpacity20Percent}"/>
+                <MenuItem Header="25%" Command="{Binding SetOpacityCommand}" CommandParameter="0.25" IsCheckable="True" IsChecked="{Binding IsOpacity25Percent}"/>
+                <MenuItem Header="30%" Command="{Binding SetOpacityCommand}" CommandParameter="0.3" IsCheckable="True" IsChecked="{Binding IsOpacity30Percent}"/>
+                <MenuItem Header="35%" Command="{Binding SetOpacityCommand}" CommandParameter="0.35" IsCheckable="True" IsChecked="{Binding IsOpacity35Percent}" />
+                <MenuItem Header="40%" Command="{Binding SetOpacityCommand}" CommandParameter="0.4" IsCheckable="True" IsChecked="{Binding IsOpacity40Percent}" />
+                <MenuItem Header="45%" Command="{Binding SetOpacityCommand}" CommandParameter="0.45" IsCheckable="True" IsChecked="{Binding IsOpacity45Percent}"/>
+                <MenuItem Header="50%" Command="{Binding SetOpacityCommand}" CommandParameter="0.5" IsCheckable="True" IsChecked="{Binding IsOpacity50Percent}"/>
+                <MenuItem Header="55%" Command="{Binding SetOpacityCommand}" CommandParameter="0.55" IsCheckable="True" IsChecked="{Binding IsOpacity55Percent}"/>
+                <MenuItem Header="60%" Command="{Binding SetOpacityCommand}" CommandParameter="0.6" IsCheckable="True" IsChecked="{Binding IsOpacity60Percent}"/>
+                <MenuItem Header="65%" Command="{Binding SetOpacityCommand}" CommandParameter="0.65" IsCheckable="True" IsChecked="{Binding IsOpacity65Percent}"/>
+                <MenuItem Header="70%" Command="{Binding SetOpacityCommand}" CommandParameter="0.7" IsCheckable="True" IsChecked="{Binding IsOpacity70Percent}"/>
+                <MenuItem Header="75%" Command="{Binding SetOpacityCommand}" CommandParameter="0.75" IsCheckable="True" IsChecked="{Binding IsOpacity75Percent}"/>
+                <MenuItem Header="80%" Command="{Binding SetOpacityCommand}" CommandParameter="0.8" IsCheckable="True" IsChecked="{Binding IsOpacity80Percent}"/>
+                <MenuItem Header="85%" Command="{Binding SetOpacityCommand}" CommandParameter="0.85" IsCheckable="True" IsChecked="{Binding IsOpacity85Percent}"/>
+                <MenuItem Header="90%" Command="{Binding SetOpacityCommand}" CommandParameter="0.9" IsCheckable="True" IsChecked="{Binding IsOpacity90Percent}"/>
+                <MenuItem Header="95%" Command="{Binding SetOpacityCommand}" CommandParameter="0.95" IsCheckable="True" IsChecked="{Binding IsOpacity95Percent}"/>
+                <MenuItem Header="100%" Command="{Binding SetOpacityCommand}" CommandParameter="1.0" IsCheckable="True" IsChecked="{Binding IsOpacity100Percent}"/>
+            </MenuItem>
+            <MenuItem Header="Save?">
+                <MenuItem Header="Save Nothing" Command="{Binding SetSaveTypeCommand}" CommandParameter="nonw" IsCheckable="True" IsChecked="{Binding IsSaveTypeNone}"/>
+                <MenuItem Header="Save Location" Command="{Binding SetSaveTypeCommand}" CommandParameter="location" IsCheckable="True" IsChecked="{Binding IsSaveTypeLocation}"/>
+                <MenuItem Header="Save Size" Command="{Binding SetSaveTypeCommand}" CommandParameter="size" IsCheckable="True" IsChecked="{Binding IsSaveTypeSize}" />
+                <MenuItem Header="Save Everything" Command="{Binding SetSaveTypeCommand}" CommandParameter="all" IsCheckable="True" IsChecked="{Binding IsSaveTypeAll}"/>
 
-        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="3"
-                BorderBrush="#333" BorderThickness="1" CornerRadius="5" Background="#555" >
-            <Border.ContextMenu>
-                <ContextMenu Background="#444" Foreground="#fff" FontSize="14">
-                    <MenuItem Header="Always on Top" IsCheckable="True" IsChecked="{Binding TopMost}" Command="{Binding ToggleTopMostCommand}"/>
-                    <MenuItem Header="Change Orientation" Command="{Binding ToggleOrientationCommand}"/>
-                    <MenuItem Header="Tool Tip" IsCheckable="True" IsChecked="{Binding ShowToolTip}" Command="{Binding ToggleToolTipCommand}"/>
-                    <MenuItem Header="Lock Resize" IsCheckable="True" IsChecked="{Binding IsLocked}" Command="{Binding ToggleLock}" />
-                    <MenuItem Header="Duplicate Ruler" Command="{Binding DuplicateCommand}"/>
-                    <MenuItem Header="Reset to Defaults" Command="{Binding ResetToDefaultCommand}" />
-                    <Separator/>
-                    <MenuItem Header="Opacity">
-                        <MenuItem Header="5%" Command="{Binding SetOpacityCommand}" CommandParameter="0.05" IsCheckable="True" IsChecked="{Binding IsOpacity5Percent}"/>
-                        <MenuItem Header="10%" Command="{Binding SetOpacityCommand}" CommandParameter="0.1" IsCheckable="True" IsChecked="{Binding IsOpacity10Percent}"/>
-                        <MenuItem Header="15%" Command="{Binding SetOpacityCommand}" CommandParameter="0.15" IsCheckable="True" IsChecked="{Binding IsOpacity15Percent}"/>
-                        <MenuItem Header="20%" Command="{Binding SetOpacityCommand}" CommandParameter="0.2" IsCheckable="True" IsChecked="{Binding IsOpacity20Percent}"/>
-                        <MenuItem Header="25%" Command="{Binding SetOpacityCommand}" CommandParameter="0.25" IsCheckable="True" IsChecked="{Binding IsOpacity25Percent}"/>
-                        <MenuItem Header="30%" Command="{Binding SetOpacityCommand}" CommandParameter="0.3" IsCheckable="True" IsChecked="{Binding IsOpacity30Percent}"/>
-                        <MenuItem Header="35%" Command="{Binding SetOpacityCommand}" CommandParameter="0.35" IsCheckable="True" IsChecked="{Binding IsOpacity35Percent}" />
-                        <MenuItem Header="40%" Command="{Binding SetOpacityCommand}" CommandParameter="0.4" IsCheckable="True" IsChecked="{Binding IsOpacity40Percent}" />
-                        <MenuItem Header="45%" Command="{Binding SetOpacityCommand}" CommandParameter="0.45" IsCheckable="True" IsChecked="{Binding IsOpacity45Percent}"/>
-                        <MenuItem Header="50%" Command="{Binding SetOpacityCommand}" CommandParameter="0.5" IsCheckable="True" IsChecked="{Binding IsOpacity50Percent}"/>
-                        <MenuItem Header="55%" Command="{Binding SetOpacityCommand}" CommandParameter="0.55" IsCheckable="True" IsChecked="{Binding IsOpacity55Percent}"/>
-                        <MenuItem Header="60%" Command="{Binding SetOpacityCommand}" CommandParameter="0.6" IsCheckable="True" IsChecked="{Binding IsOpacity60Percent}"/>
-                        <MenuItem Header="65%" Command="{Binding SetOpacityCommand}" CommandParameter="0.65" IsCheckable="True" IsChecked="{Binding IsOpacity65Percent}"/>
-                        <MenuItem Header="70%" Command="{Binding SetOpacityCommand}" CommandParameter="0.7" IsCheckable="True" IsChecked="{Binding IsOpacity70Percent}"/>
-                        <MenuItem Header="75%" Command="{Binding SetOpacityCommand}" CommandParameter="0.75" IsCheckable="True" IsChecked="{Binding IsOpacity75Percent}"/>
-                        <MenuItem Header="80%" Command="{Binding SetOpacityCommand}" CommandParameter="0.8" IsCheckable="True" IsChecked="{Binding IsOpacity80Percent}"/>
-                        <MenuItem Header="85%" Command="{Binding SetOpacityCommand}" CommandParameter="0.85" IsCheckable="True" IsChecked="{Binding IsOpacity85Percent}"/>
-                        <MenuItem Header="90%" Command="{Binding SetOpacityCommand}" CommandParameter="0.9" IsCheckable="True" IsChecked="{Binding IsOpacity90Percent}"/>
-                        <MenuItem Header="95%" Command="{Binding SetOpacityCommand}" CommandParameter="0.95" IsCheckable="True" IsChecked="{Binding IsOpacity95Percent}"/>
-                        <MenuItem Header="100%" Command="{Binding SetOpacityCommand}" CommandParameter="1.0" IsCheckable="True" IsChecked="{Binding IsOpacity100Percent}"/>
-                    </MenuItem>
-                    <MenuItem Header="Save?">
-                        <MenuItem Header="Save Nothing" Command="{Binding SetSaveCommand}" CommandParameter="nonw" IsCheckable="True" IsChecked="{Binding IsSaveTypeNone}"/>
-                        <MenuItem Header="Save Location" Command="{Binding SetSaveCommand}" CommandParameter="location" IsCheckable="True" IsChecked="{Binding IsSaveTypeLocation}"/>
-                        <MenuItem Header="Save Size" Command="{Binding SetSaveCommand}" CommandParameter="size" IsCheckable="True" IsChecked="{Binding IsSaveTypeSize}" />
-                        <MenuItem Header="Save Everything" Command="{Binding SetSaveCommand}" CommandParameter="all" IsCheckable="True" IsChecked="{Binding IsSaveTypeAll}"/>
+            </MenuItem>
+            <!--<MenuItem Header="Scale">
+          <MenuItem Header="1x" Command="{Binding SetScaleCommand}" CommandParameter="1" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=1}"/>
+          <MenuItem Header="2x" Command="{Binding SetScaleCommand}" CommandParameter="2" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=2}"/>
+          <MenuItem Header="4x" Command="{Binding SetScaleCommand}" CommandParameter="4" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=4}"/>
+          <MenuItem Header="8x" Command="{Binding SetScaleCommand}" CommandParameter="8" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=8}"/>
+      </MenuItem>-->
+            <Separator/>
+            <MenuItem Header="Close" Command="{Binding ExitCommand}">
+                <MenuItem.CommandParameter>
+                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}" 
+                         Path="PlacementTarget" />
+                </MenuItem.CommandParameter>
+            </MenuItem>
+        </ContextMenu>
+    </Window.ContextMenu>
 
-                    </MenuItem>
-                    <!--<MenuItem Header="Scale">
-                        <MenuItem Header="1x" Command="{Binding SetScaleCommand}" CommandParameter="1" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=1}"/>
-                        <MenuItem Header="2x" Command="{Binding SetScaleCommand}" CommandParameter="2" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=2}"/>
-                        <MenuItem Header="4x" Command="{Binding SetScaleCommand}" CommandParameter="4" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=4}"/>
-                        <MenuItem Header="8x" Command="{Binding SetScaleCommand}" CommandParameter="8" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=8}"/>
-                    </MenuItem>-->
-                    <Separator/>
-                    <MenuItem Header="Close" Command="{Binding CloseCommand}"/>
-                </ContextMenu>
-            </Border.ContextMenu>
-        </Border>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome 
+            ResizeBorderThickness="10"    CaptionHeight="0"             CornerRadius="0" />
+    </shell:WindowChrome.WindowChrome>
 
-        <!-- Top/Left Ruler Ticks -->
+    <Border x:Name="Bordered" Grid.Row="0" Grid.Column="0" 
+                BorderBrush="#333" BorderThickness="1" CornerRadius="5" Background="#555" MouseEnter="Border_MouseEnter"
+                MouseLeave="Border_MouseLeave" MouseLeftButtonDown="Border_MouseLeftButtonDown" MouseLeftButtonUp="Border_MouseLeftButtonUp"
+            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+
+            <Grid >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <!-- Top/Left Ruler Ticks -->
         <ItemsControl Grid.Row="0" Grid.Column="1"
                       ItemsSource="{Binding TopRulerTicks}"
                       HorizontalAlignment="Stretch"
@@ -234,5 +247,6 @@
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>
-    </Grid>
-</Window>
+            </Grid>
+        </Border>
+ </Window>

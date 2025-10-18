@@ -27,6 +27,11 @@ namespace Ruler.Wpf
             btnOk.Click += OnOkClick;
             btnCancel.Click += OnCancelClick;
         }
+        public SetSizeWindow(double width, double height) : this()
+        {
+            txtWidth.Text = width.ToString();
+            txtHeight.Text = height.ToString();
+        }   
 
         private void OnOkClick(object sender, RoutedEventArgs e)
         {

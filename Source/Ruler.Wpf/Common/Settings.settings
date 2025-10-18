@@ -5,10 +5,10 @@
     <Setting Name="size" Type="System.Windows.Size" Scope="User">
       <Value Profile="(Default)">400,75</Value>
     </Setting>
-    <Setting Name="height" Type="System.Int32" Scope="User">
+    <Setting Name="height" Type="System.Double" Scope="User">
       <Value Profile="(Default)">75</Value>
     </Setting>
-    <Setting Name="width" Type="System.Int32" Scope="User">
+    <Setting Name="width" Type="System.Double" Scope="User">
       <Value Profile="(Default)">400</Value>
     </Setting>
     <Setting Name="location" Type="System.Windows.Point" Scope="User">
