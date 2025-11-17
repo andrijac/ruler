@@ -154,5 +154,29 @@ namespace Ruler.Wpf.Common {
                 this["opacity"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double locationx {
+            get {
+                return ((double)(this["locationx"]));
+            }
+            set {
+                this["locationx"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double locationy {
+            get {
+                return ((double)(this["locationy"]));
+            }
+            set {
+                this["locationy"] = value;
+            }
+        }
     }
 }

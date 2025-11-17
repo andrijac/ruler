@@ -35,5 +35,11 @@
     <Setting Name="opacity" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.6</Value>
     </Setting>
+    <Setting Name="locationx" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="locationy" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -60,11 +60,28 @@ namespace Ruler.Wpf.Models
             get;
             set;
         }
-        public Point DisplayedLocation
+        public double LocationX
         {
             get;
             set;
         }
+        public double LocationY
+        {
+            get;
+            set;
+        }
+        public Point DisplayedLocation
+        {
+            get
+            {
+                return new Point(LocationX, LocationY);
+            }
+            set
+            {
+                LocationX = value.X;
+                LocationY = value.Y;
+            }
+        }   
         public SaveTypes SaveType
         {
             get;
@@ -83,7 +100,8 @@ namespace Ruler.Wpf.Models
                 IsLocked = false,
                 IsVertical = false,
                 TopMost = true,
-                DisplayedLocation = new Point(0, 0),
+                LocationX = 0,
+                LocationY = 0,
                 SaveType = SaveTypes.none
             };
 
@@ -99,7 +117,8 @@ namespace Ruler.Wpf.Models
             targetInstance.ShowToolTip = source.ShowToolTip;
             targetInstance.IsLocked = source.IsLocked;
             targetInstance.TopMost = source.TopMost;
-            targetInstance.DisplayedLocation = source.DisplayedLocation;
+            targetInstance.LocationX = source.LocationX;
+            targetInstance.LocationY = source.LocationY;
             targetInstance.SaveType = source.SaveType;
         }
    

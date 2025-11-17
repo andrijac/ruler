@@ -48,7 +48,12 @@ namespace Ruler.Wpf.Models
             get;
             set;
         }
-        Point DisplayedLocation
+       double LocationX
+        {
+            get;
+            set;
+        }
+        double LocationY
         {
             get;
             set;

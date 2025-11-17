@@ -14,5 +14,6 @@ namespace Ruler.Wpf.Models
         public double Position { get; set; }
         public double TickSize { get; set; }
         public bool HasLabel => !string.IsNullOrEmpty(Label);
+        public bool IsLabelVisible { get; set; }
     }
 }

@@ -1,7 +1,8 @@
 ﻿using Ruler.Wpf;
 using Ruler.Wpf.Common;
 using Ruler.Wpf.Models;
-using Ruler.Wpf.Persistence;
+using Ruler.Wpf.Services;
+using Ruler.Wpf.Services.Persistence;
 
 using System;
 using System.Collections.Generic;
@@ -24,10 +25,11 @@ namespace Ruler.Wpf.ViewModels
         // The RulerInfo class would be our Model
         private RulerInfo _rulerInfo;
         private IDialogService _dialogService;
+        private ILoggingService _loggingService;
 
         // Collections for the ItemsControls to bind to
-        private ObservableCollection<RulerTick> _topRulerTicks;
-        private ObservableCollection<RulerTick> _bottomRulerTicks;
+        private ObservableCollection<RulerTick> _topRulerTicks = new ObservableCollection<RulerTick>();
+        private ObservableCollection<RulerTick> _bottomRulerTicks = new ObservableCollection<RulerTick>();
         //Opacity boolean flags
         private bool _isOpacity5Percent;
         private bool _isOpacity10Percent;
@@ -50,7 +52,7 @@ namespace Ruler.Wpf.ViewModels
         private bool _isOpacity95Percent;
         private bool _isOpacity100Percent;
 
-        private bool _isInitialized = false;    
+        private bool _isInitialized = false;
 
         private Dictionary<int, Action<bool>> _opacitySetterMap;
         private Dictionary<SaveTypes, Action<bool>> _saveTypeSetterMap;
@@ -60,7 +62,7 @@ namespace Ruler.Wpf.ViewModels
         private bool _isSaveTypeSize;
         private bool _isSaveTypeLocation;
         private bool _isSaveTypeAll;
-
+               
 
         private ICommand _toggleLockCommand;
         private ICommand _exitCommand;
@@ -74,17 +76,20 @@ namespace Ruler.Wpf.ViewModels
         private ICommand _duplicateCommand;
         private ICommand _resetToDefaultCommand;
 
-#region  SaveTypeBooleans
+        private int _horizontalMinHeight = 85;
+        private int _vericalMinWidth = 93;
+
+        #region  SaveTypeBooleans
         public bool IsSaveTypeNone
         {
             get => _isSaveTypeNone;
             set
             {
-                if (_isSaveTypeNone != value) 
+                if (_isSaveTypeNone != value)
                 {
                     _isSaveTypeNone = value;
                     OnPropertyChanged(nameof(IsSaveTypeNone));
-                }               
+                }
             }
         }
         public bool IsSaveTypeSize
@@ -117,14 +122,14 @@ namespace Ruler.Wpf.ViewModels
             set
             {
                 if (_isSaveTypeAll != value)
-                {     
-                _isSaveTypeAll = value;
-                OnPropertyChanged(nameof(IsSaveTypeAll));
+                {
+                    _isSaveTypeAll = value;
+                    OnPropertyChanged(nameof(IsSaveTypeAll));
                 }
             }
         }
-        #endregion  
-#region OpacityBooleans
+        #endregion
+        #region OpacityBooleans
         public bool IsOpacity5Percent
         {
             get => _isOpacity5Percent;
@@ -202,11 +207,11 @@ namespace Ruler.Wpf.ViewModels
             get => _isOpacity35Percent;
             set
             {
-                if (_isOpacity35Percent!=value)
+                if (_isOpacity35Percent != value)
                 {
                     _isOpacity35Percent = value;
                     OnPropertyChanged(nameof(IsOpacity35Percent));
-                }               
+                }
             }
         }
         public bool IsOpacity40Percent
@@ -226,7 +231,7 @@ namespace Ruler.Wpf.ViewModels
             get => _isOpacity45Percent;
             set
             {
-                if(_isOpacity45Percent != value)
+                if (_isOpacity45Percent != value)
                 {
                     _isOpacity45Percent = value;
                     OnPropertyChanged(nameof(IsOpacity45Percent));
@@ -254,7 +259,7 @@ namespace Ruler.Wpf.ViewModels
                 {
                     _isOpacity55Percent = value;
                     OnPropertyChanged(nameof(IsOpacity55Percent));
-                }             
+                }
             }
         }
         public bool IsOpacity60Percent
@@ -274,11 +279,11 @@ namespace Ruler.Wpf.ViewModels
             get => _isOpacity65Percent;
             set
             {
-                if(_isOpacity65Percent != value)
+                if (_isOpacity65Percent != value)
                 {
                     _isOpacity65Percent = value;
                     OnPropertyChanged(nameof(IsOpacity65Percent));
-                }               
+                }
             }
         }
         public bool IsOpacity70Percent
@@ -358,35 +363,93 @@ namespace Ruler.Wpf.ViewModels
             get => _isOpacity100Percent;
             set
             {
-                if (_isOpacity100Percent!=value)
+                if (_isOpacity100Percent != value)
                 {
                     _isOpacity100Percent = value;
                     OnPropertyChanged(nameof(_isOpacity100Percent));
                 }
-                
+
             }
         }
         #endregion
 
 
         private RulerOrientation _orientation;
-      
+
         // State variables for mouse interaction
         private Point _startPoint;
         private Size _startSize;
         private bool _isResizing;
         private bool _isMoving;
         private double _length;
-
+        private bool _isLocked;
+        private int leftMargin = 111;
+        private double actualWidth = 203;
+        private bool _isLoadingState;
+        private double _middlewidth=1;
         private readonly SingleRulerPersistenceService _persistenceService;
+        private double _topRowHeight;
+        private bool _isGuideLineVisible = false;
+        private double _guideLinePosition;
 
-        public  RulerViewModel(IDialogService dialogService, RulerInfo initialInfo, SingleRulerPersistenceService persistenceService) 
+        public bool IsGuideLineVisible
         {
-                _dialogService = dialogService ?? throw new ArgumentException(nameof(dialogService));
+            get => _isGuideLineVisible;
+            set => SetProperty(ref _isGuideLineVisible, value);
+        }
+
+        /// <summary>
+        /// Represents the X coordinate (for horizontal ruler) 
+        /// or the Y coordinate (for vertical ruler) of the guide line.
+        /// </summary>
+        public double GuideLinePosition
+        {
+            get => _guideLinePosition;
+            set => SetProperty(ref _guideLinePosition, value);
+        }
+
+        public Double ActualWidth
+        {
+            get => actualWidth;
+            set
+            {
+                if (actualWidth != value)
+                {
+                    actualWidth = value;
+                    OnPropertyChanged(nameof(LeftMargin));
+                }
+            }
+        }
+      public double MiddleWidth
+        {
+            get => _middlewidth;
+            set
+            {
+                if (_middlewidth != value)
+                {
+                    _middlewidth = value;
+                    OnPropertyChanged(nameof(MiddleWidth));
+                }
+            }
+        }
+
+
+
+        public Thickness LeftMargin
+        {
+            get => new Thickness(ActualWidth, 0, 0, 0);
+
+        }
+     
+
+        public RulerViewModel(IDialogService dialogService, RulerInfo initialInfo, SingleRulerPersistenceService persistenceService, ILoggingService loggingService)
+        {
+            _dialogService = dialogService ?? throw new ArgumentException(nameof(dialogService));
             _persistenceService = persistenceService ?? throw new ArgumentException(nameof(persistenceService));
+            _loggingService = loggingService ?? throw new ArgumentException(nameof(loggingService));
             _rulerInfo = initialInfo ?? throw new ArgumentException(nameof(initialInfo));
             InitializeCommands();
-            Orientation = _rulerInfo.IsVertical == true ? RulerOrientation.Vertical : RulerOrientation.Horizontal;
+
             _opacitySetterMap = new Dictionary<int, Action<bool>>()
             {
                 {5, (val) => { IsOpacity5Percent = val; } },
@@ -417,24 +480,46 @@ namespace Ruler.Wpf.ViewModels
                 {SaveTypes.location, (val) => { IsSaveTypeLocation = val; } },
                 {SaveTypes.all, (val) => { IsSaveTypeAll = val; } }
             };
-            UpdateRulerMarks(); 
+            CheckSingleRuler();
+            if (IsVertical)
+            {
+
+                GenerateVerticalTicks(Height);
+            }
+            else
+            {
+
+                GenerateHorizontalTicks(Width);
+            }
             SetOpacityFlags(_rulerInfo.Opacity);
             SetSaveTypeFlags(_rulerInfo.SaveType);
-        }      
+        }
+
+        public void CheckSingleRuler()
+        {
+            if (IsVertical)
+            {
+                _isOnlySingleRulerVisible = Width < _vericalMinWidth;
+            }
+            else
+            {
+                _isOnlySingleRulerVisible = Height < _horizontalMinHeight;
+            }
+        }
         public void InitializeCommands()
         {
-           _showSetSizeFormCommand = new RelayCommand(GetNavigateSetSizeForm);
-            _resetToDefaultCommand = new RelayCommand(ResetDefault);         
+            _showSetSizeFormCommand = new RelayCommand(GetNavigateSetSizeForm);
+            _resetToDefaultCommand = new RelayCommand(ResetDefault);
             _toggleLockCommand = new RelayCommand(ToggleLock);
             _exitCommand = new RelayCommand(ExitApplication);
             _toggleVerticalCommand = new RelayCommand(ToggleVertical);
             _toggleTopMostCommand = new RelayCommand(ToggleTopMost);
-            _toggleToolTipCommand= new RelayCommand(ToggleToolTip);
+            _toggleToolTipCommand = new RelayCommand(ToggleToolTip);
             _setOpacityCommand = new RelayCommand(SetOpacity);
             _setSaveTypeCommand = new RelayCommand(SetSaveType);
             _showAboutCommand = new RelayCommand(NavigateAbout);
-           _duplicateCommand= new RelayCommand(DuplicateRuler);
-        }   
+            _duplicateCommand = new RelayCommand(DuplicateRuler);
+        }
 
         public void SetOpacityFlags(double opacity)
         {
@@ -443,14 +528,14 @@ namespace Ruler.Wpf.ViewModels
             {
                 sets.Invoke(false);
             }
-            if (_opacitySetterMap.TryGetValue(percentage,out Action<bool> setter))
+            if (_opacitySetterMap.TryGetValue(percentage, out Action<bool> setter))
             {
                 setter.Invoke(true);
-            }           
+            }
         }
         public void SetSaveTypeFlags(SaveTypes saveType)
         {
-            
+
             foreach (var sets in _saveTypeSetterMap.Values)
             {
                 sets.Invoke(false);
@@ -463,16 +548,14 @@ namespace Ruler.Wpf.ViewModels
 
         private void GetNavigateSetSizeForm(object parameters)
         {
-          var  s =  _dialogService.ShowSetSizeDialog(this.Width,this.Height);
-                Height = s.Height;
-                Width= s.Width;
-                Orientation = IsVertical==true?RulerOrientation.Vertical: RulerOrientation.Horizontal;             
+            var s = _dialogService.ShowSetSizeDialog(this.Width, this.Height);
+            SetRulerDimensions(s.Width, s.Height);
         }
 
         private void DuplicateRuler(object parameters)
         {
             RulerInfo ri = new RulerInfo();
-    
+
             RulerInfo.CopyInto(_rulerInfo, ri);
             _dialogService.ShowNewRuler(ri);
         }
@@ -495,12 +578,12 @@ namespace Ruler.Wpf.ViewModels
             get => _bottomRulerTicks;
             set
             {
-                if (_bottomRulerTicks!=value)
+                if (_bottomRulerTicks != value)
                 {
                     _bottomRulerTicks = value;
                     OnPropertyChanged(nameof(BottomRulerTicks));
                 }
-                
+
             }
         }
         // Property for the ruler's width, with change notification
@@ -513,7 +596,15 @@ namespace Ruler.Wpf.ViewModels
                 {
                     _rulerInfo.Width = value;
                     OnPropertyChanged("Width");
-                    UpdateRulerMarks();
+                    CheckSingleRuler();
+                    if (IsVertical)
+                    {
+                        GenerateVerticalTicks(Height);
+                    }
+                    else
+                    {
+                        GenerateHorizontalTicks(Width);
+                    }
                 }
             }
         }
@@ -528,7 +619,38 @@ namespace Ruler.Wpf.ViewModels
                 {
                     _rulerInfo.Height = value;
                     OnPropertyChanged("Height");
-                  UpdateRulerMarks();
+                    CheckSingleRuler();
+                    if (IsVertical)
+                    {
+                        GenerateVerticalTicks(Height);
+                    }
+                    else
+                    {
+                        GenerateHorizontalTicks(Width);
+                    }
+                }
+            }
+        }
+        public double LocationX
+        {             get => _rulerInfo.LocationX;
+            set
+            {
+                if (_rulerInfo.LocationX != value)
+                {
+                    _rulerInfo.LocationX = value;
+                    OnPropertyChanged(nameof(LocationX));
+                }
+            }
+        }
+        public double LocationY
+        {
+            get => _rulerInfo.LocationY;
+            set
+            {
+                if (_rulerInfo.LocationY != value)
+                {
+                    _rulerInfo.LocationY = value;
+                    OnPropertyChanged(nameof(LocationY));
                 }
             }
         }
@@ -536,14 +658,15 @@ namespace Ruler.Wpf.ViewModels
         // Property for the ruler's location, with change notification
         public Point DisplayedLocation
         {
-            get => _rulerInfo.DisplayedLocation;
+            get => new Point(LocationX,LocationY);
             set
             {
-                if (_rulerInfo.DisplayedLocation!=value)
+                if (_rulerInfo.DisplayedLocation != value)
                 {
                     _rulerInfo.DisplayedLocation = value;
                     OnPropertyChanged(nameof(DisplayedLocation));
-                }               
+                    _rulerInfo.DisplayedLocation = value;
+                }
             }
         }
 
@@ -556,6 +679,7 @@ namespace Ruler.Wpf.ViewModels
                 if (_rulerInfo.IsLocked != value)
                 {
                     _rulerInfo.IsLocked = value;
+                    CommandManager.InvalidateRequerySuggested();                   
                     OnPropertyChanged(nameof(IsLocked));
                 }
             }
@@ -582,9 +706,9 @@ namespace Ruler.Wpf.ViewModels
             set
             {
                 if (_rulerInfo.TopMost != value)
-                { 
-                _rulerInfo.TopMost = value;
-                OnPropertyChanged(nameof(TopMost));
+                {
+                    _rulerInfo.TopMost = value;
+                    OnPropertyChanged(nameof(TopMost));
                 }
             }
         }
@@ -596,10 +720,21 @@ namespace Ruler.Wpf.ViewModels
             set
             {
                 if (_rulerInfo.IsVertical != value)
-                {              
+                {
                     _rulerInfo.IsVertical = value;
-                    OnPropertyChanged(nameof(IsVertical));
-                    UpdateRulerMarks();
+
+                    // 2. FIX: Swap Width and Height in the model immediately.
+                    // This is the critical step to ensure 400x50 becomes 50x400.
+                    //double oldWidth = _rulerInfo.Width;
+                    //_rulerInfo.Width = _rulerInfo.Height;
+                    //_rulerInfo.Height = oldWidth;
+
+                    // 3. Notify the UI for all relevant properties
+                    OnPropertyChanged(); // Notifies IsVertical
+                   
+                    //OnPropertyChanged(nameof(TopRowHeight)); // Updates dependent property
+
+
                 }
             }
         }
@@ -610,11 +745,11 @@ namespace Ruler.Wpf.ViewModels
             get => _rulerInfo.ShowToolTip;
             set
             {
-                if (_rulerInfo.ShowToolTip!=value)
+                if (_rulerInfo.ShowToolTip != value)
                 {
-                    _rulerInfo.ShowToolTip = value; 
-                    OnPropertyChanged(nameof(ShowToolTip)); 
-                }               
+                    _rulerInfo.ShowToolTip = value;
+                    OnPropertyChanged(nameof(ShowToolTip));
+                }
             }
         }
 
@@ -624,10 +759,10 @@ namespace Ruler.Wpf.ViewModels
             get => _rulerInfo.SaveType;
             set
             {
-                if (_rulerInfo.SaveType!=value)
+                if (_rulerInfo.SaveType != value)
                 {
                     _rulerInfo.SaveType = value;
-                }              
+                }
             }
         }
 
@@ -637,7 +772,7 @@ namespace Ruler.Wpf.ViewModels
             get => _isResizing;
             set
             {
-             SetProperty(ref _isResizing, value);
+                SetProperty(ref _isResizing, value);
             }
         }
 
@@ -646,31 +781,9 @@ namespace Ruler.Wpf.ViewModels
             get => _length;
             set
             {
-               SetProperty(ref _length, value); 
+                SetProperty(ref _length, value);
             }
         }
-      
-
-        public RulerOrientation Orientation
-        {
-            get => _orientation;
-            set
-            {
-                if (SetProperty(ref _orientation, value))
-                {
-                    UpdateRulerMarks();
-                }                
-            }
-        }
-
-     private void UpdateRulerMarks()
-     {
-            Length = (IsVertical == true) ? Height : Width;
-            _topRulerTicks = new ObservableCollection<RulerTick>(GenerateRulerTicks(Length));
-            _bottomRulerTicks = new ObservableCollection<RulerTick>(GenerateRulerTicks(Length));          
-     }
-
-
         // Public method to handle mouse down from the View
         public void MouseLeftButtonDown(Point mousePosition, FrameworkElement originalSource)
         {
@@ -690,7 +803,6 @@ namespace Ruler.Wpf.ViewModels
                 _isMoving = true;
             }
         }
-
         // Public method to handle mouse move from the View
         public void MouseMove(Point mousePosition)
         {
@@ -707,10 +819,18 @@ namespace Ruler.Wpf.ViewModels
             }
             else if (_isMoving)
             {
-                DisplayedLocation = new Point(DisplayedLocation.X + deltaX, DisplayedLocation.Y + deltaY);
+                LocationX += deltaX;
+               LocationY += deltaY;
                 _startPoint = mousePosition; // Update start point for continuous dragging
             }
         }
+        // Determines the height of the top/bottom rows (0 when vertical, 25 when horizontal)
+        public double TopRowHeight => _rulerInfo.IsVertical ? 0 : 25;
+        public double BottomRowHeight => _rulerInfo.IsVertical ? 0 : 25;
+
+        // Determines the width of the left/right columns (25 when vertical, 0 when horizontal)
+        public double TopColumnWidth => _rulerInfo.IsVertical ? 25 : 0;
+        public double BottomColumnWidth => _rulerInfo.IsVertical ? 25 : 0;
 
         // Public method to handle mouse up from the View
         public void MouseLeftButtonUp()
@@ -721,26 +841,37 @@ namespace Ruler.Wpf.ViewModels
         }
         public void SetRulerDimensions(double newWidth, double newHeight)
         {
-            if (this.Width==newWidth && this.Height==newHeight)
+            if (this.Width == newWidth && this.Height == newHeight)
             {
                 return;
             }
             Width = newWidth;
             Height = newHeight;
-            UpdateRulerMarks();
+            if (IsVertical)
+            {
+                this.actualWidth = Width;
+                GenerateVerticalTicks(Height);
+            }
+            else
+            {
+                GenerateHorizontalTicks(Width);
+            }
+            OnPropertyChanged(nameof(TopRulerTicks));
+            OnPropertyChanged(nameof(BottomRulerTicks));
         }
         public void UpdateLocation(double left, double top)
         {
-            DisplayedLocation = new Point(left, top);
-        }   
+            LocationX = left;
+            LocationY = top;
+        }
         public bool IsInitialized
         {
             get => _isInitialized;
             set
             {
-               SetProperty(ref _isInitialized, value);  
+                SetProperty(ref _isInitialized, value);
             }
-        }   
+        }
 
         // Command properties for UI actions
         public ICommand ToggleLockCommand => _toggleLockCommand;
@@ -771,7 +902,8 @@ namespace Ruler.Wpf.ViewModels
             OnPropertyChanged(nameof(ShowToolTip));
             OnPropertyChanged(nameof(IsLocked));
             OnPropertyChanged(nameof(TopMost));
-            OnPropertyChanged(nameof(DisplayedLocation));
+            OnPropertyChanged(nameof(LocationX));
+            OnPropertyChanged(nameof(LocationY));
             OnPropertyChanged(nameof(SaveType));
         }
 
@@ -780,7 +912,7 @@ namespace Ruler.Wpf.ViewModels
         {
             if (parameter is Window windowToClose)
             {
-               _persistenceService.SaveRulerState(_rulerInfo);               
+                _persistenceService.SaveRulerState(_rulerInfo);
                 bool isLastRuler = _dialogService.OpenRulers.Count() == 1;
                 windowToClose.Close();
                 if (isLastRuler)
@@ -795,11 +927,22 @@ namespace Ruler.Wpf.ViewModels
         private void ToggleVertical(object parameter)
         {
             IsVertical = !IsVertical;
-            double oldWidth = Width;   
-            double oldHeight = Height; 
-            Width = oldHeight;
-            Height = oldWidth;
+            double oldWidth = Width;
+            double oldHeight = Height;
+            SetRulerDimensions(oldHeight, oldWidth);
         }
+        private bool _isOnlySingleRulerVisible = false;
+        public bool IsOnlySingleRulerVisible
+        {
+            get => _isOnlySingleRulerVisible;
+            set
+            {
+                _isOnlySingleRulerVisible = value;
+                OnPropertyChanged();
+            }
+        }
+
+    
 
         // Logic for the ToggleTopMostCommand
         private void ToggleTopMost(object parameter)
@@ -833,6 +976,50 @@ namespace Ruler.Wpf.ViewModels
                 SetSaveTypeFlags(saveTypes);
             }
         }
+        private void GenerateHorizontalTicks(double length)
+        {
+            // Calculate ticks based on Width
+            _topRulerTicks.Clear();
+            _bottomRulerTicks.Clear();
+            var ticks = GenerateRulerTicks(length); // Assuming 100 pixels per major mark
+
+            foreach (var tick in ticks)
+            {
+                // Horizontal: Position is Canvas.Left. No coordinate inversion needed.
+                // Both top and bottom sides use the same position data.
+                _topRulerTicks.Add(tick);
+                if (!IsVertical && _isOnlySingleRulerVisible)
+                {
+                    tick.IsLabelVisible = false;
+                }
+                _bottomRulerTicks.Add(tick);
+            }
+            OnPropertyChanged(nameof(BottomRulerTicks));
+            OnPropertyChanged(nameof(TopRulerTicks));
+        }
+        private void GenerateVerticalTicks(double length)
+        {
+            // Calculate ticks based on the effective height of the content area
+            _topRulerTicks.Clear();
+            _bottomRulerTicks.Clear();
+            var ticks = GenerateRulerTicks(length);
+
+            foreach (var tick in ticks)
+            {
+                // The tick's original position is the distance FROM THE TOP (0 at top, length at bottom).
+                // This is the correct value for the LEFT SIDE (Grid.Column="0").
+                _topRulerTicks.Add(tick);
+                if (IsVertical && _isOnlySingleRulerVisible)
+                {
+                    tick.IsLabelVisible = false;
+                }
+
+
+                _bottomRulerTicks.Add(tick);
+            }
+            OnPropertyChanged(nameof(BottomRulerTicks));
+            OnPropertyChanged(nameof(TopRulerTicks));
+        }
         public static IEnumerable<RulerTick> GenerateRulerTicks(double rulerLength)
         {
             var ticks = new List<RulerTick>();
@@ -847,7 +1034,8 @@ namespace Ruler.Wpf.ViewModels
                     {
                         Position = i,
                         Label = i.ToString(),
-                        TickSize = 25
+                        TickSize = 25,
+                        IsLabelVisible = true
                     });
                 }
                 // Every 50 pixels, we create a major tick without a label.
@@ -857,6 +1045,7 @@ namespace Ruler.Wpf.ViewModels
                     {
                         Position = i,
                         TickSize = 20
+
                     });
                 }
                 // Every 10 pixels, we create a minor tick.
@@ -890,7 +1079,7 @@ namespace Ruler.Wpf.ViewModels
 
             return ticks;
         }
-    
+
         private void NavigateAbout(object parameter)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
@@ -906,6 +1095,75 @@ namespace Ruler.Wpf.ViewModels
                 "Version {0}",
                 $"{version.Major}.{version.Minor}.{version.Build}.{version.MajorRevision}");
             MessageBox.Show(message, "About Ruler", MessageBoxButton.OK, MessageBoxImage.Information);
-        }   
+        }
+
+        internal void SetInitialState(RulerInfo initialInfo)
+        {
+            _isLoadingState = true;
+
+            // 1. Set all non-dimension/non-orientation properties directly on the model
+            _rulerInfo.Opacity = initialInfo.Opacity;
+            _rulerInfo.ShowToolTip = initialInfo.ShowToolTip;
+            _rulerInfo.IsLocked = initialInfo.IsLocked;
+            _rulerInfo.TopMost = initialInfo.TopMost;
+            _rulerInfo.LocationY = initialInfo.LocationY;
+            _rulerInfo.LocationX = initialInfo.LocationX;
+            _rulerInfo.DisplayedLocation = initialInfo.DisplayedLocation;
+            _rulerInfo.SaveType = initialInfo.SaveType;
+         
+
+            // 2. IMPORTANT: Set IsVertical first for reconciliation
+            _rulerInfo.IsVertical = initialInfo.IsVertical;
+
+
+            // 3. Reconciliation Logic for Width and Height based on IsVertical
+            double w = initialInfo.Width;
+            double h = initialInfo.Height;
+
+            // Determine if the saved dimensions are 'horizontal' (width >= height)
+            bool savedHorizontal = w >= h;
+
+            // If the saved orientation clashes with the saved dimensions, swap them.
+            if ((_rulerInfo.IsVertical && savedHorizontal) || (!_rulerInfo.IsVertical && !savedHorizontal))
+            {
+                // Swap dimensions in the model to match the orientation
+                _rulerInfo.Width = h;
+                _rulerInfo.Height = w;
+            }
+            else
+            {
+                // Dimensions are already correctly oriented
+                _rulerInfo.Width = w;
+                _rulerInfo.Height = h;
+            }
+
+            // 4. Set flags for the UI
+            SetOpacityFlags(_rulerInfo.Opacity);
+            SetSaveTypeFlags(_rulerInfo.SaveType);
+          
+
+            // 5. Trigger UI updates for all properties
+            // We use OnPropertyChanged for all properties to ensure the UI updates correctly from the reconciled model state.
+            OnPropertyChanged(nameof(Width));
+            OnPropertyChanged(nameof(Height));
+            OnPropertyChanged(nameof(IsVertical));
+            OnPropertyChanged(nameof(Opacity));
+            OnPropertyChanged(nameof(ShowToolTip));
+            OnPropertyChanged(nameof(IsLocked));
+            OnPropertyChanged(nameof(TopMost));
+            OnPropertyChanged(nameof(LocationY));
+            OnPropertyChanged(nameof(LocationX));
+            OnPropertyChanged(nameof(DisplayedLocation));
+            OnPropertyChanged(nameof(SaveType));
+           OnPropertyChanged(nameof(TopRowHeight));            
+            // 6. Reset flag after loading is complete
+            _isLoadingState = false;
+
+        }
+
+        internal void SetGuideLinePosition(double position)
+        {
+            GuideLinePosition = position;
+        }
     }
 }

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ruler.Wpf.Persistence.Strategy
+namespace Ruler.Wpf.Services.Persistence.Strategy
 {
     public interface IPersistenceStrategy
     {

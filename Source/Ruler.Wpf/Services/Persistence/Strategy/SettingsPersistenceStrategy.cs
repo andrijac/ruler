@@ -11,10 +11,15 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 
 
-namespace Ruler.Wpf.Persistence.Strategy
+namespace Ruler.Wpf.Services.Persistence.Strategy
 {
     public class SettingsPersistenceStrategy : IPersistenceStrategy
     {
+        private readonly ILoggingService _loggingService;
+        public SettingsPersistenceStrategy(ILoggingService loggingService)
+        {
+            _loggingService = loggingService;
+        }
         // --- PUBLIC METHOD (Required by Interface) ---
         public void Save(RulerInfo ri)
         {
@@ -44,6 +49,8 @@ namespace Ruler.Wpf.Persistence.Strategy
         private void SaveLocation(RulerInfo ri)
         {
             Settings.Default["location"] = ri.DisplayedLocation;
+            Settings.Default["locationx"] = ri.LocationX;
+            Settings.Default["locationy"] = ri.LocationY;
             Settings.Default["vertical"] = ri.IsVertical;
         }
 
@@ -125,7 +132,10 @@ namespace Ruler.Wpf.Persistence.Strategy
             ri.IsLocked = (Settings.Default["locked"] == null) ? false : (bool)Settings.Default["locked"];
             ri.TopMost = (Settings.Default["top"] == null) ? true : (bool)Settings.Default["top"];
             ri.ShowToolTip = (Settings.Default["tip"] == null) ? true : (bool)Settings.Default["tip"];
+            ri.LocationX = ( Settings.Default["locationx"] == null) ? 0 : ((double)Settings.Default["locationx"]);
+            ri.LocationY = ( Settings.Default["locationy"] == null) ? 0 : ((double)Settings.Default["locationy"]);
             string savedTypeString = Settings.Default["savetype"] == null ? "none" : (string)Settings.Default["savetype"];
+
             if (Enum.TryParse<SaveTypes>(savedTypeString, true, out SaveTypes loadedSaveType))
             {
                 ri.SaveType = loadedSaveType;
@@ -134,6 +144,7 @@ namespace Ruler.Wpf.Persistence.Strategy
             {
                 ri.SaveType = SaveTypes.none;
             }
+            Console.WriteLine($"LocationY: {ri.LocationY}");
             return ri;
         }
     }

@@ -1,5 +1,7 @@
-﻿using Ruler.Wpf.Models;
-using Ruler.Wpf.Persistence;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+using Ruler.Wpf.Models;
+using Ruler.Wpf.Services.Persistence;
 using Ruler.Wpf.ViewModels;
 
 using System;
@@ -9,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Ruler.Wpf.Common
+namespace Ruler.Wpf.Services
 {
     /// <summary>
     /// An implementation of IDialogService that shows the SetSizeWindow.
@@ -17,9 +19,13 @@ namespace Ruler.Wpf.Common
     public class DialogService : IDialogService
     {
         private readonly SingleRulerPersistenceService _persistenceService;
-        public DialogService(SingleRulerPersistenceService persistenceService)
+        private readonly ILoggingService _loggingService;
+        private readonly IServiceProvider _serviceProvider;
+        public DialogService(SingleRulerPersistenceService persistenceService, ILoggingService loggingService, IServiceProvider serviceProvider)
         {
             _persistenceService = persistenceService;
+            _loggingService = loggingService;
+            _serviceProvider = serviceProvider;
         }
         /// <summary>
         /// Shows the SetSizeWindow dialog.
@@ -58,23 +64,20 @@ namespace Ruler.Wpf.Common
             try
             {
 
-           
-            // 1. Create a brand new instance of the Main Window
-            MainWindow newWindow = new MainWindow();
+                MainWindow newWindow = _serviceProvider.GetRequiredService<MainWindow>();
 
-            // 2. Create a new ViewModel for the new window, passing the initial state
-            RulerViewModel newViewModel = new RulerViewModel(this, initialInfo, _persistenceService);
+                // 2. Since MainWindow's constructor takes RulerViewModel, the ViewModel is created automatically.
+                RulerViewModel newViewModel = (RulerViewModel)newWindow.DataContext;
 
-            // 3. Set the DataContext
-            newWindow.DataContext = newViewModel;
+                // 3. Set the specific data that the container couldn't know (the initialInfo)
+                newViewModel.SetInitialState(initialInfo);
+                _openRulers.Add(newWindow);
 
-            // 4. Add the reference to your list
-            _openRulers.Add(newWindow);
+                // 5. Clean up the list when the window is closed
+                newWindow.Closed += (sender, e) => _openRulers.Remove(newWindow);
 
-            // 5. Clean up the list when the window is closed
-            newWindow.Closed += (sender, e) => _openRulers.Remove(newWindow);
-
-            newWindow.Show();
+                // ... rest of the logic ...
+                newWindow.Show();       
             }
             catch (Exception)
             {

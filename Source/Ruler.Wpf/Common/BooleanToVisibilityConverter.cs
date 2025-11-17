@@ -28,6 +28,7 @@ namespace Ruler.Wpf.Common
                 if (parameter != null && parameter.ToString().ToLower() == "invert")
                 {
                     booleanValue = !booleanValue;
+                    Console.WriteLine("Bottom Ticks");
                 }
 
                 return booleanValue ? Visibility.Visible : Visibility.Collapsed;

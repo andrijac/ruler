@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ruler.Wpf.Persistence
+namespace Ruler.Wpf.Services.Persistence
 {
     public static class CommandLineRulerFactory
     {       

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Ruler.Wpf.Models;
 
-namespace Ruler.Wpf.Common
+namespace Ruler.Wpf.Services
 {
     /// <summary>
     /// Defines a contract for services that show dialogs.

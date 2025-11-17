@@ -1,6 +1,6 @@
 ﻿using Ruler.Wpf.Common;
 using Ruler.Wpf.Models;
-using Ruler.Wpf.Persistence.Strategy;
+using Ruler.Wpf.Services.Persistence.Strategy;
 
 using System;
 using System.Collections.Generic;
@@ -8,16 +8,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ruler.Wpf.Persistence
+namespace Ruler.Wpf.Services.Persistence
 {
     public class SingleRulerPersistenceService
     {
         private readonly Dictionary<SaveTypes, IPersistenceStrategy> _strategies;
+        private readonly ILoggingService _loggingService;
 
-        public SingleRulerPersistenceService()
+        public SingleRulerPersistenceService(ILoggingService loggingService )
         {
+            _loggingService = loggingService;
             // Maps ALL SaveTypes to the single SettingsPersistenceStrategy instance.
-            IPersistenceStrategy settingsStrategy = new SettingsPersistenceStrategy();
+            IPersistenceStrategy settingsStrategy = new SettingsPersistenceStrategy(_loggingService);
 
             _strategies = new Dictionary<SaveTypes, IPersistenceStrategy>
             {
@@ -25,9 +27,8 @@ namespace Ruler.Wpf.Persistence
                 { SaveTypes.all, settingsStrategy },
                 { SaveTypes.location, settingsStrategy },
                 { SaveTypes.size, settingsStrategy }
-            };
+            };            
         }
-
         public void SaveRulerState(RulerInfo rulerInfo)
         {
             if (_strategies.TryGetValue(rulerInfo.SaveType, out IPersistenceStrategy strategy))
@@ -42,10 +43,12 @@ namespace Ruler.Wpf.Persistence
         }
         public RulerInfo LoadRulerState()
         {
-            // For simplicity, just load using the SettingsStrategy, 
-            // as it's the only one that defines loading current state.
-            // NOTE: You must get an instance of the strategy here.
-            return new SettingsPersistenceStrategy().Load();
+            if (_strategies.TryGetValue(SaveTypes.none, out IPersistenceStrategy strategy))
+            {
+                return strategy.Load();
+            }
+            // Fallback or throw an error if the required strategy isn't found
+            throw new InvalidOperationException("Default persistence strategy not found.");
         }
     }
 }
