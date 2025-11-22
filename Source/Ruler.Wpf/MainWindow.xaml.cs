@@ -111,10 +111,7 @@ namespace Ruler.Wpf
         {
             try
             {
-                Console.WriteLine($"Actual Width: {this.ActualWidth}");
-                Console.WriteLine($"Left Margin compared Width: {this.Width/111}");
-                
-                Console.WriteLine($"this.top:  {this.Top}");
+     
                 if (this.DataContext is RulerViewModel viewModel && !viewModel.IsInitialized)
                 {
                     
@@ -126,92 +123,25 @@ namespace Ruler.Wpf
                     _loggingService.LogInfo("MainWindow loaded. Initializing size and position.");
                     // Use the ViewModel's stored DIU values directly.
                     // WPF handles the DPI scaling automatically.
-                    Console.WriteLine($"viewmodel.LocationY:  {_viewModel.LocationY}");
                     this.Width = viewModel.Width;
                     this.Height = viewModel.Height;
                     this.Left = viewModel.LocationX;
                     this.Top = viewModel.LocationY;
-                    Console.WriteLine($"displayed location.y {viewModel.DisplayedLocation.Y}");
-                    Console.WriteLine($"this.top after set:  {this.Top}");
-                    viewModel.ActualWidth = this.ActualWidth;
+     
+                    
                     viewModel.IsInitialized = true;
                     this.LocationChanged += Window_LocationChanged;
-                    if (_viewModel.IsVertical)
-                    {
-                        Console.WriteLine($"Canvas Height: {RulerCanvas.ActualWidth}");
-                        Console.WriteLine($"Left Ruler widht: {LeftRuler.ActualWidth}");
-                        Console.WriteLine($"Right Ruler widht: {RightRuler.ActualWidth}");
-
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Canvas Height: {RulerCanvas.ActualHeight}");
-                        Console.WriteLine($"Top Ruler widht: {TopRuler.ActualHeight}");
-                        Console.WriteLine($"Bottom Ruler widht: {BottomRuler.ActualHeight}");
-                    }
+                    Console.WriteLine($"Canvas Actual Height: {RulerCanvas.ActualHeight}, Actual Width: {RulerCanvas.ActualWidth}");
+                  
                 }
             }
             catch (Exception ex)
             {
                 var a = ex.Message;
             }
-            Console.WriteLine($"Final Actual Width: {this.ActualWidth}");
-            Console.WriteLine($"Ratio: {this.ActualWidth / 111}");
-            Console.WriteLine($"Final Left Margin compared Width: {_viewModel.LeftMargin}");
-        }
-
-      
-
-        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (_isSizeChangingProgrammatically) return;
-
-            if (_viewModel == null)
-            {
-                return;
-            }
-            if (_viewModel.IsVertical)
-            {
-                _viewModel.MiddleWidth = (RulerCanvas.ActualWidth - (LeftRuler.ActualWidth + RightRuler.ActualWidth));
-            }
-            else
-            {
-                _viewModel.MiddleWidth = (RulerCanvas.ActualHeight - (TopRuler.ActualHeight + BottomRuler.ActualHeight));
-            }
-            _viewModel.SetRulerDimensions(e.NewSize.Width, e.NewSize.Height);
-            _viewModel.UpdateLocation(this.Left, this.Top);
-            _loggingService.LogInfo($"Window size changed to {e.NewSize.Width}x{e.NewSize.Height}");
-        }      
-        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            _mouseDownPosition = e.GetPosition(this);
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                // If the user clicks anywhere, start the move operation.
-                // The OS should automatically start resizing if the click occurred in the 
-                // 10-pixel ResizeBorderThickness defined in WindowChrome.
-                _loggingService.LogInfo("Mouse left button down - starting DragMove.");
-                this.DragMove();
-            }
-        }
-        private void Source_DpiChanged(object sender, DpiChangedEventArgs e)
-        {
-            Console.WriteLine($"DPI Changed from {e.OldDpi.DpiScaleY} to {e.NewDpi.DpiScaleY}. Reapplying margin fix.");
-            // Recalculate and apply the margin correction
-         //   ApplyDpiAwareMarginFix();
-        }
-        private void MainWindow_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            // Stops the active resize command and releases mouse capture.
-            this.isMouseResizeCommand = false;
-            this.resizeRegion = ResizeRegion.None;
-            this.Cursor = Cursors.Arrow;
-          //  this.Bordered.ReleaseMouseCapture();
-            _loggingService.LogInfo("Mouse left button up - ending DragMove or Resize.");
-
-            // If you used this.CaptureMouse() during the down event, call this.ReleaseMouseCapture()
-            // DragMove() automatically handles mouse capture release.
-        }
+   
+        }     
+         
         private void MainWindow_SourceInitialized(object sender, EventArgs e)
         {
             // Get the window handle and set up the message loop override
@@ -222,14 +152,7 @@ namespace Ruler.Wpf
 
             // 2. Subscribe to the DpiChanged event to fix the vertical ruler margin when the DPI changes
           //  source.DpiChanged += Source_DpiChanged;
-        }
-
-        //private void Source_DpiChanged(object sender, HwndDpiChangedEventArgs e)
-        //{
-        //    Console.WriteLine($"DPI Changed from {e.OldDpi.DpiScaleY} to {e.NewDpi.DpiScaleY}. Reapplying margin fix.");
-        //    // Recalculate and apply the margin correction
-        //   // ApplyDpiAwareMarginFix();
-        //}
+        }       
 
         private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
@@ -295,13 +218,7 @@ namespace Ruler.Wpf
                     _viewModel.UpdateLocation(window.Left, window.Top);
                 }
             }
-        }
-        //private void Source_DpiChanged(object sender, DpiChangedEventArgs e)
-        //{
-        //    Console.WriteLine($"DPI Changed from {e.OldDpi.DpiScaleY} to {e.NewDpi.DpiScaleY}. Reapplying margin fix.");
-        //    Recalculate and apply the margin correction
-        //    ApplyDpiAwareMarginFix();
-        //}
+        }      
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             // 1. Check for the critical message: Non-Client Hit Test
@@ -382,37 +299,7 @@ namespace Ruler.Wpf
             {
              _viewModel.ToggleVerticalCommand.Execute(null);
             }
-        }
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            _viewModel.MouseLeftButtonDown(e.GetPosition(this), e.OriginalSource as FrameworkElement);
-
-            // Now, check the ViewModel's IsMoving state to see if we should start dragging.
-            if (!_viewModel.IsLocked && !_viewModel.IsResizing)
-            {
-                this.DragMove();
-            }
-        }
-
-        private void Border_MouseEnter(object sender, MouseEventArgs e)
-        {
-            this.Cursor = Cursors.SizeNESW;
-        }
-
-        private void Border_MouseLeave(object sender, MouseEventArgs e)
-        {
-
-        }
-
-        private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-
-        }
-
-        private void Border_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-
-        }
+        }    
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -420,11 +307,15 @@ namespace Ruler.Wpf
             {
                 return;
             }
-            _viewModel.ActualWidth = e.NewSize.Width;
-            Console.WriteLine(this.ActualWidth);
-            Console.WriteLine($"left side margin {_viewModel.LeftMargin}");
-            Console.WriteLine($"Width: {e.NewSize.Width} Height: {e.NewSize.Height}");
-          //  _viewModel.TopRowHeight = this.TopRowDefinition.ActualHeight;
+            if (_viewModel.IsVertical)
+            {
+                _viewModel.UpdateMiddleWidth( e.NewSize.Width - e.PreviousSize.Width);
+            }
+            else
+            {
+                _viewModel.UpdateMiddleWidth(e.NewSize.Height - e.PreviousSize.Height);
+            }
+                
            _viewModel.SetRulerDimensions(e.NewSize.Width, e.NewSize.Height);
         }
 
@@ -474,40 +365,40 @@ namespace Ruler.Wpf
             }
         }
 
-        private void Window_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
+            
 
-        }
-
-        private void Bordered_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+     
+        
+        
+        private void RulerCanvas_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            _startPoint = e.GetPosition(Bordered);
+            _startPoint = e.GetPosition(RulerCanvas);
             _isDragging = false;
-            Bordered.CaptureMouse();
+            RulerCanvas.CaptureMouse();
         }
 
-        private void Bordered_MouseMove(object sender, MouseEventArgs e)
+        private void RulerCanvas_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton ==  MouseButtonState.Pressed && Bordered.IsMouseCaptured)
+            if (e.LeftButton == MouseButtonState.Pressed && RulerCanvas.IsMouseCaptured)
             {
-                Point currentPoint = e.GetPosition(Bordered);
+                Point currentPoint = e.GetPosition(RulerCanvas);
                 if (!_isDragging && (Math.Abs(currentPoint.X - _startPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
                                      Math.Abs(currentPoint.Y - _startPoint.Y) > SystemParameters.MinimumVerticalDragDistance))
                 {
                     _isDragging = true;
-                    Bordered.ReleaseMouseCapture();
+                    RulerCanvas.ReleaseMouseCapture();
                     this.DragMove();
                 }
 
             }
         }
 
-        private void Bordered_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void RulerCanvas_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
-            Bordered.ReleaseMouseCapture();
+            RulerCanvas.ReleaseMouseCapture();
             if (!_isDragging)
             {
-                Point clickPoint = e.GetPosition(Bordered);
+                Point clickPoint = e.GetPosition(RulerCanvas);
                 double position;
                 if (_viewModel.IsVertical)
                 {
@@ -522,6 +413,7 @@ namespace Ruler.Wpf
                 // Also ensure the line is visible
                 _viewModel.IsGuideLineVisible = true;
             }
+
         }
     }
 }

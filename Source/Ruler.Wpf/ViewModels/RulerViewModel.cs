@@ -62,7 +62,7 @@ namespace Ruler.Wpf.ViewModels
         private bool _isSaveTypeSize;
         private bool _isSaveTypeLocation;
         private bool _isSaveTypeAll;
-               
+
 
         private ICommand _toggleLockCommand;
         private ICommand _exitCommand;
@@ -386,16 +386,25 @@ namespace Ruler.Wpf.ViewModels
         private int leftMargin = 111;
         private double actualWidth = 203;
         private bool _isLoadingState;
-        private double _middlewidth=1;
+        private double _middlewidth = 1;
         private readonly SingleRulerPersistenceService _persistenceService;
         private double _topRowHeight;
         private bool _isGuideLineVisible = false;
         private double _guideLinePosition;
+        private double _minheight = 45;
+        private double _minwidth = 40;
 
         public bool IsGuideLineVisible
         {
             get => _isGuideLineVisible;
-            set => SetProperty(ref _isGuideLineVisible, value);
+            set {
+                if (_isGuideLineVisible!=value)
+                {
+                    _isGuideLineVisible = value;
+                    OnPropertyChanged();
+                   
+                }
+            }
         }
 
         /// <summary>
@@ -405,8 +414,16 @@ namespace Ruler.Wpf.ViewModels
         public double GuideLinePosition
         {
             get => _guideLinePosition;
-            set => SetProperty(ref _guideLinePosition, value);
+            set
+            {
+                if (_guideLinePosition!=value)
+                {
+                    _guideLinePosition = value;
+                    OnPropertyChanged();
+                }
+            }
         }
+        public Color GuideLineColor { get; set; } = Colors.Red;
 
         public Double ActualWidth
         {
@@ -415,14 +432,34 @@ namespace Ruler.Wpf.ViewModels
             {
                 if (actualWidth != value)
                 {
+                    if (IsVertical)
+                    {
+                        if (value < 110)
+                        {
+                            actualWidth = 110;
+                        }
+                    }
+                    else
+                    { 
                     actualWidth = value;
-                    OnPropertyChanged(nameof(LeftMargin));
+                    }
+                   
                 }
             }
         }
-      public double MiddleWidth
+        public double MiddleWidth
         {
-            get => _middlewidth;
+            get
+            {
+                if (IsVertical)
+                {
+                    Console.WriteLine($"Middlewidth: {_minwidth + (Width - 75)}");
+                    return _minwidth + (Width - 75);
+                }
+                Console.WriteLine($"MiddleWidth Horizontal: {_minheight + (Height- 75)}");
+                return  _minheight+( Height - 75);
+
+            }
             set
             {
                 if (_middlewidth != value)
@@ -432,15 +469,31 @@ namespace Ruler.Wpf.ViewModels
                 }
             }
         }
-
-
-
-        public Thickness LeftMargin
+        private bool _firstMiddleWidthUpdate = true;
+        public void UpdateMiddleWidth(double newMiddleWidth)
         {
-            get => new Thickness(ActualWidth, 0, 0, 0);
-
+            //double newvalue;
+        
+               
+            //    if (IsVertical)
+            //    {
+            //        newvalue = _minwidth ;
+            //    }
+            //    else
+            //    {
+            //        newvalue = _minheight + newMiddleWidth;
+            //    }
+            //    Console.WriteLine($"MiddleWidth value {newvalue}");
+            //    MiddleWidth = newvalue;
+            
+            
+            //    Console.WriteLine($"New Value: {MiddleWidth + newMiddleWidth}");
+            //  MiddleWidth += newMiddleWidth;
+                      
         }
-     
+
+
+
 
         public RulerViewModel(IDialogService dialogService, RulerInfo initialInfo, SingleRulerPersistenceService persistenceService, ILoggingService loggingService)
         {
@@ -596,6 +649,7 @@ namespace Ruler.Wpf.ViewModels
                 {
                     _rulerInfo.Width = value;
                     OnPropertyChanged("Width");
+                    OnPropertyChanged(nameof(MiddleWidth));
                     CheckSingleRuler();
                     if (IsVertical)
                     {
@@ -619,6 +673,7 @@ namespace Ruler.Wpf.ViewModels
                 {
                     _rulerInfo.Height = value;
                     OnPropertyChanged("Height");
+                    OnPropertyChanged(nameof(MiddleWidth));
                     CheckSingleRuler();
                     if (IsVertical)
                     {
@@ -626,13 +681,18 @@ namespace Ruler.Wpf.ViewModels
                     }
                     else
                     {
+                        if (value<120)
+                        {
+
+                        }
                         GenerateHorizontalTicks(Width);
                     }
                 }
             }
         }
         public double LocationX
-        {             get => _rulerInfo.LocationX;
+        {
+            get => _rulerInfo.LocationX;
             set
             {
                 if (_rulerInfo.LocationX != value)
@@ -658,7 +718,7 @@ namespace Ruler.Wpf.ViewModels
         // Property for the ruler's location, with change notification
         public Point DisplayedLocation
         {
-            get => new Point(LocationX,LocationY);
+            get => new Point(LocationX, LocationY);
             set
             {
                 if (_rulerInfo.DisplayedLocation != value)
@@ -679,7 +739,7 @@ namespace Ruler.Wpf.ViewModels
                 if (_rulerInfo.IsLocked != value)
                 {
                     _rulerInfo.IsLocked = value;
-                    CommandManager.InvalidateRequerySuggested();                   
+                    CommandManager.InvalidateRequerySuggested();
                     OnPropertyChanged(nameof(IsLocked));
                 }
             }
@@ -721,6 +781,7 @@ namespace Ruler.Wpf.ViewModels
             {
                 if (_rulerInfo.IsVertical != value)
                 {
+                    _firstMiddleWidthUpdate = true;
                     _rulerInfo.IsVertical = value;
 
                     // 2. FIX: Swap Width and Height in the model immediately.
@@ -731,7 +792,7 @@ namespace Ruler.Wpf.ViewModels
 
                     // 3. Notify the UI for all relevant properties
                     OnPropertyChanged(); // Notifies IsVertical
-                   
+
                     //OnPropertyChanged(nameof(TopRowHeight)); // Updates dependent property
 
 
@@ -820,7 +881,7 @@ namespace Ruler.Wpf.ViewModels
             else if (_isMoving)
             {
                 LocationX += deltaX;
-               LocationY += deltaY;
+                LocationY += deltaY;
                 _startPoint = mousePosition; // Update start point for continuous dragging
             }
         }
@@ -942,7 +1003,7 @@ namespace Ruler.Wpf.ViewModels
             }
         }
 
-    
+
 
         // Logic for the ToggleTopMostCommand
         private void ToggleTopMost(object parameter)
@@ -1110,7 +1171,7 @@ namespace Ruler.Wpf.ViewModels
             _rulerInfo.LocationX = initialInfo.LocationX;
             _rulerInfo.DisplayedLocation = initialInfo.DisplayedLocation;
             _rulerInfo.SaveType = initialInfo.SaveType;
-         
+
 
             // 2. IMPORTANT: Set IsVertical first for reconciliation
             _rulerInfo.IsVertical = initialInfo.IsVertical;
@@ -1140,7 +1201,7 @@ namespace Ruler.Wpf.ViewModels
             // 4. Set flags for the UI
             SetOpacityFlags(_rulerInfo.Opacity);
             SetSaveTypeFlags(_rulerInfo.SaveType);
-          
+
 
             // 5. Trigger UI updates for all properties
             // We use OnPropertyChanged for all properties to ensure the UI updates correctly from the reconciled model state.
@@ -1155,7 +1216,7 @@ namespace Ruler.Wpf.ViewModels
             OnPropertyChanged(nameof(LocationX));
             OnPropertyChanged(nameof(DisplayedLocation));
             OnPropertyChanged(nameof(SaveType));
-           OnPropertyChanged(nameof(TopRowHeight));            
+            OnPropertyChanged(nameof(TopRowHeight));
             // 6. Reset flag after loading is complete
             _isLoadingState = false;
 
@@ -1164,6 +1225,18 @@ namespace Ruler.Wpf.ViewModels
         internal void SetGuideLinePosition(double position)
         {
             GuideLinePosition = position;
+        }
+
+        internal void UpdateRulerContentDimensions(double canvasContentHeight, double canvasContentWidth, double topRulerContentHeight, double leftRulerContentWidth, double rightRulerContentWidth, double bottomRulerContentHeight)
+        {
+            if (topRulerContentHeight > 0 && bottomRulerContentHeight > 0)
+            {
+                MiddleWidth = canvasContentHeight - topRulerContentHeight - bottomRulerContentHeight;
+            }
+            else if (leftRulerContentWidth > 0 && rightRulerContentWidth > 0)
+            {
+                MiddleWidth = canvasContentWidth - leftRulerContentWidth - rightRulerContentWidth;
+            }
         }
     }
 }
