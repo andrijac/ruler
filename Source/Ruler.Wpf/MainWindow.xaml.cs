@@ -43,6 +43,10 @@ namespace Ruler.Wpf
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+        // --- Win32 Interop Definitions for MonitorFromRect ---
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromRect(ref RECT lprc, uint dwFlags);
+
         private RulerViewModel _viewModel;
         private bool _isSizeChangingProgrammatically = false;
         private bool _isMoving = false;
@@ -76,8 +80,8 @@ namespace Ruler.Wpf
         private ResizeRegion resizeRegion = ResizeRegion.None;
         // Flag to track if a drag operation has started
         private bool _isDragging = false;
-    
-                public MainWindow(RulerViewModel viewModel,ILoggingService loggingService)
+
+        public MainWindow(RulerViewModel viewModel, ILoggingService loggingService)
         {
             InitializeComponent();
             this.Loaded += MainWindow_Loaded;
@@ -85,6 +89,15 @@ namespace Ruler.Wpf
             this.DataContext = viewModel;
             _loggingService = loggingService;
             this.Loaded += MainWindow_Loaded;
+            RECT rulerarea = GetWindowRectFromWpf();
+            bool isVisible = IsWindowVisible(rulerarea);
+            if (!isVisible)
+            {
+                _loggingService.LogInfo("Ruler is NOT visible on any monitor.");
+                _viewModel.DisplayedLocation = new Point(0, 0);
+                _viewModel.LocationX = 0;
+                _viewModel.LocationY = 0;
+            }
         }
         //private void ApplyDpiAwareMarginFix()
         //{
@@ -254,7 +267,34 @@ namespace Ruler.Wpf
                     //_viewModel.LocationY = window.Top;
                 }
             }
-        }       
+        }
+        private const int MONITOR_DEFAULTTONULL = 0x00000000;
+
+        private static bool IsWindowVisible(RECT rect)
+        {
+            // MonitorFromRect returns a handle (IntPtr) to the display monitor
+            // that intersects the rectangle. We use MONITOR_DEFAULTTONULL (0)
+            // so it returns NULL if the rectangle does not intersect any display monitor.
+            IntPtr monitorHandle = MonitorFromRect(ref rect, MONITOR_DEFAULTTONULL);
+
+            // If the handle is not zero (NULL), a monitor was found, meaning the window is visible.
+            return monitorHandle != IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// Helper to convert WPF position/size to native RECT.
+        /// </summary>
+        private RECT GetWindowRectFromWpf()
+        {
+            return new RECT
+            {
+                Left = (int)this.Left,
+                Top = (int)this.Top,
+                Right = (int)(this.Left + this.Width),
+                Bottom = (int)(this.Top + this.Height)
+            };
+        }
+
         private void RulerCanvas_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed && RulerCanvas.IsMouseCaptured)
