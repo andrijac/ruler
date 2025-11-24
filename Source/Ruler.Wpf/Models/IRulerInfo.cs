@@ -1,5 +1,6 @@
 ﻿using Ruler.Wpf.Common;
 
+using System.Security.AccessControl;
 using System.Windows;
 
 
@@ -63,6 +64,13 @@ namespace Ruler.Wpf.Models
             get;
             set;
         }
+
+       
+        //bool IsHighContrast { get; set; }
+        //double ZoomFactor { get; set; }
+        //UnitType Unit { get; set; }
+        bool IsGuideLineVisible { get; set; }
+        double GuideLinePosition { get; set; }
 
     }
 }

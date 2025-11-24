@@ -140,37 +140,21 @@ namespace Ruler.Wpf
                 var a = ex.Message;
             }
    
-        }     
-         
+        }
+        private const int WM_RBUTTONDOWN = 0x0204;
+        private const int WM_CONTEXTMENU = 0x007B;
         private void MainWindow_SourceInitialized(object sender, EventArgs e)
         {
             // Get the window handle and set up the message loop override
             WindowInteropHelper helper = new WindowInteropHelper(this);
             HwndSource source = HwndSource.FromHwnd(helper.Handle);
            // 1. Hook up the window message handler for drag, lock, and move events
-            source.AddHook(HwndHook);
-
+            source?.AddHook(HwndHook);          
             // 2. Subscribe to the DpiChanged event to fix the vertical ruler margin when the DPI changes
           //  source.DpiChanged += Source_DpiChanged;
-        }       
-
+        }
         private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            // 1. --- WINDOW LOCKING/DRAGGING LOGIC (WM_NCHITTEST) ---
-            if (msg == WM_NCHITTEST)
-            {
-                // If locked, we return HTCAPTION (Hit Test Caption Area).
-                // This allows the user to drag the window by any client area, 
-                // but since we are not returning HT* border values, resizing is disabled.
-                if (_viewModel != null && _viewModel.IsLocked)
-                {
-                    handled = true;
-                    return new IntPtr(HTCAPTION);
-                }
-            }
-
-            // 2. --- LOCATION FIX LOGIC (WM_MOVE / WM_WINDOWPOSCHANGED) ---
-            // These messages trigger when the window moves, requiring a position update.
+        {          
             if (msg == WM_MOVE || msg == WM_WINDOWPOSCHANGED)
             {
                 Window window = (Window)HwndSource.FromHwnd(hwnd).RootVisual;
@@ -218,104 +202,14 @@ namespace Ruler.Wpf
                     _viewModel.UpdateLocation(window.Left, window.Top);
                 }
             }
-        }      
-        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            // 1. Check for the critical message: Non-Client Hit Test
-            if (msg == WM_NCHITTEST)
-            {
-
-
-                // 🛑 CRITICAL LOGIC: BLOCK RESIZE ONLY WHEN LOCKED 🛑
-                if (_viewModel.IsLocked)
-                {
-                    // If locked, we tell Windows that the entire area should be treated
-                    // as a non-interactive client area. 
-                    // HTCLIENT blocks OS-level resizing and dragging.
-                    handled = true;
-                    return new IntPtr(HTCLIENT);
-                }
-                // Unpack the mouse coordinates (packed x, y screen coordinates)
-                int x = (int)lParam & 0xFFFF;
-                    int y = (int)lParam >> 16;
-
-                    // Convert screen coordinates to WPF device-independent units (client area)
-                    System.Windows.Point screenPoint = new System.Windows.Point(x, y);
-                    System.Windows.Point clientPoint = this.PointFromScreen(screenPoint);
-
-                    // Check if the cursor is within the defined resize border thickness
-                    bool isNearHorizontalEdge =
-                        (clientPoint.X <= EDGE_TOLERANCE) ||
-                        (clientPoint.X >= this.ActualWidth - EDGE_TOLERANCE);
-
-                    bool isNearVerticalEdge =
-                        (clientPoint.Y <= EDGE_TOLERANCE) ||
-                        (clientPoint.Y >= this.ActualHeight - EDGE_TOLERANCE);
-
-                    bool isNearResizeHandle = isNearHorizontalEdge || isNearVerticalEdge;
-
-                    //if (isNearResizeHandle)
-                    //{
-                    //    // If locked AND near a border, override the OS hit-test.
-                    //    // Return HTCAPTION (Draggable Title Bar) to block resize but allow dragging.
-                    //    handled = true;
-                    //    return new IntPtr(HTCAPTION);
-                    //}
-                
-                // --------------------------------------------------------
-                // If the code reaches here, one of two things is true:
-                // 1. The window is NOT locked (isLocked == false).
-                // 2. The window IS locked, but the cursor is NOT near a border.
-                // In both cases, we must allow the default WindowChrome logic to execute.
-                // Therefore, we DO NOT set handled = true and proceed to the default return.
-            }
-
-            // Default return: Pass the message to the next handler, which is usually 
-            // the default WindowProc, allowing WindowChrome to process resize, move, 
-            // minimize, and maximize commands.
-            return IntPtr.Zero;
-        }
-
-        /// <summary>
-        /// Handles the mouse left button up event.
-        /// This ends the drag-to-move or drag-to-resize operation.
-        /// </summary>
-        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
-        {
-            this.isMouseResizeCommand = false;
-            this.resizeRegion = ResizeRegion.None;
-            this.Cursor = Cursors.Arrow;
-        }
-
-        /// <summary>
-        /// Handles a mouse double-click event.
-        /// This can be used as a shortcut to toggle the ruler lock.
-        /// </summary>
-        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
-        {
-            base.OnMouseDoubleClick(e);
-
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-             _viewModel.ToggleVerticalCommand.Execute(null);
-            }
-        }    
+        }  
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (_viewModel is null)
             {
                 return;
-            }
-            if (_viewModel.IsVertical)
-            {
-                _viewModel.UpdateMiddleWidth( e.NewSize.Width - e.PreviousSize.Width);
-            }
-            else
-            {
-                _viewModel.UpdateMiddleWidth(e.NewSize.Height - e.PreviousSize.Height);
-            }
-                
+            }                
            _viewModel.SetRulerDimensions(e.NewSize.Width, e.NewSize.Height);
         }
 
@@ -342,10 +236,7 @@ namespace Ruler.Wpf
                         Point locationInDIP = matrix.Transform(new Point(rect.Left, rect.Top));
 
                         double actualLeft = locationInDIP.X;
-                        double actualTop = locationInDIP.Y;
-
-                        // Debug logging of the corrected values
-                        Console.WriteLine($"Win32 Location Changed: Left={actualLeft}, Top={actualTop}");
+                        double actualTop = locationInDIP.Y;                                             
 
                         // 3. Manually write the window's current screen position back to the ViewModel properties.
                         _viewModel.UpdateLocation(actualLeft, actualTop);
@@ -363,20 +254,7 @@ namespace Ruler.Wpf
                     //_viewModel.LocationY = window.Top;
                 }
             }
-        }
-
-            
-
-     
-        
-        
-        private void RulerCanvas_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            _startPoint = e.GetPosition(RulerCanvas);
-            _isDragging = false;
-            RulerCanvas.CaptureMouse();
-        }
-
+        }       
         private void RulerCanvas_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed && RulerCanvas.IsMouseCaptured)
@@ -392,7 +270,6 @@ namespace Ruler.Wpf
 
             }
         }
-
         private void RulerCanvas_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             RulerCanvas.ReleaseMouseCapture();
@@ -414,6 +291,36 @@ namespace Ruler.Wpf
                 _viewModel.IsGuideLineVisible = true;
             }
 
+        }
+        private void RulerCanvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _startPoint = e.GetPosition(RulerCanvas);
+            _isDragging = false;
+            RulerCanvas.CaptureMouse();
+        }
+        private void RulerCanvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_viewModel != null && _viewModel.IsLocked)
+            {
+                // 1. Mark the event as handled to prevent it from propagating further up 
+                //    to the Window/System level where it might be consumed.
+                e.Handled = true;
+
+                if (RulerCanvas.ContextMenu != null)
+                {
+                    // 2. Manually set the placement target to the canvas itself
+                    RulerCanvas.ContextMenu.PlacementTarget = RulerCanvas;
+
+                    // 3. Set the position of the menu to the current mouse click position
+                    Point clickPoint = e.GetPosition(RulerCanvas);
+                    RulerCanvas.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.AbsolutePoint;
+                    RulerCanvas.ContextMenu.HorizontalOffset = clickPoint.X;
+                    RulerCanvas.ContextMenu.VerticalOffset = clickPoint.Y;
+
+                    // 4. Open the ContextMenu
+                    RulerCanvas.ContextMenu.IsOpen = true;
+                }
+            }
         }
     }
 }

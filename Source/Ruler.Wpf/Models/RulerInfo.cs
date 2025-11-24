@@ -86,8 +86,17 @@ namespace Ruler.Wpf.Models
         {
             get;
             set;
+        }      
+        public bool IsGuideLineVisible 
+        { 
+            get;
+            set; 
         }
-     
+        public double GuideLinePosition 
+        { 
+            get;
+            set; 
+        }
 
         public static RulerInfo GetDefaultRulerInfo()
         {

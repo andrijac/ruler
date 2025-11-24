@@ -24,18 +24,22 @@
         Background="LightGray"
         Height="{Binding Height,Mode=TwoWay}"
         Width="{Binding Width,Mode=TwoWay}"
-        Left="{Binding LocationX, Mode=OneWay}"
-        Top="{Binding LocationY,Mode=OneWay}"
+        Left="{Binding LocationX, Mode=TwoWay}"
+        Top="{Binding LocationY,Mode=TwoWay}"
         Opacity="{Binding Opacity,Mode=TwoWay}"
         Topmost="{Binding TopMost,Mode=TwoWay}"
-        ResizeMode="CanResize"
+       ResizeMode="{Binding WindowResizeMode}"
+        ToolTip="{Binding RulerMeasurementsText}"
+        ToolTipService.IsEnabled="{Binding ShowToolTip}"
        
         SizeChanged="Window_SizeChanged"
         LocationChanged="Window_LocationChanged"
         >
 
     <Window.Resources>
+        <converters:BooleanToResizeModeConverter x:Key="BooleanToResizeModeConverter"/>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
         <DataTemplate x:Key="TopHorizontalRulerTickTemplate">
             <Grid>
                 <StackPanel Orientation="Vertical">
@@ -261,12 +265,7 @@
             The ToolTip is set using PROPERTY ELEMENT SYNTAX (<Border.ToolTip>...</Border.ToolTip>). 
             It is NOT a content child. This is correct.
         -->
-        <Border.ToolTip>
-            <ToolTip 
-                Content="{Binding RulerMeasurementsText}" 
-                Placement="Top" 
-                IsEnabled="{Binding IsToolTipVisible}"/>
-        </Border.ToolTip>
+        
 
         <!-- 
             *** This Grid is the ONLY content element allowed inside the RulerContainer Border. ***
@@ -286,18 +285,33 @@
             <Canvas Grid.Row="0" x:Name="RulerCanvas" 
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    ClipToBounds="True" 
-                    Margin="-0.5, .5, -0.5,-0.5 "
-                    PreviewMouseDown="RulerCanvas_PreviewMouseDown"
+                    ClipToBounds="True"  
+                    IsHitTestVisible="True"                   
                     PreviewMouseMove="RulerCanvas_PreviewMouseMove"
                     PreviewMouseUp="RulerCanvas_PreviewMouseUp"
+                    PreviewMouseLeftButtonDown="RulerCanvas_PreviewMouseLeftButtonDown"
+                    PreviewMouseRightButtonDown="RulerCanvas_PreviewMouseRightButtonDown"
                     Background="Transparent">
+                <Canvas.Style>
+                    <Style TargetType="Canvas">
+                        <Style.Triggers>
+                            <DataTrigger  Binding="{Binding IsVertical}" Value="True">
+                                <Setter Property="Margin" Value="0.5,-7,0.5,0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsVertical}" Value="False">
+                                <Setter Property="Margin" Value="-0.5,0,-0.5,0" />
+                            </DataTrigger>
+                        </Style.Triggers>                     
+                    </Style>
+                </Canvas.Style>
+              
 
                 <!-- GUIDE LINE CONTAINER -->
                 <Border x:Name="GuideLineContainer"
         Background="Red"  
                     HorizontalAlignment="Left" 
         VerticalAlignment="Top"
+                        IsHitTestVisible="False"
         Visibility="{Binding IsGuideLineVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
         >
                     <!-- Ensure it is on top of the ruler ticks -->
@@ -349,11 +363,7 @@
                     </Border.Style>
                 </Border>
 
-                <!--<controls:PassthroughBorder x:Name="Bordered" Grid.Row="0" Grid.Column="0" Margin="0,-8,0,0"
-                BorderBrush="#333" BorderThickness="1" CornerRadius="0" Background="Transparent"
-                             HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-            shell:WindowChrome.IsHitTestVisibleInChrome="False">-->
+               
 
                     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                         <Grid.RowDefinitions>
@@ -457,7 +467,7 @@
               IsHitTestVisible="False"
                           x:Name="LeftRuler"
               Grid.Column="0" Grid.RowSpan="3"
-                                      >
+                       Margin="0,0,0,0"               >
                             <ItemsControl.Visibility>
                                 <Binding Path="IsVertical" Converter="{StaticResource BooleanToVisibilityConverter}" />
                             </ItemsControl.Visibility>
@@ -506,7 +516,6 @@
                         </ItemsControl>    
 
                     </Grid>
-                <!--</controls:PassthroughBorder>-->
             </Canvas>
         </Grid>
     </Border>
