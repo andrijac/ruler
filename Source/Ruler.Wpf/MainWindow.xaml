@@ -1,0 +1,523 @@
+﻿<!-- 
+    MainWindow.xaml
+    
+    This file defines the user interface for the ruler application.
+    It uses a transparent, borderless window to create the ruler effect.
+    The ContextMenu provides all the functionality found in the original
+    WinForms application, with each MenuItem bound to a command in the
+    RulerViewModel.
+-->
+<Window x:Class="Ruler.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Ruler.Wpf.Common"
+        xmlns:models ="clr-namespace:Ruler.Wpf.Models"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:controls="clr-namespace:Ruler.Wpf.Controls"
+        xmlns:converters="clr-namespace:Ruler.Wpf.Converters"
+        mc:Ignorable="d"
+        Title="Ruler"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="LightGray"
+        Height="{Binding Height,Mode=TwoWay}"
+        Width="{Binding Width,Mode=TwoWay}"
+        Left="{Binding LocationX, Mode=TwoWay}"
+        Top="{Binding LocationY,Mode=TwoWay}"
+        Opacity="{Binding Opacity,Mode=TwoWay}"
+        Topmost="{Binding TopMost,Mode=TwoWay}"
+       ResizeMode="{Binding WindowResizeMode}"
+        ToolTip="{Binding RulerMeasurementsText}"
+        ToolTipService.IsEnabled="{Binding ShowToolTip}"
+       
+        SizeChanged="Window_SizeChanged"
+        LocationChanged="Window_LocationChanged"
+        >
+
+    <Window.Resources>
+        <converters:BooleanToResizeModeConverter x:Key="BooleanToResizeModeConverter"/>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
+        <DataTemplate x:Key="TopHorizontalRulerTickTemplate">
+            <Grid>
+                <StackPanel Orientation="Vertical">
+                    <Rectangle Fill="Black" Width="1" Height="{Binding TickSize}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,0,0,0" />
+                    <TextBlock Foreground="Black" Text="{Binding Label}" FontSize="12" HorizontalAlignment="Left" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- DataTemplate for the bottom horizontal ruler ticks, with a vertical flip -->
+        <DataTemplate x:Key="BottomHorizontalRulerTickTemplate">
+            <Grid>
+                <StackPanel Orientation="Vertical">
+                    <Rectangle Fill="Black" Width="1" Height="{Binding TickSize}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,0,0,0" />
+                    <TextBlock Text="{Binding Label}" Foreground="Black" FontSize="12" HorizontalAlignment="Left" Margin="0,2,0,0">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform ScaleY="-1" />
+                        </TextBlock.RenderTransform>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLabelVisible}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsLabelVisible}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>    
+                    <StackPanel.RenderTransform>
+                        <ScaleTransform ScaleY="-1" />
+                    </StackPanel.RenderTransform>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>    
+
+        <!-- 🛑 FIX: Removed temporary backgrounds from VerticalRightContainerStyle 🛑 -->
+        <Style x:Key="VerticalRightContainerStyle" TargetType="ContentPresenter">
+            <Setter Property="Canvas.Top" Value="{Binding Position}"/>
+            <!-- The negative margin was pushing the content out. Changed to zero. -->
+
+            
+            <!-- This MUST be Right so the content pushes against the right edge of the Canvas -->
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+
+            <!-- These setters are redundant since they are on the ItemsControl, but harmless. -->
+            <Setter Property="Grid.Row" Value="1" />
+            <Setter Property="Grid.Column" Value="2" />
+        </Style>
+      
+        <DataTemplate x:Key="RightVerticalRulerTickTemplate">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+
+
+                <Rectangle 
+    Fill="Black"
+    Width="{Binding TickSize}"
+    Height="1"
+    VerticalAlignment="Center"
+    HorizontalAlignment="Stretch"
+                    />
+
+
+                <TextBlock 
+                    Text="{Binding Label}"
+                    FontSize="12"
+                    Foreground="Black"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    >
+
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLabelVisible}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsLabelVisible}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                    <TextBlock.RenderTransform>
+                        <ScaleTransform ScaleX="-1" />
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+
+               
+                
+                <StackPanel.RenderTransform>
+                    <ScaleTransform ScaleX="-1" />
+                </StackPanel.RenderTransform>
+            </StackPanel>
+        </DataTemplate>
+        
+        <Style x:Key="HorizontalBottomContainerStyle" TargetType="ContentPresenter">
+            <Setter Property="Canvas.Left" Value="{Binding Position}"/>
+            <Setter Property="Canvas.Top" Value="0"/>
+        </Style>
+
+        <Style x:Key="VerticalLeftContainerStyle" TargetType="{x:Type ContentPresenter}">
+            <!-- Binds the vertical position from the Tick model -->
+            <Setter Property="Canvas.Top" Value="{Binding Position}"/>
+
+            <!-- 
+            *** THE FIX ***
+            Shifts the entire 1px-high element up by 0.5px 
+            to center it perfectly on the Position coordinate (e.g., y=0).
+        -->
+            <Setter Property="Margin" Value="0, 0, 0, 0"/>
+
+            <!-- Other standard Canvas properties -->
+            <Setter Property="Canvas.Left" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <!-- 
+        TEMPLATE 1: Left Vertical Ruler Tick Template (No manual margin here)
+    -->
+        <DataTemplate x:Key="LeftVerticalRulerTickTemplate">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0" >
+
+                <!-- 1. The Tick Line (1 pixel high) -->
+                <Rectangle 
+                Fill="Black"
+                Width="{Binding TickSize}"
+                Height="1"
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Left"
+                Margin="0,0,5,0" />
+
+                <!-- 2. The Label. VerticalAlignment="Center" ensures it aligns to the 1px line. -->
+                <TextBlock 
+                Text="{Binding Label}"
+                FontSize="12"
+                Foreground="Black"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <Style x:Key="HorizontalTopContainerStyle" TargetType="ContentPresenter">
+            <Setter Property="Canvas.Top" Value="0"/>
+            <Setter Property="Canvas.Left" Value="{Binding Position}"/>
+        </Style>
+        <ItemsPanelTemplate x:Key="VerticalRulerItemsPanel">
+            <Grid IsItemsHost="True" />
+        </ItemsPanelTemplate>
+
+        <ItemsPanelTemplate x:Key="HorizontalRulerItemsPanel">
+            <Canvas IsItemsHost="True" />
+        </ItemsPanelTemplate>
+    </Window.Resources>
+    <Window.ContextMenu >
+        <ContextMenu Background="Gray">
+            <MenuItem Header="Always on Top" IsCheckable="True" IsChecked="{Binding TopMost,Mode=OneWay}" Command="{Binding ToggleTopMostCommand}"/>
+            <MenuItem Header="Change Orientation" Command="{Binding ToggleVerticalCommand}"/>
+            <MenuItem Header="Tool Tip" IsCheckable="True" IsChecked="{Binding ShowToolTip,Mode=OneWay}" Command="{Binding ToggleToolTipCommand}"/>
+            <MenuItem Header="Lock Resize" IsCheckable="True" IsChecked="{Binding IsLocked,Mode=OneWay}" Command="{Binding ToggleLockCommand}" />
+            <MenuItem Header="Duplicate Ruler" Command="{Binding DuplicateCommand}"/>
+            <MenuItem Header="Reset to Defaults" Command="{Binding ResetToDefaultCommand}" />
+            <MenuItem Header="Set Size" Command="{Binding ShowSetSizeFormCommand}" />
+            <Separator/>
+            <MenuItem Header="Opacity">
+                <MenuItem Header="5%"  Command="{Binding SetOpacityCommand}" CommandParameter="0.05" IsCheckable="True" IsChecked="{Binding IsOpacity5Percent}"/>
+                <MenuItem Header="10%" Command="{Binding SetOpacityCommand}" CommandParameter="0.1" IsCheckable="True" IsChecked="{Binding IsOpacity10Percent}"/>
+                <MenuItem Header="15%" Command="{Binding SetOpacityCommand}" CommandParameter="0.15" IsCheckable="True" IsChecked="{Binding IsOpacity15Percent}"/>
+                <MenuItem Header="20%" Command="{Binding SetOpacityCommand}" CommandParameter="0.2" IsCheckable="True" IsChecked="{Binding IsOpacity20Percent}"/>
+                <MenuItem Header="25%" Command="{Binding SetOpacityCommand}" CommandParameter="0.25" IsCheckable="True" IsChecked="{Binding IsOpacity25Percent}"/>
+                <MenuItem Header="30%" Command="{Binding SetOpacityCommand}" CommandParameter="0.3" IsCheckable="True" IsChecked="{Binding IsOpacity30Percent}"/>
+                <MenuItem Header="35%" Command="{Binding SetOpacityCommand}" CommandParameter="0.35" IsCheckable="True" IsChecked="{Binding IsOpacity35Percent}" />
+                <MenuItem Header="40%" Command="{Binding SetOpacityCommand}" CommandParameter="0.4" IsCheckable="True" IsChecked="{Binding IsOpacity40Percent}" />
+                <MenuItem Header="45%" Command="{Binding SetOpacityCommand}" CommandParameter="0.45" IsCheckable="True" IsChecked="{Binding IsOpacity45Percent}"/>
+                <MenuItem Header="50%" Command="{Binding SetOpacityCommand}" CommandParameter="0.5" IsCheckable="True" IsChecked="{Binding IsOpacity50Percent}"/>
+                <MenuItem Header="55%" Command="{Binding SetOpacityCommand}" CommandParameter="0.55" IsCheckable="True" IsChecked="{Binding IsOpacity55Percent}"/>
+                <MenuItem Header="60%" Command="{Binding SetOpacityCommand}" CommandParameter="0.6" IsCheckable="True" IsChecked="{Binding IsOpacity60Percent}"/>
+                <MenuItem Header="65%" Command="{Binding SetOpacityCommand}" CommandParameter="0.65" IsCheckable="True" IsChecked="{Binding IsOpacity65Percent}"/>
+                <MenuItem Header="70%" Command="{Binding SetOpacityCommand}" CommandParameter="0.7" IsCheckable="True" IsChecked="{Binding IsOpacity70Percent}"/>
+                <MenuItem Header="75%" Command="{Binding SetOpacityCommand}" CommandParameter="0.75" IsCheckable="True" IsChecked="{Binding IsOpacity75Percent}"/>
+                <MenuItem Header="80%" Command="{Binding SetOpacityCommand}" CommandParameter="0.8" IsCheckable="True" IsChecked="{Binding IsOpacity80Percent}"/>
+                <MenuItem Header="85%" Command="{Binding SetOpacityCommand}" CommandParameter="0.85" IsCheckable="True" IsChecked="{Binding IsOpacity85Percent}"/>
+                <MenuItem Header="90%" Command="{Binding SetOpacityCommand}" CommandParameter="0.9" IsCheckable="True" IsChecked="{Binding IsOpacity90Percent}"/>
+                <MenuItem Header="95%" Command="{Binding SetOpacityCommand}" CommandParameter="0.95" IsCheckable="True" IsChecked="{Binding IsOpacity95Percent}"/>
+                <MenuItem Header="100%" Command="{Binding SetOpacityCommand}" CommandParameter="1.0" IsCheckable="True" IsChecked="{Binding IsOpacity100Percent}"/>
+            </MenuItem>
+            <MenuItem Header="Save?">
+                <MenuItem Header="Save Nothing" Command="{Binding SetSaveTypeCommand}" CommandParameter="none" IsCheckable="True" IsChecked="{Binding IsSaveTypeNone}"/>
+                <MenuItem Header="Save Location" Command="{Binding SetSaveTypeCommand}" CommandParameter="location" IsCheckable="True" IsChecked="{Binding IsSaveTypeLocation}"/>
+                <MenuItem Header="Save Size" Command="{Binding SetSaveTypeCommand}" CommandParameter="size" IsCheckable="True" IsChecked="{Binding IsSaveTypeSize}" />
+                <MenuItem Header="Save Everything" Command="{Binding SetSaveTypeCommand}" CommandParameter="all" IsCheckable="True" IsChecked="{Binding IsSaveTypeAll}"/>
+
+            </MenuItem>
+            <!--<MenuItem Header="Scale">
+          <MenuItem Header="1x" Command="{Binding SetScaleCommand}" CommandParameter="1" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=1}"/>
+          <MenuItem Header="2x" Command="{Binding SetScaleCommand}" CommandParameter="2" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=2}"/>
+          <MenuItem Header="4x" Command="{Binding SetScaleCommand}" CommandParameter="4" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=4}"/>
+          <MenuItem Header="8x" Command="{Binding SetScaleCommand}" CommandParameter="8" IsCheckable="True" IsChecked="{Binding Scale, Converter={Binding Source={x:Reference MainWindows}, Path=IntToBool}, ConverterParameter=8}"/>
+      </MenuItem>-->
+            <Separator/>
+            <MenuItem Header="Close" Command="{Binding ExitCommand}">
+                <MenuItem.CommandParameter>
+                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}" 
+                         Path="PlacementTarget" />
+                </MenuItem.CommandParameter>
+            </MenuItem>
+        </ContextMenu>
+    </Window.ContextMenu>
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome 
+            ResizeBorderThickness="10"    CaptionHeight="0"             CornerRadius="0" />
+    </shell:WindowChrome.WindowChrome>
+    <Border x:Name="RulerContainer" 
+            Background="Transparent" 
+            CornerRadius="0" 
+            BorderBrush="Black" 
+            BorderThickness="1">
+
+        <!-- 
+            The ToolTip is set using PROPERTY ELEMENT SYNTAX (<Border.ToolTip>...</Border.ToolTip>). 
+            It is NOT a content child. This is correct.
+        -->
+        
+
+        <!-- 
+            *** This Grid is the ONLY content element allowed inside the RulerContainer Border. ***
+            Padding="1" aligns Canvas with the inner border edges.
+        -->
+        <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <!-- Only one row, taking up all available space -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Ruler Content Area (Canvas is the content of the Grid row) -->
+            <!-- 
+                 The Margin="-0.5, 0, -0.5, 0" centers 1px wide ticks on the pixel boundary, 
+                 making the 0-tick and Max-tick visually flush with the side borders.
+            -->
+            <Canvas Grid.Row="0" x:Name="RulerCanvas" 
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    ClipToBounds="True"  
+                    IsHitTestVisible="True"                   
+                    PreviewMouseMove="RulerCanvas_PreviewMouseMove"
+                    PreviewMouseUp="RulerCanvas_PreviewMouseUp"
+                    PreviewMouseLeftButtonDown="RulerCanvas_PreviewMouseLeftButtonDown"
+                    PreviewMouseRightButtonDown="RulerCanvas_PreviewMouseRightButtonDown"
+                    Background="Transparent">
+                <Canvas.Style>
+                    <Style TargetType="Canvas">
+                        <Style.Triggers>
+                            <DataTrigger  Binding="{Binding IsVertical}" Value="True">
+                                <Setter Property="Margin" Value="0.5,-7,0.5,0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsVertical}" Value="False">
+                                <Setter Property="Margin" Value="-0.5,0,-0.5,0" />
+                            </DataTrigger>
+                        </Style.Triggers>                     
+                    </Style>
+                </Canvas.Style>
+              
+
+                <!-- GUIDE LINE CONTAINER -->
+                <Border x:Name="GuideLineContainer"
+        Background="Red"  
+                    HorizontalAlignment="Left" 
+        VerticalAlignment="Top"
+                        IsHitTestVisible="False"
+        Visibility="{Binding IsGuideLineVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+        >
+                    <!-- Ensure it is on top of the ruler ticks -->
+
+                    <Border.Style>
+                        <Style TargetType="{x:Type Border}">
+                            <!-- 
+            ===================================================================
+            DEFAULT STATE: IsVertical = False (Horizontal Ruler) 
+            We need a VERTICAL line that moves on X.
+            ===================================================================
+            -->
+
+                            <!-- Default Dimensions: Thin and tall (Vertical Line) -->
+                            <Setter Property="Width" Value="2"/>
+                            <Setter Property="Height" Value="{Binding ActualHeight, ElementName=RulerCanvas}"/>
+
+                            <!-- Default Transform: Moves along X-axis (Horizontal movement) -->
+                            <Setter Property="RenderTransform">
+                                <Setter.Value>
+                                    <!-- Uses GuideLinePosition for X movement -->
+                                    <TranslateTransform X="{Binding GuideLinePosition}" Y="0"/>
+                                </Setter.Value>
+                            </Setter>
+
+                            <Style.Triggers>
+                                <!-- 
+                ===================================================================
+                TRIGGER STATE: IsVertical = True (Vertical Ruler)
+                We need a HORIZONTAL line that moves on Y.
+                ===================================================================
+                -->
+                                <DataTrigger Binding="{Binding IsVertical}" Value="True">
+
+                                    <!-- 1. Swap Dimensions: Make it a wide, short horizontal line -->
+                                    <Setter Property="Width" Value="{Binding ActualWidth, ElementName=RulerCanvas}"/>
+                                    <Setter Property="Height" Value="2"/>
+
+                                    <!-- 2. Swap Transform: Make it move along the Y-axis (Vertical movement) -->
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <!-- Uses GuideLinePosition for Y movement -->
+                                            <TranslateTransform X="0" Y="{Binding GuideLinePosition}"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
+
+               
+
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition>
+                                <RowDefinition.Style>
+                                    <Style TargetType="RowDefinition">
+                                        <Setter Property="Height" Value="*"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsVertical}" Value="True">
+                                                <Setter Property="Height" Value="auto"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsVertical}" Value="False">
+                                                <Setter Property="Height" Value="{Binding MiddleWidth}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RowDefinition.Style>
+                            </RowDefinition>
+                            <RowDefinition Height="35"/>
+                        </Grid.RowDefinitions>
+                        <!-- Columns are for Vertical Ruler Margins (Left/Right) -->
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="35"/>
+                            <ColumnDefinition >
+                                <ColumnDefinition.Style>
+                                    <Style TargetType="ColumnDefinition">
+                                        <Setter Property="Width" Value="*"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsVertical}" Value="True">
+                                                <Setter Property="Width" Value="{Binding MiddleWidth}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsVertical}" Value="False">
+                                                <Setter Property="Width" Value="Auto"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ColumnDefinition.Style>
+                            </ColumnDefinition>
+                            <ColumnDefinition Width="35"/>
+                        </Grid.ColumnDefinitions>
+                
+                       <!--  Top Ruler Ticks -->                         
+                        <ItemsControl ItemsSource="{Binding TopRulerTicks}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          IsHitTestVisible="False"
+                                      x:Name="TopRuler"
+                          Grid.Row="0"  Grid.ColumnSpan="3"
+                                      Margin="0,0,0,0"
+                                     >
+                            <ItemsControl.Visibility>
+                                <Binding Path="IsVertical" Converter="{StaticResource BooleanToVisibilityConverter}" ConverterParameter="Invert"/>
+                            </ItemsControl.Visibility>
+
+                            <ItemsControl.ItemContainerStyle>
+                                <StaticResource ResourceKey="HorizontalTopContainerStyle"/>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <StaticResource ResourceKey="TopHorizontalRulerTickTemplate"/>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+               
+
+                        <!-- Bottom Ruler Ticks  -->
+                        <ItemsControl ItemsSource="{Binding BottomRulerTicks}"
+              Grid.Row="2" Grid.ColumnSpan="3"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              IsHitTestVisible="False"
+              x:Name="BottomRuler"
+                                      
+              >
+
+                            <ItemsControl.Visibility>
+                                <Binding Path="IsVertical" Converter="{StaticResource BooleanToVisibilityConverter}" ConverterParameter="Invert"/>
+                            </ItemsControl.Visibility>
+
+                            <ItemsControl.ItemContainerStyle>
+                                <StaticResource ResourceKey="HorizontalBottomContainerStyle"/>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <StaticResource ResourceKey="BottomHorizontalRulerTickTemplate"/>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+
+                        <!--Left Ruler Ticks-->
+                        <ItemsControl ItemsSource="{Binding TopRulerTicks}"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              IsHitTestVisible="False"
+                          x:Name="LeftRuler"
+              Grid.Column="0" Grid.RowSpan="3"
+                       Margin="0,0,0,0"               >
+                            <ItemsControl.Visibility>
+                                <Binding Path="IsVertical" Converter="{StaticResource BooleanToVisibilityConverter}" />
+                            </ItemsControl.Visibility>
+
+                            <ItemsControl.ItemContainerStyle>
+                                <StaticResource ResourceKey="VerticalLeftContainerStyle"/>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <StaticResource ResourceKey="LeftVerticalRulerTickTemplate"/>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        
+                        
+                        <!--Right Ruler Ticks-->
+                        <ItemsControl ItemsSource="{Binding BottomRulerTicks}"
+              Grid.Column="2"  Grid.RowSpan="3"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+                              x:Name="RightRuler"
+              IsHitTestVisible="False"
+              Margin="0,7,0,0"
+                              >
+
+                            <ItemsControl.Visibility>
+                                <Binding Path="IsVertical" Converter="{StaticResource BooleanToVisibilityConverter}"/>
+                            </ItemsControl.Visibility>
+
+                            <ItemsControl.ItemContainerStyle>
+                                <StaticResource ResourceKey="VerticalRightContainerStyle"/>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <StaticResource ResourceKey="RightVerticalRulerTickTemplate"/>
+                            </ItemsControl.ItemTemplate>
+
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                        </ItemsControl>    
+
+                    </Grid>
+            </Canvas>
+        </Grid>
+    </Border>
+  
+</Window>
