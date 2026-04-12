@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Resources;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Ruler
@@ -180,6 +181,7 @@ namespace Ruler
                 new MenuItemHolder(MenuItemEnum.LockResize, "Lock Resizing", this.LockResizeHandler, rulerInfo.IsLocked),
                 new MenuItemHolder(MenuItemEnum.SetSize, "Set size...", this.SetSizeHandler, false),
                 new MenuItemHolder(MenuItemEnum.Duplicate, "Duplicate", this.DuplicateHandler, false),
+                new MenuItemHolder(MenuItemEnum.Update, "Check for updates...", this.UpdateHandler, false),
                 MenuItemHolder.Separator,
                 new MenuItemHolder(MenuItemEnum.Reset, "Reset To Default", this.ResetToDefaulHandler, false),
                 MenuItemHolder.Separator,
@@ -225,6 +227,8 @@ namespace Ruler
 
             this.menuItemList = list;
         }
+
+       
 
         #endregion Init
 
@@ -421,7 +425,33 @@ namespace Ruler
         {
             this.ShowToolTip = !this.ShowToolTip;
         }
-
+        private void UpdateHandler(object sender, EventArgs e)
+        {
+            UpdateService updateService = new UpdateService();
+            if (updateService.UpdateAvailable)
+            {
+                DialogResult result = MessageBox.Show("An update is available. Do you want to download it?", "Update Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (result == DialogResult.Yes)
+                {
+                    updateService.DownloadUpdateAsync().ContinueWith(t =>
+                    {
+                        if (t.Result)
+                        {
+                            MessageBox.Show("Update downloaded. The application will now restart to apply the update.", "Update Downloaded", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            updateService.InstallUpdate();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Failed to download the update. Please try again later.", "Update Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }, TaskScheduler.FromCurrentSynchronizationContext());
+                }
+            }
+            else
+            {
+                MessageBox.Show("You are using the latest version.", "No Update Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
         private void ExitHandler(object sender, EventArgs e)
         {
             switch (this.SaveType)
