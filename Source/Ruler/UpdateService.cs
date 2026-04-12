@@ -8,6 +8,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,8 +35,11 @@ namespace Ruler
             {
                 // 2. GitHub API MUST have a User-Agent header
                 client.DefaultRequestHeaders.Add("User-Agent", "MyUpdaterApp");
+                client.DefaultRequestHeaders.Accept.Add(
+    new MediaTypeWithQualityHeaderValue("application/json"));
 
-                string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
+                //  string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
+                string apiUrl = "https://api.github.com/repos/IsaacMorris1980/ruler/releases/latest";
 
                 try
                 {
@@ -43,21 +47,21 @@ namespace Ruler
                     string responseBody = await client.GetStringAsync(apiUrl);
 
                     // 4. Parse the JSON
-                    var releases = JsonConvert.DeserializeObject<List<GitHubRelease>>(responseBody);
+                    var releases = JsonConvert.DeserializeObject<GitHubRelease>(responseBody);
 
-                    _latestRelease = releases.FirstOrDefault(r => !r.TagName.Contains("Beta"));
+                    _latestRelease = releases; //.FirstOrDefault(r => !r.TagName.Contains("Beta"));
                     Version currentVersion = Assembly.GetEntryAssembly().GetName().Version;
-                    if (_latestRelease != null)
+                    //if (_latestRelease != null)
+                    //{
+                    Version latestVersion = new Version(_latestRelease.TagName.TrimStart('v'));
+                    if (latestVersion > currentVersion)
                     {
-                        Version latestVersion = new Version(_latestRelease.TagName.TrimStart('v'));
-                        if (latestVersion > currentVersion)
-                        {
-                            _isUpdateAvailable = true;
-
-                        }
+                        _isUpdateAvailable = true;
 
                     }
-                    // Look for a .zip file in the assets list
+
+                    //}
+                    //// Look for a .zip file in the assets list
                     GitHubAsset asset = new GitHubAsset();
                     asset.Name = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.Name;
                     asset.DownloadUrl = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.DownloadUrl;
@@ -97,29 +101,27 @@ namespace Ruler
 
         public void InstallUpdate()
         {
+            string destinationPath;
             string exePath = Assembly.GetEntryAssembly().Location;
             FileVersionInfo myFileInfo = FileVersionInfo.GetVersionInfo(exePath);
 
             using (ZipArchive archive = ZipFile.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.zip")))
             {
-                foreach (ZipArchiveEntry entry in archive.Entries)
+                archive.ExtractToDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update"));
+                destinationPath  = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update");
+                _executablePath = FindMainExe(destinationPath);
+                FileVersionInfo myFileInfo2 = FileVersionInfo.GetVersionInfo(_executablePath);
+                if (myFileInfo.InternalName == myFileInfo2.InternalName)
                 {
-                    string destinationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, entry.FullName);
-                    entry.ExtractToFile(destinationPath, true);
-                    _executablePath = FindMainExe(destinationPath);
-                    FileVersionInfo myFileInfo2 = FileVersionInfo.GetVersionInfo(_executablePath);
-                    if (myFileInfo.InternalName == myFileInfo2.InternalName)
-                    {
-                        LaunchUpdater(_executablePath, exePath);
-                    }
-
-
-                }
+                    LaunchUpdater(_executablePath, exePath);
+                }  
             }
 
         }
         public void LaunchUpdater(string newExePath, string oldExePath)
         {
+            string fileToDelete = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.zip");
+            string folderToDelete = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update");
             // Create a simple batch commands string
             string batchCommands = $@"
 @echo off
@@ -128,6 +130,11 @@ timeout /t 2 /nobreak > nul
 del /f /q ""{oldExePath}""
 move /y ""{newExePath}"" ""{oldExePath}""
 start """" ""{oldExePath}""
+timeout /t 1 /nobreak > nul
+
+:: Clean up the zip and the extraction folder
+if exist ""{fileToDelete}"" del /f /q ""{fileToDelete}""
+if exist ""{folderToDelete}"" rd /s /q ""{folderToDelete}""
 del ""%~f0"""; // This last line makes the batch file delete itself
 
             string batchPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.bat");
