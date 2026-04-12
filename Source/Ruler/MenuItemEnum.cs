@@ -13,6 +13,7 @@
 		Save,
 		About,
 		Exit,
+		Update,
 		RulerInfo,
 		Separator
 	}
