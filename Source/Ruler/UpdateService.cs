@@ -38,8 +38,7 @@ namespace Ruler
                 client.DefaultRequestHeaders.Accept.Add(
     new MediaTypeWithQualityHeaderValue("application/json"));
 
-                //  string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
-                string apiUrl = "https://api.github.com/repos/IsaacMorris1980/ruler/releases/latest";
+                 string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
 
                 try
                 {
