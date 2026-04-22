@@ -1,5 +1,8 @@
 ﻿using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Ruler.Shared.Factories;
+using Ruler.Shared.Interfaces;
+using Ruler.Shared.Models;
 
 namespace Ruler.Test
 {
@@ -9,35 +12,32 @@ namespace Ruler.Test
 		[TestMethod]
 		public void GetDefaultRulerInfoTest()
 		{
-			Assert.AreNotEqual(null, RulerInfo.GetDefaultRulerInfo());
+			Assert.AreNotEqual(null, RulerFactory.CreateDefault());
 		}
 
 		[TestMethod]
 		public void CopyIntoTest()
 		{
-			IRulerInfo source = new RulerInfo
-			{
-				Width = 500,
-				Height = 80,
-				Opacity = 0.90,
-				ShowToolTip = true,
-				IsLocked = true,
-				IsVertical = true,
-				TopMost = true
-			};
+			RulerInfo source = RulerFactory.CreateDefault();
+			source.Width = 500;
+			source.Height = 80;
+			source.Opacity = 0.90;
+			source.ShowToolTip = true;
+			source.IsLocked = true;
+			source.IsVertical = true;
+			source.TopMost = true;
+          
+			RulerInfo target = RulerFactory.CreateDefault();
+			target.Width = 200;
+			target.Height = 50;
+			target.Opacity = 0.50;
+			target.ShowToolTip = false;
+			target.IsLocked = false;
+			target.IsVertical = false;
+			target.TopMost = false;
 
-			IRulerInfo target = new RulerInfo
-			{
-				Width = 400,
-				Height = 75,
-				Opacity = 0.60,
-				ShowToolTip = true,
-				IsLocked = false,
-				IsVertical = false,
-				TopMost = true
-			};
 
-			RulerInfo.CopyInto(source, target);
+			RulerFactory.CopyValues(source, target);
 
 			var properties = Helper.GetPublicPropertiesFromInterface(typeof(IRulerInfo));
 

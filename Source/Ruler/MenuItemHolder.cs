@@ -1,35 +1,36 @@
-﻿using System;
+﻿using Ruler.Shared.Enums;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Ruler
 {
-	internal class MenuItemHolder
-	{
-		public MenuItemHolder(MenuItemEnum menuItemEnum, string title, EventHandler handler, bool isChecked)
-		{
-			this.MenuItemEnum = menuItemEnum;
-			this.MenuItem = new MenuItem(title, handler, Shortcut.None);
-			this.MenuItem.Checked = isChecked;
-		}
+    public class MenuItemHolder
+    {
+        public MenuItemEnum MenuItemEnum { get; set; }
+        public MenuItem MenuItem { get; set; }
 
-		public static MenuItemHolder Separator
-		{
-			get
-			{
-				return new MenuItemHolder(MenuItemEnum.Separator, "-", null, false);
-			}
-		}
+        // Standard constructor for items
+        public MenuItemHolder(MenuItemEnum type, string text, EventHandler handler, bool isChecked)
+        {
+            MenuItemEnum = type;
+            MenuItem = new MenuItem(text, handler)
+            {
+                Checked = isChecked
+            };
+        }
 
-		public MenuItemEnum MenuItemEnum
-		{
-			get;
-			set;
-		}
+        // Special constructor for separators
+        private MenuItemHolder() { }
 
-		public MenuItem MenuItem
-		{
-			get;
-			set;
-		}
-	}
+        public static MenuItemHolder Separator => new MenuItemHolder
+        {
+            MenuItemEnum = MenuItemEnum.Separator,
+            MenuItem = new MenuItem("-")
+        };
+    }
 }

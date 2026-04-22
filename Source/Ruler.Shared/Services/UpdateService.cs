@@ -1,25 +1,28 @@
-﻿using Newtonsoft.Json;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO.Compression;
+using System.IO;
+using System.ComponentModel;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Ruler.Shared.Models;
 
-namespace Ruler
+namespace Ruler.Shared.Services
 {
     public class UpdateService
     {
         private bool _isUpdateAvailable;
         private GitHubRelease _latestRelease;
         private string _executablePath;
+        // A delegate that the UI project will subscribe to
+        public Action OnRequestRestart { get; set; }
         public bool UpdateAvailable
         {
             get
@@ -38,7 +41,7 @@ namespace Ruler
                 client.DefaultRequestHeaders.Accept.Add(
     new MediaTypeWithQualityHeaderValue("application/json"));
 
-                 string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
+                string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
 
                 try
                 {
@@ -46,25 +49,25 @@ namespace Ruler
                     string responseBody = await client.GetStringAsync(apiUrl);
 
                     // 4. Parse the JSON
-                    var releases = JsonConvert.DeserializeObject<GitHubRelease>(responseBody);
+                    var releases = JsonConvert.DeserializeObject<List<GitHubRelease>>(responseBody);
 
-                    _latestRelease = releases; //.FirstOrDefault(r => !r.TagName.Contains("Beta"));
-                    Version currentVersion = Assembly.GetEntryAssembly().GetName().Version;
-                    //if (_latestRelease != null)
+                    //_latestRelease = releases; //.FirstOrDefault(r => !r.TagName.Contains("Beta"));
+                    //Version currentVersion = Assembly.GetEntryAssembly().GetName().Version;
+                    ////if (_latestRelease != null)
+                    ////{
+                    //Version latestVersion = new Version(_latestRelease.TagName.TrimStart('v'));
+                    //if (latestVersion > currentVersion)
                     //{
-                    Version latestVersion = new Version(_latestRelease.TagName.TrimStart('v'));
-                    if (latestVersion > currentVersion)
-                    {
-                        _isUpdateAvailable = true;
-
-                    }
+                    //    _isUpdateAvailable = true;
 
                     //}
-                    //// Look for a .zip file in the assets list
-                    GitHubAsset asset = new GitHubAsset();
-                    asset.Name = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.Name;
-                    asset.DownloadUrl = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.DownloadUrl;
-                    _latestRelease.Assets = new List<GitHubAsset> { asset };
+
+                    ////}
+                    ////// Look for a .zip file in the assets list
+                    //GitHubAsset asset = new GitHubAsset();
+                    //asset.Name = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.Name;
+                    //asset.DownloadUrl = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.DownloadUrl;
+                    //_latestRelease.Assets = new List<GitHubAsset> { asset };
 
 
 
@@ -101,19 +104,20 @@ namespace Ruler
         public void InstallUpdate()
         {
             string destinationPath;
+
             string exePath = Assembly.GetEntryAssembly().Location;
             FileVersionInfo myFileInfo = FileVersionInfo.GetVersionInfo(exePath);
 
             using (ZipArchive archive = ZipFile.OpenRead(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.zip")))
             {
                 archive.ExtractToDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update"));
-                destinationPath  = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update");
+                destinationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update");
                 _executablePath = FindMainExe(destinationPath);
                 FileVersionInfo myFileInfo2 = FileVersionInfo.GetVersionInfo(_executablePath);
                 if (myFileInfo.InternalName == myFileInfo2.InternalName)
                 {
                     LaunchUpdater(_executablePath, exePath);
-                }  
+                }
             }
 
         }
@@ -148,9 +152,9 @@ del ""%~f0"""; // This last line makes the batch file delete itself
             };
 
             Process.Start(psi);
-
+            OnRequestRestart.Invoke();
             // Close the current app immediately
-            Environment.Exit(0);
+
         }
         public string FindMainExe(string extractPath)
         {

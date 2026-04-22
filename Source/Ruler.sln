@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36408.4 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11620.152 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ruler", "Ruler\Ruler.csproj", "{FCB0DDB2-AD8B-4080-A17D-732EFBF448C7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ruler.Tests", "Ruler.Tests\Ruler.Tests.csproj", "{6EEC3011-3871-49AC-BA14-87E3EA3E2D84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ruler.Wpf", "Ruler.Wpf\Ruler.Wpf.csproj", "{73BEFA42-D277-49C4-8BBA-15CEC84E7E54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ruler.Shared", "Ruler.Shared\Ruler.Shared.csproj", "{B66439FF-BC75-469F-99FA-70AC0BAC4E7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{6EEC3011-3871-49AC-BA14-87E3EA3E2D84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6EEC3011-3871-49AC-BA14-87E3EA3E2D84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6EEC3011-3871-49AC-BA14-87E3EA3E2D84}.Release|Any CPU.Build.0 = Release|Any CPU
-		{73BEFA42-D277-49C4-8BBA-15CEC84E7E54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{73BEFA42-D277-49C4-8BBA-15CEC84E7E54}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{73BEFA42-D277-49C4-8BBA-15CEC84E7E54}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{73BEFA42-D277-49C4-8BBA-15CEC84E7E54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B66439FF-BC75-469F-99FA-70AC0BAC4E7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B66439FF-BC75-469F-99FA-70AC0BAC4E7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B66439FF-BC75-469F-99FA-70AC0BAC4E7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B66439FF-BC75-469F-99FA-70AC0BAC4E7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
