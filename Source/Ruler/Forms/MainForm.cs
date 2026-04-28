@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,800 +22,6 @@ using System.Windows.Forms.VisualStyles;
 
 namespace Ruler.Forms
 {
-    //    public partial class MainForm : Form, IRulerInfo
-    //    {
-    //        #region Fields & Properties
-
-    //        // Data and Menu tracking
-    //        private RulerInfo _rulerInfo;
-    //        private List<MenuItemHolder> menuItemList;
-
-    //        // Interaction state for dragging/resizing
-    //        private bool isMouseResizeCommand;
-    //        private Point offset;
-    //        private Point mouseDownPoint;
-    //        private Rectangle mouseDownRect;
-    //        private Point mouseDownFormLocation;
-    //        private int staticMarkerDelta=0;
-
-    //        // Properties to quickly access RulerInfo states
-    //        //public bool IsLocked => _rulerInfo.IsLocked;
-    //        //public bool IsVertical => _rulerInfo.IsVertical;
-    //        public RulerInfo RulerData => _rulerInfo;
-    //        #endregion
-
-    //        public MainForm(RulerInfo info)
-    //        {
-
-    //            InitializeComponent();
-    //            _rulerInfo = info;
-    //            // Setup Form Style
-    //            this.FormBorderStyle = FormBorderStyle.None;
-    //            this.DoubleBuffered = true;
-    //            this.ShowInTaskbar = true;
-    //            // Apply initial state from RulerInfo
-    //           \
-
-    //            // Initialize the Context Menu
-    //            CreateMenuItems(_rulerInfo);
-    //            this.StartPosition = FormStartPosition.Manual;
-    //            this.DoubleBuffered = true;
-    //            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-    //                          ControlStyles.UserPaint |
-    //                          ControlStyles.OptimizedDoubleBuffer, true);
-    //        }
-
-
-    //        //private void ApplyRulerSettings(IRulerInfo rulerInfo)
-    //        //{
-    //        //    Debug.WriteLine($"RulerInfo {rulerInfo.ToString()}");
-    //        //    this.SuspendLayout();
-    //        //    // Use the interface type instead of the class type
-    //        //    PropertyInfo[] properties = typeof(IRulerInfo).GetProperties();
-
-    //        //    foreach (PropertyInfo sourceProp in properties)
-    //        //    {
-    //        //        // Skip properties that need special handling
-    //        //        if (sourceProp.Name == "Location" || sourceProp.Name == "DisplayLocation") continue;
-    //        //        if (sourceProp.Name == "Orientation") Debug.WriteLine($"Applying Orientation: {sourceProp.GetValue(rulerInfo)}");
-    //        //        // Map interface property to Form property
-    //        //        PropertyInfo targetProp = this.GetType().GetProperty(sourceProp.Name);
-
-    //        //        if (targetProp != null && targetProp.CanWrite)
-    //        //        {
-    //        //            object value = sourceProp.GetValue(rulerInfo);
-    //        //            targetProp.SetValue(this, value);
-    //        //        }
-    //        //    }
-
-    //        //    if (!ValidateScreenBounds())
-    //        //    {
-    //        //        MessageBox.Show("Saved ruler position is off-screen. Resetting to default location.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-    //        //        this.Location = new Point(100, 100);
-    //        //    }
-    //        //    else
-    //        //    {
-    //        //        // Explicitly apply the location
-    //        //        this.Location = rulerInfo.DisplayLocation;
-    //        //    }
-    //        //    this.ResumeLayout();
-    //        //    this.Invalidate();
-    //        //}
-
-    //        #region Resizing and Dragging
-
-    //        private bool GetIsInResizableArea()
-    //        {
-    //            if (this.IsLocked) return false;
-
-    //            const int border = 8;
-    //            Point pt = this.PointToClient(Control.MousePosition);
-
-    //            // Check edges
-    //            return pt.X <= border || pt.X >= (this.Width - border) ||
-    //                   pt.Y <= border || pt.Y >= (this.Height - border);
-    //        }
-
-    //        protected override void OnMouseDown(MouseEventArgs e)
-    //        {
-    //            this.TopMost = false;
-    //            // 1. Call base first to let the form handle internal events
-    //            base.OnMouseDown(e);
-
-    //            // 2. Add your logic
-    //            if (e.Button == MouseButtons.Left)
-    //            {
-    //                this.isMouseResizeCommand = GetIsInResizableArea();
-    //                this.offset = e.Location;
-
-    //                // Guideline calculation
-    //                this.staticMarkerDelta = (_rulerInfo.Orientation == Orientation.Vertical)
-    //                    ? e.Location.Y : e.Location.X;
-
-    //                this.mouseDownPoint = e.Location;
-    //            }
-    //            this.mouseDownPoint = e.Location;
-    //            this.mouseDownFormLocation = this.Location;
-    //            this.mouseDownRect = new Rectangle(this.Location, this.Size);
-    //        }
-    //        //    base.OnMouseDown(e); // Best practice: call base first
-
-    //        //    if (e.Button == MouseButtons.Left)
-    //        //    {
-    //        //        // 1. Setup Drag/Resize logic
-    //        //        this.isMouseResizeCommand = GetIsInResizableArea();
-
-    //        //        // Use e.Location (Client coordinates) instead of MousePosition. 
-    //        //        // This avoids window border/title bar offset issues.
-    //        //        this.offset = e.Location;
-
-    //        //        // 2. Setup Guideline Logic
-    //        //        // Update the marker position based on the click
-    //        //        if (_rulerInfo.Orientation == Orientation.Vertical)
-    //        //        {
-    //        //            this.staticMarkerDelta = e.Location.Y;
-    //        //        }
-    //        //        else
-    //        //        {
-    //        //            this.staticMarkerDelta = e.Location.X;
-    //        //        }
-
-    //        //        // 3. Track state for the potential "Click vs Drag" distinction
-    //        //        this.mouseDownPoint = e.Location;
-    //        //        this.mouseDownFormLocation = this.Location;
-    //        //        this.mouseDownRect = new Rectangle(this.Location, this.Size);
-
-    //        //        // 4. Force a redraw to show the guideline line immediately
-    //        //        // this.Invalidate();
-    //        //        //if (e.Button == MouseButtons.Left)
-    //        //        //{
-    //        //        //    this.isMouseResizeCommand = GetIsInResizableArea();
-
-    //        //        //    // Capture all starting coordinates for the math in OnMouseMove
-    //        //        //    this.offset = new Point(MousePosition.X - this.Location.X, MousePosition.Y - this.Location.Y);
-    //        //        //    this.mouseDownPoint = MousePosition;
-    //        //        //    this.mouseDownRect = new Rectangle(this.Location, this.Size);
-    //        //        //    this.mouseDownFormLocation = this.Location;
-    //        //        //}
-    //        //        //base.OnMouseDown(e);
-    //        //    }
-    //        //  }
-    //        protected override void OnMouseUp(MouseEventArgs e)
-    //        {
-    //            this.TopMost = true;
-    //            // If the mouse hasn't moved significantly, we treat it as a "Click"
-    //            // and show/toggle the guideline.
-    //            if (e.Button == MouseButtons.Left)
-    //            {
-    //                // Add a small threshold (e.g., 3 pixels) to differentiate drag from click
-    //                if (Math.Abs(e.Location.X - mouseDownPoint.X) < 3 &&
-    //                    Math.Abs(e.Location.Y - mouseDownPoint.Y) < 3)
-    //                {
-    //                    _rulerInfo.IsGuideline = true; // Activate the line
-    //                    this.Invalidate();
-    //                }
-    //            }
-    //            base.OnMouseUp(e);
-    //        }
-    //        protected override void OnResize(EventArgs e)
-    //        {
-    //            base.OnResize(e);
-    //            this.Invalidate(); // Redraw to adjust the ruler markings to the new size
-    //        }
-    //        public bool ValidateScreenBounds()
-    //        {
-    //            // Define the full rectangle of the ruler
-    //            Rectangle rulerRect = new Rectangle(_rulerInfo.Left, _rulerInfo.Top, _rulerInfo.Width, _rulerInfo.Height);
-
-    //            // Check if the ruler intersects with ANY monitor
-    //            bool isVisible = false;
-    //            foreach (Screen screen in Screen.AllScreens)
-    //            {
-    //                if (screen.WorkingArea.IntersectsWith(rulerRect))
-    //                {
-    //                    isVisible = true;
-    //                    break;
-    //                }
-    //            }
-
-    //            if (!isVisible)  return false;
-    //                return true;
-    //            //{
-    //            //    // Snap to the primary screen if completely lost
-    //            //    _rulerInfo.Left = 100;
-    //            //    _rulerInfo.Top = 100;
-
-    //            //    // Update the form itself if this is called from MainForm
-    //            //    this.Location = new Point(100, 100);
-    //            //}
-    //        }
-    //        protected override void OnMouseMove(MouseEventArgs e)
-    //        {
-
-    //            if (e.Button == MouseButtons.None)
-    //            {
-    //                this.Cursor = GetIsInResizableArea() ? Cursors.SizeAll : Cursors.Default;
-    //            }
-    //            else if (e.Button == MouseButtons.Left)
-    //            {
-    //                if (isMouseResizeCommand)
-    //                {
-    //                    // Basic stretching from the bottom-right
-    //                    int newWidth = e.Location.X;
-    //                    int newHeight = e.Location.Y;
-    //                    if (this.Width != newWidth || this.Height != newHeight)
-    //                    {
-    //                        this.Size = new Size(Math.Max(50, newWidth), Math.Max(50, newHeight));
-    //                        _rulerInfo.Width = this.Width;
-    //                        _rulerInfo.Height = this.Height;
-    //                    }
-    //                }
-    //                else
-    //                {
-    //                    // Move the entire window
-    //                    Point screenPos = Control.MousePosition;
-    //                    screenPos.Offset(-offset.X, -offset.Y);
-
-    //                    this.Location = screenPos;
-
-    //                    // Update your info object
-    //                    _rulerInfo.Left = screenPos.X;
-    //                    _rulerInfo.Top = screenPos.Y;
-    //                    this.DisplayLocation = _rulerInfo.DisplayLocation;
-    //                }
-    //            }
-    //            base.OnMouseMove(e);
-    //        }
-
-    //        #endregion
-
-    //        #region Context Menu Construction
-
-    //        private void CreateMenuItems(RulerInfo rulerInfo)
-    //        {
-    //            this.ContextMenu = new ContextMenu();
-
-    //            var list = new List<MenuItemHolder>()
-    //            {
-    //                new MenuItemHolder(MenuItemEnum.TopMost, "Stay On Top", this.TopMostHandler, rulerInfo.TopMost),
-    //                new MenuItemHolder(MenuItemEnum.Vertical, "Vertical", this.VerticalHandler, rulerInfo.IsVertical),
-    //                new MenuItemHolder(MenuItemEnum.ShowToolTip, "Tool Tip", this.ShowToolTipHandler, rulerInfo.ShowToolTip),
-    //                new MenuItemHolder(MenuItemEnum.Opacity, "Opacity", null, false),
-    //                new MenuItemHolder(MenuItemEnum.LockResize, "Lock Resizing", this.LockResizeHandler, rulerInfo.IsLocked),
-    //                new MenuItemHolder(MenuItemEnum.SetSize, "Set size...", this.SetSizeHandler, false),
-    //                new MenuItemHolder(MenuItemEnum.Duplicate, "Duplicate", this.DuplicateHandler, false),
-    //                new MenuItemHolder(MenuItemEnum.Update, "Check for updates...", async (s, e) => await this.UpdateHandler(s, e), false),
-    //                MenuItemHolder.Separator,
-    //                new MenuItemHolder(MenuItemEnum.Reset, "Reset To Default", this.ResetToDefaultHandler, false),
-    //                new MenuItemHolder(MenuItemEnum.ClearSaved, "Clear Saved Rulers",ResetAllRulersHandler, false),
-    //                MenuItemHolder.Separator,
-    //                new MenuItemHolder(MenuItemEnum.About, "About...", this.AboutHandler, false),
-    //                MenuItemHolder.Separator,
-
-    //#if DEBUG
-    //              //  new MenuItemHolder(MenuItemEnum.RulerInfo, "Copy RulerInfo", (s,e) => Clipboard.SetText(_rulerInfo.Id.ToString()), false),
-    //              //  MenuItemHolder.Separator,
-    //#endif
-    //                new MenuItemHolder(MenuItemEnum.Save, "Save Settings?", this.SaveHandler, false),
-    //                new MenuItemHolder(MenuItemEnum.Exit, "Exit", this.ExitHandler, false)
-    //            };
-
-    //            // Build Opacity Sub-menu
-    //            MenuItem opacityMenuItem = list.Find(m => m.MenuItemEnum == MenuItemEnum.Opacity).MenuItem;
-    //            for (int i = 10; i <= 100; i += 10)
-    //            {
-    //                opacityMenuItem.MenuItems.Add(new MenuItem($"{i}%", this.OpacityMenuHandler)
-    //                {
-    //                    Checked = i == (int)(rulerInfo.Opacity * 100)
-    //                });
-    //            }
-
-    //            // Build Save Sub-menu
-    //            MenuItem saveMenuItem = list.Find(m => m.MenuItemEnum == MenuItemEnum.Save).MenuItem;
-    //            saveMenuItem.MenuItems.Add(new MenuItem("Do not Save", (s, e) => SetSaveType(SaveTypes.none)) { Checked = rulerInfo.SaveType == SaveTypes.none });
-    //            saveMenuItem.MenuItems.Add(new MenuItem("Save Location", (s, e) => SetSaveType(SaveTypes.location)) { Checked = rulerInfo.SaveType == SaveTypes.location });
-    //            saveMenuItem.MenuItems.Add(new MenuItem("Save Size", (s, e) => SetSaveType(SaveTypes.size)) { Checked = rulerInfo.SaveType == SaveTypes.size });
-    //            saveMenuItem.MenuItems.Add(new MenuItem("Save complete ruler", (s, e) => SetSaveType(SaveTypes.all)) { Checked = rulerInfo.SaveType == SaveTypes.all });
-
-    //            list.ForEach(mh => this.ContextMenu.MenuItems.Add(mh.MenuItem));
-    //            this.menuItemList = list;
-    //        }
-    //        private void SetSaveType(SaveTypes type)
-    //        {
-    //            // 1. Update the property (which syncs with _rulerInfo)
-    //            this.SaveType = type;
-
-    //            // 2. Sync the UI checkmarks
-    //            // First, find the 'Save' menu holder in our tracked list
-    //            var saveWrapper = menuItemList.Find(m => m.MenuItemEnum == MenuItemEnum.Save);
-
-    //            if (saveWrapper != null && saveWrapper.MenuItem != null)
-    //            {
-    //                foreach (MenuItem subItem in saveWrapper.MenuItem.MenuItems)
-    //                {
-    //                    // The checkmark logic depends on matching the SaveType
-    //                    // We can determine the type by the text of the menu item
-    //                    switch (subItem.Text)
-    //                    {
-    //                        case "Do not Save":
-    //                            subItem.Checked = (type == SaveTypes.none);
-    //                            break;
-    //                        case "Save Location":
-    //                            subItem.Checked = (type == SaveTypes.location);
-    //                            break;
-    //                        case "Save Size":
-    //                            subItem.Checked = (type == SaveTypes.size);
-    //                            break;
-    //                        case "Save complete ruler":
-    //                            subItem.Checked = (type == SaveTypes.all);
-    //                            break;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        #endregion
-    //        public bool IsVertical
-    //        {
-    //            get => _rulerInfo.IsVertical;
-    //            set
-    //            {
-    //                if (_rulerInfo.IsVertical != value)
-    //                {
-    //                    _rulerInfo.IsVertical = value;
-    //                    //    // Physical rotation logic
-    //                    //    int temp = this.Width;
-    //                    //    this.Width = this.Height;
-    //                    //    this.Height = temp;
-    //                }
-    //            }
-    //        }
-    //        public new int Top
-    //        {
-    //            get => _rulerInfo.Top;
-    //            set => _rulerInfo.Top = value;
-    //        }
-    //        public bool IsGuideline
-    //        {
-    //            get => _rulerInfo.IsGuideline;
-    //            set => _rulerInfo.IsGuideline = value;
-    //        }
-    //         public double GuidelineLocation
-    //        {
-    //            get => _rulerInfo.GuidelineLocation;
-    //            set => _rulerInfo.GuidelineLocation = value;
-    //        }
-    //        public Orientation Orientation
-    //        {
-    //            get { Debug.WriteLine($"Getting Orientation: {_rulerInfo.Orientation}");
-    //                return _rulerInfo.Orientation; }
-    //            }
-    //        public new  int Left
-    //        {
-    //            get => _rulerInfo.Left;
-    //            set => _rulerInfo.Left = value;
-    //        }
-    //        public string DisplayLocationString
-    //        {
-    //            get => _rulerInfo.DisplayLocationString;
-    //            set => _rulerInfo.DisplayLocationString = value;
-    //        }
-    //        public bool IsLocked
-    //        {
-    //            get => _rulerInfo.IsLocked;
-    //            set => _rulerInfo.IsLocked = value;
-    //        }
-
-    //        public bool ShowToolTip
-    //        {
-    //            get => _rulerInfo.ShowToolTip;
-    //            set => _rulerInfo.ShowToolTip = value;
-    //        }
-
-    //        public SaveTypes SaveType
-    //        {
-    //            get => _rulerInfo.SaveType;
-    //            set => _rulerInfo.SaveType = value;
-    //        }
-    //        public Point DisplayLocation
-    //        {
-    //            get => this.Location;
-    //            set
-    //            {
-    //                this.Location = value;
-    //                _rulerInfo.Left = value.X;
-    //                _rulerInfo.Top = value.Y;
-    //            }
-    //        }
-
-    //        // Wrapping standard Form properties to sync with RulerInfo
-    //        public new bool TopMost
-    //        {
-    //            get => base.TopMost;
-    //            set
-    //            {
-    //                base.TopMost = value;
-    //                _rulerInfo.TopMost = value;
-    //            }
-    //        }
-
-    //        public new double Opacity
-    //        {
-    //            get => base.Opacity;
-    //            set
-    //            {
-    //                base.Opacity = value;
-    //                _rulerInfo.Opacity = value;
-    //            }
-    //        }
-
-    //        #region Action Handlers
-
-    //#if DEBUG
-    //private void CopyRulerInfo(object sender, EventArgs e)
-    //{
-    //    // Logic: Convert current state to parameters (Shared Library logic)
-    //    string parameters = RulerFactory.ToParameterString(this.RulerData);
-    //    Clipboard.SetText(parameters);
-    //    MessageBox.Show($"Copied to clipboard:{Environment.NewLine}{parameters}");
-    //}
-    //#endif
-
-    //        private void SetSizeHandler(object sender, EventArgs e)
-    //        {
-    //            using (SetSizeForm form = new SetSizeForm(this.Width, this.Height))
-    //            {
-    //                // Keep the dialog accessible if the ruler is pinned
-    //                if (this.TopMost) form.TopMost = true;
-
-    //                if (form.ShowDialog() == DialogResult.OK)
-    //                {
-    //                    Size size = form.GetNewSize();
-    //                    // Update through properties to sync with _rulerInfo
-    //                    this.Width = size.Width;
-    //                    this.Height = size.Height;
-    //                }
-    //            }
-    //        }
-    //        private void ResetAllRulersHandler(object sender, EventArgs e)
-    //        {
-    //            if (MessageBox.Show("Are you sure you want to clear all saved rulers? This cannot be undone.", "Confirm Clear", MessageBoxButtons.YesNo) == DialogResult.Yes)
-    //            {
-    //                RulerApplicationContext.ClearAll();
-    //                MessageBox.Show("All saved rulers have been cleared.");
-    //               foreach (MainForm form in Application.OpenForms.OfType<MainForm>())
-    //                {
-    //                   form.SaveType = SaveTypes.none;
-    //                   RulerApplicationContext.Register(form); // Re-register to update the context's tracking of open forms
-    //                }
-    //                MessageBox.Show("Current ruler's save type set to 'Do not Save' to reflect cleared saved data.");
-    //            }
-    //        }
-
-    //        private void DuplicateHandler(object sender, EventArgs e)
-    //        {
-    //           RulerInfo newInfo = new RulerInfo();
-    //            RulerFactory.CopyValues(this.RulerData, newInfo);
-    //            MainForm newForm = new MainForm(newInfo);
-    //            RulerApplicationContext.Register(newForm);
-    //            newForm.Show();
-    //        }
-
-    //        private void OpacityMenuHandler(object sender, EventArgs e)
-    //        {
-    //            MenuItem item = (MenuItem)sender;
-
-    //            // Clear other checkmarks in sub-menu
-    //            foreach (MenuItem mi in item.Parent.MenuItems) mi.Checked = false;
-    //            item.Checked = true;
-
-    //            // Use property to update both UI and RulerInfo
-    //            string val = item.Text.Replace("%", string.Empty);
-    //            if (double.TryParse(val, out double opacity))
-    //            {
-    //                this.Opacity = _rulerInfo.Opacity = opacity / 100;
-    //            }
-    //        }
-
-    //        private async Task UpdateHandler(object sender, EventArgs e)
-    //        {
-    //            UpdateService updateService = new UpdateService();
-
-    //            // Subscribe to the restart request
-    //            updateService.OnRequestRestart = () =>
-    //            {
-    //                // This calls the static method in your context
-    //                RulerApplicationContext.CloseAll();
-
-    //                // Optionally launch the updater process here
-    //                // Process.Start("Updater.exe");
-    //            };
-
-    //            await updateService.CheckForUpdates();
-
-    //            if (updateService.UpdateAvailable)
-    //            {
-    //                if (MessageBox.Show("Update found! Restart amd update?", "Update", MessageBoxButtons.YesNo) == DialogResult.Yes)
-    //                {
-    //                    bool success = await updateService.DownloadUpdateAsync();
-    //                    if (success)
-    //                    {
-    //                        updateService.InstallUpdate();
-    //                    }
-    //                }
-    //            }
-    //        }
-
-    //        private void ExitHandler(object sender, EventArgs e)
-    //        {
-    //            this.Close();
-    //        }
-
-    //        public void SaveHandler(object sender, EventArgs e)
-    //        {
-    //            MenuItem item = (MenuItem)sender;
-    //            foreach (MenuItem mi in item.Parent.MenuItems) mi.Checked = false;
-    //            item.Checked = true;
-
-    //            // Standard .NET 4.8 switch statement
-    //            switch (item.Text)
-    //            {
-    //                case "Save Location":
-    //                    this.SaveType = SaveTypes.location;
-    //                    break;
-    //                case "Save Size":
-    //                    this.SaveType = SaveTypes.size;
-    //                    break;
-    //                case "Save complete ruler":
-    //                    this.SaveType = SaveTypes.all;
-    //                    break;
-    //                default:
-    //                    this.SaveType = SaveTypes.none;
-    //                    break;
-    //            }
-    //        }
-    //        private void ApplyOrientationChanged()
-    //        {
-    //            // 3. Update Stat
-    //            Debug.WriteLine($" Orientation after update: {_rulerInfo.Orientation}");
-    //    //        _rulerInfo.IsVertical = this.IsVertical;
-
-    //            // 4. Perform the swap
-    //            Size temp = this.Size;
-    //            this.Size = new Size(temp.Height, temp.Width);
-
-    //            this.Invalidate();
-    //        }
-    //        private void VerticalHandler(object sender, EventArgs e)
-    //        {
-    //            this.IsVertical = !this.IsVertical;
-    //            ApplyOrientationChanged();
-    //        }
-    //        private void TopMostHandler(object sender, EventArgs e) => this.TopMost = !this.TopMost;
-    //        private void ShowToolTipHandler(object sender, EventArgs e) => this.ShowToolTip = !this.ShowToolTip;
-    //        private void LockResizeHandler(object sender, EventArgs e) => this.IsLocked = !this.IsLocked;
-
-    //        private void ResetToDefaultHandler(object sender, EventArgs e)
-    //        {
-    //            // Get fresh defaults from the Library Factory
-    //            var defaults = RulerFactory.CreateDefault();
-    //            RulerFactory.CopyValues(_rulerInfo, defaults);
-    //            ApplyRulerSettings(_rulerInfo); // Refresh UI
-    //        }
-    //        private void AboutHandler(object sender, EventArgs e)
-    //        {
-    //            // Gather version info from the assembly
-    //            Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-    //            string versionDisplay = $"{version.Major}.{version.Minor}.{version.Build}";
-
-    //            string message = string.Format(
-    //                "Ruler Tool\n\n" +
-    //                "Version: {0}\n\n" +
-    //                "Credits:\n" +
-    //                "• Original implementation by Jeff Key (sliver.com)\n" +
-    //                "• Maintained by Andrija Cacanovic\n" +
-    //                "• Modified and modernized by Isaac Morris\n\n" +
-    //                "Icons by Kristen Magee (kbecca.com)\n" +
-    //                "Hosted on GitHub: github.com/andrijac/ruler",
-    //                versionDisplay);
-
-    //            MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    //        }
-
-    //        #endregion
-
-    //        #region Paint
-
-    //        protected override void OnPaint(PaintEventArgs e)
-    //        {
-    //            base.OnPaint(e);
-    //            e.Graphics.Clear(this.BackColor);
-    //            if (_rulerInfo.IsGuideline)
-    //            {
-    //                DrawGuideline(e.Graphics);
-    //            }
-    //            if (_rulerInfo.Orientation == Orientation.Vertical)
-    //            {
-    //                DrawVerticalRuler(e.Graphics);
-    //            }
-    //            else
-    //            {
-    //                DrawHorizontalRuler(e.Graphics);
-    //            }
-    //            //Graphics graphics = e.Graphics;
-
-    //            //int height = this.Height;
-    //            //int width = this.Width;
-
-    //            //if (this.IsVertical)
-    //            //{
-    //            //    graphics.RotateTransform(90);
-    //            //    graphics.TranslateTransform(0, -this.Width + 1);
-    //            //    height = this.Width;
-    //            //    width = this.Height;
-    //            //}
-
-    //            //DrawRuler(graphics, width, height, this.Font, this.staticMarkerDelta);
-
-    //            //base.OnPaint(e);
-    //        }
-    //        private void DrawHorizontalRuler(Graphics g)
-    //        {
-    //            int width = this.ClientSize.Width;
-    //            int height = this.ClientSize.Height;
-
-    //            // Draw main scale line
-    //            g.DrawLine(Pens.Black, 0, height - 1, width, height - 1);
-
-    //            for (int x = 0; x <= width; x += 10)
-    //            {
-    //                // Draw tick marks
-    //                int tickHeight = (x % 50 == 0) ? 15 : 5; // Major ticks longer
-    //                g.DrawLine(Pens.Black, x, height - tickHeight, x, height);
-    //                g.DrawLine(Pens.Black, x, 0, x, tickHeight); // Top ticks
-
-    //                // Draw labels for major ticks
-    //                if (x % 50 == 0)
-    //                {
-    //                    // Define a format that centers the text
-    //                    StringFormat centerFormat = new StringFormat();
-    //                    centerFormat.Alignment = StringAlignment.Center; // Horizontal center
-    //                    centerFormat.LineAlignment = StringAlignment.Center; // Vertical center (relative to bounding box)
-    //                    //g.DrawString(x.ToString(), this.Font, Brushes.Black, x, height - 30);
-    //                    if (height > 70)
-    //                    {
-    //                        g.DrawString(x.ToString(), this.Font, Brushes.Black, x, 22,centerFormat);
-    //                        g.DrawString(x.ToString(), this.Font, Brushes.Black, x, height - 22,centerFormat);
-    //                    }
-    //                    else
-    //                    {
-    //                        g.DrawString(x.ToString(), this.Font, Brushes.Black, x, height / 2);
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        private void DrawVerticalRuler(Graphics g)
-    //        {
-    //            int width = this.ClientSize.Width;
-    //            int height = this.ClientSize.Height;
-
-    //            // Draw main scale line
-    //            g.DrawLine(Pens.Black, width - 1, 0, width - 1, height);
-
-    //            for (int y = 0; y <= height; y += 10)
-    //            {
-    //                // Draw tick marks (extending horizontally)
-    //                int tickWidth = (y % 50 == 0) ? 15 : 5;
-    //                g.DrawLine(Pens.Black, width - tickWidth, y, width, y);
-    //                g.DrawLine(Pens.Black, 0, y, tickWidth, y);
-
-    //                // Draw labels for major ticks
-    //                if (y % 50 == 0)
-    //                {
-    //                    StringFormat centerFormat = new StringFormat();
-    //                    centerFormat.Alignment = StringAlignment.Center; // Horizontal center
-    //                    centerFormat.LineAlignment = StringAlignment.Center; // Vertical center (relative to bounding box)
-
-    //                    if (width > 80)
-    //                    {
-    //                        g.DrawString(y.ToString(), this.Font, Brushes.Black, width - 30, y, centerFormat);
-    //                        g.DrawString(y.ToString(), this.Font, Brushes.Black, 30, y, centerFormat);
-    //                    }
-    //                    else
-    //                    {
-    //                        string label = y.ToString();
-    //                        // 1. Measure how wide the text is
-    //                        SizeF textSize = g.MeasureString(label, this.Font);
-
-    //                        // 2. Subtract half the text width from the center coordinate
-    //                        float xPosition = (width / 2) - (textSize.Width / 2);
-
-    //                        // 3. Draw using that calculated position
-    //                        g.DrawString(label, this.Font, Brushes.Black, xPosition, y);
-    //                    }
-    //                }
-    //            }
-    //        }
-
-    //        private static void DrawRuler(Graphics g, int formWidth, int formHeight, Font font, int staticMarker)
-    //        {
-    //            float markerLoc = staticMarker;
-    //            // Border
-    //            g.DrawRectangle(Pens.Black, 0, 0, formWidth - 1, formHeight - 1);
-
-    //            // Width
-    //            g.DrawString(markerLoc + " pixels", font, Brushes.Black, 10, (formHeight / 2) - (font.Height / 2));
-
-    //            // Ticks
-    //            for (int i = 0; i < formWidth; i++)
-    //            {
-    //                if (i % 2 == 0)
-    //                {
-    //                    int tickHeight;
-
-    //                    if (i % 100 == 0)
-    //                    {
-    //                        tickHeight = 15;
-    //                        DrawTickLabel(g, i.ToString(), i, formHeight, tickHeight, font);
-    //                    }
-    //                    else if (i % 10 == 0)
-    //                    {
-    //                        tickHeight = 10;
-    //                    }
-    //                    else
-    //                    {
-    //                        tickHeight = 5;
-    //                    }
-
-    //                    DrawTick(g, i, formHeight, tickHeight);
-    //                    if (i == staticMarker)
-    //                    {
-    //                        g.DrawLine(Pens.BlueViolet, i, 0, i, formHeight);
-    //                    }
-    //                }
-    //            }
-    //        }
-
-    //        private static void DrawTick(Graphics g, int xPos, int formHeight, int tickHeight)
-    //        {
-    //            // Top
-    //            g.DrawLine(Pens.Black, xPos, 0, xPos, tickHeight);
-
-    //            // Bottom
-    //            g.DrawLine(Pens.Black, xPos, formHeight, xPos, formHeight - tickHeight);
-    //        }
-
-    //        private static void DrawTickLabel(Graphics g, string text, int xPos, int formHeight, int height, Font font)
-    //        {
-    //            // Top
-    //            g.DrawString(text, font, Brushes.Black, xPos, height);
-
-    //            // Bottom
-    //            g.DrawString(text, font, Brushes.Black, xPos, formHeight - height - font.Height);
-    //        }
-    //        private void DrawGuideline(Graphics g)
-    //        {
-    //            using (Pen guidelinePen = new Pen(Color.Red, 2))
-    //            {
-    //                if (_rulerInfo.Orientation == Orientation.Horizontal)
-    //                {
-    //                    // Draw a horizontal line at the captured Y position
-    //                    g.DrawLine(guidelinePen, staticMarkerDelta,0,staticMarkerDelta,this.ClientSize.Height);
-    //                }
-    //                else
-    //                {
-    //                    // Draw a vertical line at the captured X position
-    //                    g.DrawLine(guidelinePen,0, staticMarkerDelta, this.ClientSize.Width,staticMarkerDelta);
-    //                }
-    //            }
-    //        }
-
-    //        #endregion Paint
-
-    //        private void MainForm_Load(object sender, EventArgs e)
-    //        {
-    //         //   this.Location = _rulerInfo.DisplayLocation;
-    //        }
-    //    }
     public partial class MainForm : Form
     {
         private const int WM_SYSCOMMAND = 0x0112;
@@ -860,7 +67,7 @@ namespace Ruler.Forms
             //this.SetStyle(ControlStyles.AllPaintingInWmPaint |
             //              ControlStyles.UserPaint);
             this.UpdateStyles();
-            Debug.WriteLine(_rulerInfo.ToString());
+           
             using (Graphics g = this.CreateGraphics())
             {
                 float dpiX = g.DpiX; // e.g., 144 for 150% scaling
@@ -882,7 +89,7 @@ namespace Ruler.Forms
             };
             // 3. Initial safety check
             ValidateScreenBounds();
-            Debug.WriteLine(_rulerInfo.ToString());
+           
         }
         protected override void WndProc(ref Message m)
         {
@@ -987,6 +194,7 @@ namespace Ruler.Forms
                 _rulerInfo.ShowToolTip = !_rulerInfo.ShowToolTip;
                 miShowTooltip.Checked = _rulerInfo.ShowToolTip; // Sync the checkmark
             };
+            _contextMenuStrip.Items.Add(miShowTooltip);
             _contextMenuStrip.Items.Add(CreateOpacityMenu("Opacity"));
             ToolStripMenuItem miSetSize = new ToolStripMenuItem("Set Size");
             miSetSize.Click += (s, e) =>
@@ -1022,6 +230,7 @@ namespace Ruler.Forms
                 _rulerInfo.IsGuidelineEnabled = !_rulerInfo.IsGuidelineEnabled;
                 this.Invalidate(); // Trigger a repaint to show/hide the guideline
             };
+            _contextMenuStrip.Items.Add(miShowGuideline);
             ToolStripMenuItem miUpdate = new ToolStripMenuItem("Check for updates...");
             miUpdate.Click += async (s, e) =>
             {
@@ -1182,16 +391,19 @@ namespace Ruler.Forms
               if (_rulerInfo.Guideline.IsLocked)
                 {
                     return;
-                }
-                else
-                {
-                    _rulerInfo.IsGuidelineEnabled = false;
-                   
-                }
-                
+                }     
             }
             Cursor = Cursors.Default;
             this.Invalidate();
+        }
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            if (_rulerInfo.IsGuidelineEnabled)
+            {
+                this.Invalidate();
+            }
+
         }
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -1218,14 +430,9 @@ namespace Ruler.Forms
                     }
                 }
 
-                // 1. Check for Resize
-                HitArea area = GetHitArea(e.Location);
-                if (area==HitArea.None)
-                {
-                    _hasMoved = true;
-                }
-                _currentMode = (area == HitArea.None) ? InteractionMode.Drag  : InteractionMode.Resize;
-                _activeArea = area;
+               
+                _activeArea = GetHitArea(e.Location);
+                _currentMode = (_activeArea == HitArea.None) ? InteractionMode.Drag : InteractionMode.Resize;
 
                 _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
             }
@@ -1235,32 +442,24 @@ namespace Ruler.Forms
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            Debug.WriteLine("In Mouseup event");
+
             if (e.Button == MouseButtons.Left)
             {
-                //Compare the current position to the start position
-                if (e.Location != _startLocation)
+                // Only trigger the guideline toggle if no significant movement occurred
+                if (!_hasMoved)
                 {
-                    // The window moved! Update the model
-                    _rulerInfo.Left = e.Location.X;
-                    _rulerInfo.Top = e.Location.Y;
-                    this.Location = new Point(_rulerInfo.Left, _rulerInfo.Top);
-                }
-                else
-                {
-                   _rulerInfo.IsGuidelineEnabled = true;
-                    _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? _startLocation.Y : _startLocation.X;
+                    _rulerInfo.IsGuidelineEnabled = true;
+                    _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
                     this.Invalidate();
                 }
             }
             else if (e.Button == MouseButtons.Right)
             {
-                // Right-click: Show context menu
-                _contextMenuStrip.Show(e.Location);
-                return;
+                _contextMenuStrip.Show(Cursor.Position);
             }
-            _currentMode = InteractionMode.None; // Reset interaction mode after mouse up
 
+            _currentMode = InteractionMode.None;
+            _hasMoved = false; // Reset for next click
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -1278,21 +477,30 @@ namespace Ruler.Forms
             {
                 if (!_hasMoved)
                 {
+                    // Check if the mouse has moved far enough to be a real drag
                     int dx = Math.Abs(e.Location.X - _startLocation.X);
                     int dy = Math.Abs(e.Location.Y - _startLocation.Y);
+
                     if (dx > SystemInformation.DragSize.Width || dy > SystemInformation.DragSize.Height)
                     {
-                        _hasMoved = true; // The user has moved the mouse enough to be considered a drag
+                        _hasMoved = true;
                     }
                 }
+
+                // Only perform the action if the move threshold has been crossed
                 if (_hasMoved)
                 {
                     ExecuteInteraction(Cursor.Position);
                 }
             }
+            else
+            {
+                // Update cursor visual without triggering movement
+                UpdateCursor(e.Location);
+            }
 
             // Only set the cursor if we are NOT in the middle of a move/resize
-          
+
         }
         private void UpdateCursor(Point mousePos)
         {
@@ -1329,39 +537,26 @@ namespace Ruler.Forms
         
         private void ExecuteInteraction(Point currentPos)
         {
-            Point currentCursorPos = Cursor.Position;
-            int dx = currentCursorPos.X - _dragStartCursorPos.X;
-            int dy = currentCursorPos.Y - _dragStartCursorPos.Y;
-            //int deltaX = currentPos.X - _startLocation.X;
-            //int deltaY = currentPos.Y - _startLocation.Y;
-            Debug.WriteLine("DeltaX "+dx);
-            Debug.WriteLine("DeltaY" +dy);
+            int dx = Cursor.Position.X - _dragStartCursorPos.X;
+            int dy = Cursor.Position.Y - _dragStartCursorPos.Y;
 
             if (_currentMode == InteractionMode.Resize)
             {
-                // Calculate new bounds based on the initial state
-                int newLeft = _dragStartFormPos.X;
-                int newTop = _dragStartFormPos.Y;
-                int newWidth = _dragStartFormSize.Width;
-                int newHeight = _dragStartFormSize.Height;
+                // Calculate bounds based on original state
+                int newWidth = Math.Max(50, _dragStartFormSize.Width + (_activeArea.HasFlag(HitArea.Right) ? dx : (_activeArea.HasFlag(HitArea.Left) ? -dx : 0)));
+                int newHeight = Math.Max(50, _dragStartFormSize.Height + (_activeArea.HasFlag(HitArea.Bottom) ? dy : (_activeArea.HasFlag(HitArea.Top) ? -dy : 0)));
 
-                if (_activeArea.HasFlag(HitArea.Right)) newWidth += dx;
-                if (_activeArea.HasFlag(HitArea.Bottom)) newHeight += dy;
+                // Calculate new origin if resizing from Left or Top
+                int newLeft = _activeArea.HasFlag(HitArea.Left) ? _dragStartFormPos.X + dx : _dragStartFormPos.X;
+                int newTop = _activeArea.HasFlag(HitArea.Top) ? _dragStartFormPos.Y + dy : _dragStartFormPos.Y;
 
-                if (_activeArea.HasFlag(HitArea.Left)) { newLeft += dx; newWidth -= dx; }
-                if (_activeArea.HasFlag(HitArea.Top)) { newTop += dy; newHeight -= dy; }
-                // Apply all changes atomically to prevent flickering
                 this.SetBounds(newLeft, newTop, newWidth, newHeight);
             }
             else if (_currentMode == InteractionMode.Drag)
             {
-                // Simply offset the current position
+                // Smoothly update location relative to the start position
                 this.Location = new Point(_dragStartFormPos.X + dx, _dragStartFormPos.Y + dy);
             }
-
-            // Update the starting location so movement remains relative 
-            // to the previous delta, preventing exponential snapping
-            //_startLocation = currentPos;
 
             this.Invalidate();
         }
@@ -1447,10 +642,43 @@ namespace Ruler.Forms
             {
                 DrawVerticalRuler(e.Graphics);
             }
+            bool isMouseOver = this.ClientRectangle.Contains(this.PointToClient(Cursor.Position));
 
-            if (_rulerInfo.IsGuidelineEnabled)
+            if (_rulerInfo.IsGuidelineEnabled && (isMouseOver || _rulerInfo.IsLocked))
             {
                 DrawGuideline(e.Graphics);
+            }
+            if (_rulerInfo.ShowToolTip)
+            {
+                StringFormat centerFormat = new StringFormat();
+                centerFormat.Alignment = StringAlignment.Center;      // Horizontal center
+                centerFormat.LineAlignment = StringAlignment.Center;  // Vertical center
+
+                // 2. Define the area you want the text to be centered in
+                RectangleF centerRect = new RectangleF(0, 0, this.Width, this.Height);
+
+                if (_rulerInfo.IsGuidelineEnabled)
+                {
+                    string toolTipText = $"Size: {this.Width} x {this.Height}\nGuideline at: {(int)_rulerInfo.Guideline.Position}";
+                    // 3. Draw the shadow (shifted 1 pixel)
+                    e.Graphics.DrawString(toolTipText, this.Font, Brushes.White,
+                        new RectangleF(centerRect.X + 1, centerRect.Y + 1, centerRect.Width, centerRect.Height),
+                        centerFormat);
+
+                    // 4. Draw the main text
+                    e.Graphics.DrawString(toolTipText, this.Font, Brushes.Blue, centerRect, centerFormat);
+                }
+                else
+                {
+                    string tooltipText = $"Size: {this.Width} x {this.Height}";
+                    // 3. Draw the shadow (shifted 1 pixel)
+                    e.Graphics.DrawString(tooltipText, this.Font, Brushes.White,
+                        new RectangleF(centerRect.X + 1, centerRect.Y + 1, centerRect.Width, centerRect.Height),
+                        centerFormat);
+
+                    // 4. Draw the main text
+                    e.Graphics.DrawString(tooltipText, this.Font, Brushes.Blue, centerRect, centerFormat);
+                }
             }
         }
         private void DrawLabelOnBothSides(Graphics g, int pos, string text, Orientation orientation)

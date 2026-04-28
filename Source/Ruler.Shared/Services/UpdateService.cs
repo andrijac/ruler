@@ -41,7 +41,7 @@ namespace Ruler.Shared.Services
                 client.DefaultRequestHeaders.Accept.Add(
     new MediaTypeWithQualityHeaderValue("application/json"));
 
-                string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases";
+                string apiUrl = "https://api.github.com/repos/andrijac/ruler/releases/latest";
 
                 try
                 {
@@ -51,23 +51,23 @@ namespace Ruler.Shared.Services
                     // 4. Parse the JSON
                     var releases = JsonConvert.DeserializeObject<List<GitHubRelease>>(responseBody);
 
-                    //_latestRelease = releases; //.FirstOrDefault(r => !r.TagName.Contains("Beta"));
-                    //Version currentVersion = Assembly.GetEntryAssembly().GetName().Version;
-                    ////if (_latestRelease != null)
-                    ////{
-                    //Version latestVersion = new Version(_latestRelease.TagName.TrimStart('v'));
-                    //if (latestVersion > currentVersion)
+                    _latestRelease = releases.FirstOrDefault(r => !r.TagName.Contains("Beta"));
+                    Version currentVersion = Assembly.GetEntryAssembly().GetName().Version;
+                    //if (_latestRelease != null)
                     //{
-                    //    _isUpdateAvailable = true;
+                    Version latestVersion = new Version(_latestRelease.TagName.TrimStart('v'));
+                    if (latestVersion > currentVersion)
+                    {
+                        _isUpdateAvailable = true;
+
+                    }
 
                     //}
-
-                    ////}
-                    ////// Look for a .zip file in the assets list
-                    //GitHubAsset asset = new GitHubAsset();
-                    //asset.Name = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.Name;
-                    //asset.DownloadUrl = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.DownloadUrl;
-                    //_latestRelease.Assets = new List<GitHubAsset> { asset };
+                    //// Look for a .zip file in the assets list
+                    GitHubAsset asset = new GitHubAsset();
+                    asset.Name = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.Name;
+                    asset.DownloadUrl = _latestRelease.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip"))?.DownloadUrl;
+                    _latestRelease.Assets = new List<GitHubAsset> { asset };
 
 
 

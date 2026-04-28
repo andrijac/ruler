@@ -33,13 +33,13 @@ namespace Ruler.Shared.Services
 
             try
             {
-               Debug.WriteLine(rulers);
+               
                 return JsonConvert.SerializeObject(rulers, _settings);
             }
             catch (Exception ex)
             {
                 // In a real app, log this error to a file or console
-                System.Diagnostics.Debug.WriteLine($"Serialization Error: {ex.Message}");
+              
                 return string.Empty;
             }
         }
@@ -50,7 +50,7 @@ namespace Ruler.Shared.Services
         /// </summary>
         public static List<RulerInfo> DeserializeRulers(string json)
         {
-            Debug.WriteLine($"Deserializing JSON: {json}");
+            
             if (string.IsNullOrWhiteSpace(json))
             {
                 return new List<RulerInfo> { RulerFactory.CreateDefault() };
@@ -63,8 +63,6 @@ namespace Ruler.Shared.Services
             }
             catch (JsonException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Deserialization Error: {ex.Message}");
-
                 // Return default state so the user doesn't open an empty app on corruption
                 return new List<RulerInfo> { RulerFactory.CreateDefault() };
             }

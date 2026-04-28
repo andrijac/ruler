@@ -20,7 +20,7 @@ namespace Ruler.Shared.Factories
                 Width = 400,
                 Height = 75,
                 Opacity = 0.60,
-                ShowToolTip = true,
+                ShowToolTip = false,
                 IsVertical = false,
                 TopMost = true,
                 Top = 0,

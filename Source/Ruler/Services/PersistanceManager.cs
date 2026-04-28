@@ -41,7 +41,6 @@ namespace Ruler
 
                 // 3. Serialize to JSON using your Library's SettingsService (Newtonsoft)
                 string json = SettingsService.SerializeRulers(processedData);
-                Debug.WriteLine(json);
                 // 4. Save to the actual exe.config
               Properties.Settings.Default.RulerCollection = json;
               Properties.Settings.Default.Save();
