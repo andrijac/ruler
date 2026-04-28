@@ -1,4 +1,4 @@
-﻿namespace Ruler
+﻿namespace Ruler.Shared.Enums
 {
 	public enum MenuItemEnum
 	{
@@ -10,6 +10,7 @@
 		SetSize,
 		Duplicate,
 		Reset,
+		ClearSaved,
 		Save,
 		About,
 		Exit,

@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Ruler.Shared.Models;
 
-namespace Ruler
+namespace Ruler.Shared.Models
 {
     public class GitHubRelease
     {
