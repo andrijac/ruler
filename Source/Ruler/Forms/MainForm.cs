@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
+
 namespace Ruler.Forms
 {
     //    public partial class MainForm : Form, IRulerInfo
@@ -827,26 +828,37 @@ namespace Ruler.Forms
         private const int HT_BOTTOM = 15;
         private const int HT_BOTTOMRIGHT = 17;
         private const int LabelPadding = 22;
+        const int WM_LBUTTONDOWN = 0x0201;
+        const int WM_RBUTTONDOWN = 0x0204;
+        const int WM_LBUTTONUP = 0x0202;
+        const int WM_RBUTTONUP = 0x0205;
 
+        
         private Point _startLocation;
+        private bool _hasMoved=false;
         private readonly RulerInfo _rulerInfo;
         private ContextMenuStrip _contextMenuStrip;
-        private bool _isDragging = false;
+        private InteractionMode _currentMode = InteractionMode.None;
+        private HitArea _activeArea;
+        private Point _dragStartCursorPos;  // Global screen position
+        private Point _dragStartFormPos;    // Original form location
+        private Size _dragStartFormSize;
 
         public RulerInfo RulerData => _rulerInfo; // Expose the RulerInfo for external use (e.g., duplication)  
         public MainForm(RulerInfo info)
         {
 
             _rulerInfo = info;
-            Debug.WriteLine(info.ToString());
             InitializeComponent();
           
             this.FormBorderStyle = FormBorderStyle.None;
             this.AutoScaleMode = AutoScaleMode.None;
+            this.SetStyle(ControlStyles.ResizeRedraw, true);
             this.DoubleBuffered = true;
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-                          ControlStyles.UserPaint |
-                          ControlStyles.OptimizedDoubleBuffer, true);
+            //this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            this.SetStyle(ControlStyles.Selectable, true);
+            //this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+            //              ControlStyles.UserPaint);
             this.UpdateStyles();
             Debug.WriteLine(_rulerInfo.ToString());
             using (Graphics g = this.CreateGraphics())
@@ -862,7 +874,7 @@ namespace Ruler.Forms
                 this.Size = new Size(targetWidth, targetHeight);
             }
             // 2. Build the context menu
-            this.ContextMenuStrip = _contextMenuStrip = new ContextMenuStrip();
+            _contextMenuStrip = new ContextMenuStrip();
             CreateMenuItems();
             _contextMenuStrip.Opening += (s, e) =>
             {
@@ -899,6 +911,8 @@ namespace Ruler.Forms
 
             // Force the size to be exactly what you want, regardless of what Windows did
             this.Size = new Size(_rulerInfo.Width, _rulerInfo.Height);
+            this.TopMost = _rulerInfo.TopMost;  
+            this.Opacity = _rulerInfo.Opacity;
         }
         private void ValidateAllItems(ToolStripItemCollection items)
         {
@@ -1001,6 +1015,13 @@ namespace Ruler.Forms
             };
             _contextMenuStrip.Items.Add(miSetSize);
             _contextMenuStrip.Items.Add(miDuplicate);
+            ToolStripMenuItem miShowGuideline = new ToolStripMenuItem("Show Guideline");
+            miShowGuideline.Tag = nameof(_rulerInfo.IsGuidelineEnabled); // Link to the IsGuidelineEnabled property
+            miShowGuideline.Click += (s, e) =>
+            {
+                _rulerInfo.IsGuidelineEnabled = !_rulerInfo.IsGuidelineEnabled;
+                this.Invalidate(); // Trigger a repaint to show/hide the guideline
+            };
             ToolStripMenuItem miUpdate = new ToolStripMenuItem("Check for updates...");
             miUpdate.Click += async (s, e) =>
             {
@@ -1153,79 +1174,215 @@ namespace Ruler.Forms
             _rulerInfo.Height = this.Height;
             this.Invalidate(); // Trigger a repaint to reflect size changes
         }
-        protected override void OnMouseDown(MouseEventArgs e)
+        protected override void OnMouseLeave(EventArgs e)
         {
-            base.OnMouseDown(e);
-
-            if (e.Button == MouseButtons.Left)
+            base.OnMouseLeave(e);
+          if (_rulerInfo.IsGuidelineEnabled)
             {
-                // 1. Check for Resize
-                int hitTest = GetHitTestCode(e.Location);
-
-                // Only allow resize if NOT locked
-                if (hitTest != 0 && !_rulerInfo.IsLocked)
+              if (_rulerInfo.Guideline.IsLocked)
                 {
-                    this.Capture = false;
-                    Message msg = Message.Create(this.Handle, 0xA1, (IntPtr)hitTest, IntPtr.Zero);
-                    this.DefWndProc(ref msg);
+                    return;
                 }
                 else
                 {
-                    // 2. Otherwise, Move (This works even when locked)
-                    _startLocation = this.Location;
-                    this.Capture = false;
-                    Message msg = Message.Create(this.Handle, 0xA1, (IntPtr)0x2, IntPtr.Zero);
-                    this.DefWndProc(ref msg);
+                    _rulerInfo.IsGuidelineEnabled = false;
+                   
                 }
+                
             }
+            Cursor = Cursors.Default;
+            this.Invalidate();
+        }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left)
+            {
+                _dragStartCursorPos = Cursor.Position;
+                _dragStartFormPos = this.Location;
+                _dragStartFormSize = this.Size;
+                _startLocation = e.Location; // Capture the initial click position for later comparison
+                _hasMoved = false;
+
+
+                if (_rulerInfo.IsGuidelineEnabled && _rulerInfo.Guideline != null)
+                {
+                    int distanceToGuideline = _rulerInfo.IsVertical
+                        ? Math.Abs(e.Y - (int)_rulerInfo.Guideline.Position)
+                        : Math.Abs(e.X - (int)_rulerInfo.Guideline.Position);
+                    if (distanceToGuideline < 5)
+                    {
+                        _rulerInfo.Guideline.IsLocked = !_rulerInfo.Guideline.IsLocked;
+                        this.Invalidate();
+                        return;
+                    }
+                }
+
+                // 1. Check for Resize
+                HitArea area = GetHitArea(e.Location);
+                if (area==HitArea.None)
+                {
+                    _hasMoved = true;
+                }
+                _currentMode = (area == HitArea.None) ? InteractionMode.Drag  : InteractionMode.Resize;
+                _activeArea = area;
+
+                _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
+            }
+         
+           
         }
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-
-            // 3. Compare the current position to the start position
-            if (this.Location != _startLocation)
+            Debug.WriteLine("In Mouseup event");
+            if (e.Button == MouseButtons.Left)
             {
-                // The window moved! Update the model
-                _rulerInfo.Left = this.Left;
-                _rulerInfo.Top = this.Top;
-
-                // Trigger your persistence logic here
-                // SaveSettings();
+                //Compare the current position to the start position
+                if (e.Location != _startLocation)
+                {
+                    // The window moved! Update the model
+                    _rulerInfo.Left = e.Location.X;
+                    _rulerInfo.Top = e.Location.Y;
+                    this.Location = new Point(_rulerInfo.Left, _rulerInfo.Top);
+                }
+                else
+                {
+                   _rulerInfo.IsGuidelineEnabled = true;
+                    _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? _startLocation.Y : _startLocation.X;
+                    this.Invalidate();
+                }
             }
-        }
+            else if (e.Button == MouseButtons.Right)
+            {
+                // Right-click: Show context menu
+                _contextMenuStrip.Show(e.Location);
+                return;
+            }
+            _currentMode = InteractionMode.None; // Reset interaction mode after mouse up
 
+        }
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            bool d = _hasMoved;
+            if (_rulerInfo.IsGuidelineEnabled)
+            {
+                if (!_rulerInfo.Guideline.IsLocked && _rulerInfo.Guideline != null  )
+                {
+                    _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
+                    this.Invalidate(); // Trigger a repaint to move the guideline
+                }
+            }
+            if (e.Button == MouseButtons.Left)
+            {
+                if (!_hasMoved)
+                {
+                    int dx = Math.Abs(e.Location.X - _startLocation.X);
+                    int dy = Math.Abs(e.Location.Y - _startLocation.Y);
+                    if (dx > SystemInformation.DragSize.Width || dy > SystemInformation.DragSize.Height)
+                    {
+                        _hasMoved = true; // The user has moved the mouse enough to be considered a drag
+                    }
+                }
+                if (_hasMoved)
+                {
+                    ExecuteInteraction(Cursor.Position);
+                }
+            }
 
             // Only set the cursor if we are NOT in the middle of a move/resize
-            if (!_isDragging)
-            {
-                // Check if we are near the edge
-                bool atRight = (e.X > this.Width - 5);
-                bool atBottom = (e.Y > this.Height - 5);
-
-                if (atRight && atBottom) this.Cursor = Cursors.SizeNWSE;
-                else if (atRight) this.Cursor = Cursors.SizeWE;
-                else if (atBottom) this.Cursor = Cursors.SizeNS;
-                else this.Cursor = Cursors.Default;
-            }
+          
         }
-        private int GetHitTestCode(Point p)
+        private void UpdateCursor(Point mousePos)
         {
-            int margin = 5; // Pixels for edge detection
-            bool onLeft = p.X <= margin;
-            bool onRight = p.X >= this.Width - margin;
-            bool onTop = p.Y <= margin;
-            bool onBottom = p.Y >= this.Height - margin;
+            HitArea area = GetHitArea(mousePos);
 
-            if (onBottom && onRight) return HT_BOTTOMRIGHT;
-            if (onRight) return HT_RIGHT;
-            if (onBottom) return HT_BOTTOM;
-            // You can add HT_LEFT and HT_TOP here if you want those sides resizable too
+            // 1. Diagonal Resizing
+            if (area.HasFlag(HitArea.Top | HitArea.Left) || area.HasFlag(HitArea.Bottom | HitArea.Right))
+            {
+                this.Cursor = Cursors.SizeNWSE;
+            }
 
-            return 0; // Not on an edge
+
+            else if (area.HasFlag(HitArea.Top | HitArea.Right) || area.HasFlag(HitArea.Bottom | HitArea.Left))
+            {
+                this.Cursor = Cursors.SizeNESW;
+            }
+
+            // 2. Horizontal/Vertical Resizing
+            else if (area.HasFlag(HitArea.Left) || area.HasFlag(HitArea.Right))
+            {
+                this.Cursor = Cursors.SizeWE;
+            }
+            else if (area.HasFlag(HitArea.Top) || area.HasFlag(HitArea.Bottom))
+            {
+                this.Cursor = Cursors.SizeNS;
+            }
+
+            // 3. Move (Anywhere else)
+            else
+            {
+                this.Cursor = Cursors.Arrow;
+            }
+            }
+        
+        private void ExecuteInteraction(Point currentPos)
+        {
+            Point currentCursorPos = Cursor.Position;
+            int dx = currentCursorPos.X - _dragStartCursorPos.X;
+            int dy = currentCursorPos.Y - _dragStartCursorPos.Y;
+            //int deltaX = currentPos.X - _startLocation.X;
+            //int deltaY = currentPos.Y - _startLocation.Y;
+            Debug.WriteLine("DeltaX "+dx);
+            Debug.WriteLine("DeltaY" +dy);
+
+            if (_currentMode == InteractionMode.Resize)
+            {
+                // Calculate new bounds based on the initial state
+                int newLeft = _dragStartFormPos.X;
+                int newTop = _dragStartFormPos.Y;
+                int newWidth = _dragStartFormSize.Width;
+                int newHeight = _dragStartFormSize.Height;
+
+                if (_activeArea.HasFlag(HitArea.Right)) newWidth += dx;
+                if (_activeArea.HasFlag(HitArea.Bottom)) newHeight += dy;
+
+                if (_activeArea.HasFlag(HitArea.Left)) { newLeft += dx; newWidth -= dx; }
+                if (_activeArea.HasFlag(HitArea.Top)) { newTop += dy; newHeight -= dy; }
+                // Apply all changes atomically to prevent flickering
+                this.SetBounds(newLeft, newTop, newWidth, newHeight);
+            }
+            else if (_currentMode == InteractionMode.Drag)
+            {
+                // Simply offset the current position
+                this.Location = new Point(_dragStartFormPos.X + dx, _dragStartFormPos.Y + dy);
+            }
+
+            // Update the starting location so movement remains relative 
+            // to the previous delta, preventing exponential snapping
+            //_startLocation = currentPos;
+
+            this.Invalidate();
+        }
+        private HitArea GetHitArea(Point pt)
+        {
+            HitArea area = HitArea.None;
+            int margin = 8; // Size of the "grab" zone in pixels
+
+            // Check Horizontal bounds
+            if (pt.X < margin)
+                area |= HitArea.Left;
+            else if (pt.X > this.Width - margin)
+                area |= HitArea.Right;
+
+            // Check Vertical bounds
+            if (pt.Y < margin)
+                area |= HitArea.Top;
+            else if (pt.Y > this.Height - margin)
+                area |= HitArea.Bottom;
+
+            return area;
         }
         private void DrawHorizontalRuler(Graphics g)
         {
@@ -1270,12 +1427,12 @@ namespace Ruler.Forms
         private void DrawGuideline(Graphics g)
         {
             // A single line crossing the ruler at the current mouse position
-            Pen p = new Pen(Color.Red, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
+            Pen p = Pens.Red;   
 
             if (!_rulerInfo.IsVertical)
-                g.DrawLine(p, (float)_rulerInfo.GuidelineLocation, 0, (float)_rulerInfo.GuidelineLocation, this.Height);
+                g.DrawLine(p, (float)_rulerInfo.Guideline.Position, 0, (float)_rulerInfo.Guideline.Position, this.Height);
             else
-                g.DrawLine(p, 0, (float)_rulerInfo.GuidelineLocation, this.Width, (float)_rulerInfo.GuidelineLocation);
+                g.DrawLine(p, 0, (float)_rulerInfo.Guideline.Position, this.Width, (float)_rulerInfo.Guideline.Position);
         }
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -1283,12 +1440,18 @@ namespace Ruler.Forms
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             if (!_rulerInfo.IsVertical)
+            {
                 DrawHorizontalRuler(e.Graphics);
+            }
             else
+            {
                 DrawVerticalRuler(e.Graphics);
+            }
 
-            if (_rulerInfo.IsGuideline)
+            if (_rulerInfo.IsGuidelineEnabled)
+            {
                 DrawGuideline(e.Graphics);
+            }
         }
         private void DrawLabelOnBothSides(Graphics g, int pos, string text, Orientation orientation)
         {
@@ -1326,8 +1489,16 @@ namespace Ruler.Forms
                 }
             }
         }
-
-
+        public void SetTooltip(string text)
+        {
+            ToolTip tt = new ToolTip();
+            tt.Show(text, this, 1000);
+        }
+    
+        private void MainForm_Click(object sender, EventArgs e)
+        {
+   //         MessageBox.Show("Main form clicked!");
+        }
     }
 }
 

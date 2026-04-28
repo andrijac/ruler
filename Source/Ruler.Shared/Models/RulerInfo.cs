@@ -115,15 +115,15 @@ namespace Ruler.Shared.Models
         {
             get => IsVertical ? Orientation.Vertical : Orientation.Horizontal;
         }
-       [JsonProperty("IsGuideline")]
-        public bool IsGuideline
+      public RulerGuideline Guideline
         {
-            get;set;
-        }
-        [JsonProperty("GuidelineLocation")]
-        public double GuidelineLocation
+            get;
+            set;
+        } = new RulerGuideline();
+        public bool IsGuidelineEnabled
         {
-            get; set;
+            get;
+            set;
         }
         public override string ToString()
         {
@@ -133,8 +133,8 @@ namespace Ruler.Shared.Models
                    $"  Location: {Left},{Top} (Display: {DisplayLocationString})" + Environment.NewLine +
                    $"  Opacity: {Opacity}" + Environment.NewLine +
                    $"  TopMost: {TopMost} | ShowToolTip: {ShowToolTip}" + Environment.NewLine +
-                   $"  IsLocked: {IsLocked} | IsGuideline: {IsGuideline}" + Environment.NewLine +
-                   $"  GuidelineLocation: {GuidelineLocation}" + Environment.NewLine +
+                   $"  IsLocked: {IsLocked}" + Environment.NewLine +
+                   $"  Guideline: {Guideline.ToString()}" + Environment.NewLine +
                    $"  SaveType: {SaveType}";
         }
         public void ToggleOrientation()

@@ -32,10 +32,11 @@
             this.SuspendLayout();
             // 
             // MainForm
-            //
+            // 
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
             this.Text = "MainForm";
+            this.Click += new System.EventHandler(this.MainForm_Click);
             this.ResumeLayout(false);
 
         }
