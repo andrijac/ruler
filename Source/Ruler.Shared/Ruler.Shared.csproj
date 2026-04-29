@@ -66,7 +66,6 @@
     <Compile Include="Factories\RulerFactory.cs" />
     <Compile Include="Services\RulerInfoPreprocessor.cs" />
     <Compile Include="Services\SettingsService.cs" />
-    <Compile Include="Services\UpdateService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

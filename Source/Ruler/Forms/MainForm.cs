@@ -231,32 +231,7 @@ namespace Ruler.Forms
                 this.Invalidate(); // Trigger a repaint to show/hide the guideline
             };
             _contextMenuStrip.Items.Add(miShowGuideline);
-            ToolStripMenuItem miUpdate = new ToolStripMenuItem("Check for updates...");
-            miUpdate.Click += async (s, e) =>
-            {
-                UpdateService updateService = new UpdateService();
-                // Subscribe to the restart request
-                updateService.OnRequestRestart = () =>
-                {
-                    // This calls the static method in your context
-                    RulerApplicationContext.CloseAll();
-                    // Optionally launch the updater process here
-                    // Process.Start("Updater.exe");
-                };
-                await updateService.CheckForUpdates();
-                if (updateService.UpdateAvailable)
-                {
-                    if (MessageBox.Show("Update found! Restart and update?", "Update", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    {
-                        bool success = await updateService.DownloadUpdateAsync();
-                        if (success)
-                        {
-                            updateService.InstallUpdate();
-                        }
-                    }
-                }
-            };
-            _contextMenuStrip.Items.Add(miUpdate);
+          
             ToolStripMenuItem miReset = new ToolStripMenuItem("Reset");
             ToolStripMenuItem miResetDefault = new ToolStripMenuItem("Reset To Default");
             miResetDefault.Click += (s, e) =>
