@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Newtonsoft.Json;
 
-using Ruler.Wpf.Common;
-using Ruler.Wpf.Models;
+using Ruler.Shared.Factories;
+using Ruler.Shared.Models;
+using Ruler.Wpf.Properties;
 using Ruler.Wpf.Services;
-using Ruler.Wpf.Services.Persistence;
-using Ruler.Wpf.Services.Persistence.Strategy;
 using Ruler.Wpf.ViewModels;
+using Ruler.Wpf.Views;
 
 using System;
 using System.Collections.Generic;
@@ -22,54 +22,51 @@ namespace Ruler.Wpf
     /// </summary>
     public partial class App : Application
     {
-        // In App.xaml.cs
-        public IServiceProvider ServiceProvider { get; private set; }
-        protected override void OnStartup(StartupEventArgs e)
+        private void Application_Startup(object sender, StartupEventArgs e)
         {
-            base.OnStartup(e);
-            var log = new LoggingService();
-            var settingsStraegy = new SettingsPersistenceStrategy(log);
-            RulerInfo initialInfo;
-            
-            if (e.Args.Length>0)
+            List<RulerInfo> rulerInfos = null;
+
+            // 1. Pull raw JSON string from settings
+            string jsonSettings = Settings.Default.RulerCollection;
+
+            // 2. Deserialize into data contracts if string exists
+            if (!string.IsNullOrWhiteSpace(jsonSettings))
             {
-                initialInfo = CommandLineRulerFactory.CovertToRulerInfo(e.Args);
+                try
+                {
+                    rulerInfos = JsonConvert.DeserializeObject<List<RulerInfo>>(jsonSettings);
+                }
+                catch (JsonException)
+                {
+                    rulerInfos = null; // Safety fallback on corruption
+                }
             }
-            else
+
+            // 3. Fallback to factory if list is null or empty
+            if (rulerInfos == null || rulerInfos.Count == 0)
             {
-                initialInfo = settingsStraegy.Load();
+                // Assuming factory can generate a default info contract or view model
+                RulerInfo defaultInfo = RulerFactory.CreateDefault();
+                rulerInfos = new List<RulerInfo> { defaultInfo };
             }
 
+            // //Current.Dispatcher.InvokeAsync(() =>
+            // //{
+            // //    var windowManager = new WindowManager();
+            // //    windowManager.InitializeWorkspace(rulerInfos);
+            // //}, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            var windowManager = new WindowManager();
 
+            //  5.Hand off the active ViewModels to the Window Manager
 
-            ServiceCollection serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(initialInfo);
-            ConfigureServices(serviceCollection);
-           ServiceProvider = serviceCollection.BuildServiceProvider();
-
-           
-            ExecuteStartupLogic();
+            windowManager.InitializeWorkspace(rulerInfos);
+            //RulerInfo info = RulerFactory.CreateDefault();
+            //var mainViewModel = new RulerViewModel(info);
+            //RulerWindow window = new RulerWindow
+            //{
+            //    DataContext = mainViewModel
+            //};
+            //window.Show();
         }
-        private void ConfigureServices(IServiceCollection services)
-        {
-            
-            services.AddSingleton<ILoggingService, LoggingService>();
-            services.AddSingleton<SettingsPersistenceStrategy>();
-            services.AddSingleton<SingleRulerPersistenceService>();
-            services.AddSingleton<IDialogService, DialogService>();           
-            services.AddTransient<RulerViewModel>();
-            services.AddTransient<MainWindow>();
-        }
-        private void ExecuteStartupLogic()
-        {
-            var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
-            var dialogService = ServiceProvider.GetRequiredService<IDialogService>();
-            var persistenceService = ServiceProvider.GetRequiredService<SingleRulerPersistenceService>();
-            RulerInfo initialInfo = persistenceService.LoadRulerState();
-            dialogService.AddRuler(mainWindow);            
-            mainWindow.Show();
-        }
-
     }
 }
-

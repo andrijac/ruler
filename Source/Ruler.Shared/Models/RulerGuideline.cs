@@ -1,12 +1,7 @@
 ﻿using Newtonsoft.Json;
 
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO.Ports;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Ruler.Shared.Models
 {
@@ -14,6 +9,7 @@ namespace Ruler.Shared.Models
     {
         private double _position;
         private bool _isLocked;
+        private bool _isEnabled;
         public RulerGuideline()
         {
             Position = 0;
@@ -29,21 +25,33 @@ namespace Ruler.Shared.Models
         public bool IsLocked
         {
             get => _isLocked;
-            set => SetProperty(ref _isLocked, value);
-        }
-        public Color GuidelineColor
-        {
-            get             
+            set
             {
-                return IsLocked ? Color.Blue : Color.Red;
+                SetProperty(ref _isLocked, value);
+                OnPropertyChanged(nameof(GuidelineColorHex));
+            }
+
+        }
+        [JsonProperty("IsEnabled")]
+        public bool IsEnabled
+        {
+            get => _isEnabled;
+            set => SetProperty(ref _isEnabled, value);
+        }
+        [JsonIgnore]
+        public string GuidelineColorHex
+        {
+            get
+            {
+                // Blue hex code if locked, otherwise Red hex code
+                return IsLocked ? "#FF0000FF" : "#FFFF0000";
             }
         }
         public override string ToString()
         {
             return $"[Guideline Details]" + Environment.NewLine +
                    $"  Position: {Position}" + Environment.NewLine +
-                   $"  IsLocked: {IsLocked}" + Environment.NewLine +
-                   $"  GuidelineColor: {GuidelineColor}";
+                   $"  IsLocked: {IsLocked}" + Environment.NewLine;
         }
     }
 }

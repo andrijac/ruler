@@ -1,48 +1,52 @@
-﻿using System.Windows.Data;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Globalization;
 using System.Windows;
+using System.Windows.Data;
 
 namespace Ruler.Wpf.Converters
 {
+    /// <summary>
+    /// Converts a boolean value to a WPF Visibility state (Visible vs Collapsed).
+    /// Supports an optional string parameter "Invert" to flip the logic.
+    /// </summary>
     public class BooleanToVisibilityConverter : IValueConverter
     {
-        // Converts boolean to visibility (true -> Visible, false -> Collapsed)
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool booleanValue)
+            if (value is bool boolValue)
             {
-                bool invert = false;
+                // Check if the XAML passed Parameter="Invert" or Parameter="True" to flip the behavior
+                bool invert = parameter != null &&
+                             string.Equals(parameter.ToString(), "Invert", StringComparison.OrdinalIgnoreCase);
 
-                // Check for the 'ConverterParameter' to invert the logic
-                if (parameter != null && parameter.ToString().Equals("Invert", StringComparison.OrdinalIgnoreCase))
+                if (invert)
                 {
-                    invert = true;
+                    boolValue = !boolValue;
                 }
 
-                // Apply the logic:
-                // If invert is true, visible when booleanValue is false.
-                // If invert is false, visible when booleanValue is true.
-                Console.WriteLine(booleanValue);
-                Console.WriteLine(invert);
-                if (booleanValue != invert)
-                {
-                    Console.WriteLine("Visible");
-                    return Visibility.Visible;
-                }
+                return boolValue ? Visibility.Visible : Visibility.Collapsed;
             }
-            Console.WriteLine("Collapsed");
+
             return Visibility.Collapsed;
         }
 
-        // Converts visibility to boolean (not typically needed for UI binding)
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return DependencyProperty.UnsetValue;
+            if (value is Visibility visibility)
+            {
+                bool boolValue = visibility == Visibility.Visible;
+
+                bool invert = parameter != null &&
+                             string.Equals(parameter.ToString(), "Invert", StringComparison.OrdinalIgnoreCase);
+
+                return invert ? !boolValue : boolValue;
+            }
+
+            return false;
         }
     }
 }

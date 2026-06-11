@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{73BEFA42-D277-49C4-8BBA-15CEC84E7E54}</ProjectGuid>
+    <ProjectGuid>{6E022873-9990-440A-A95A-B3256EB93866}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Ruler.Wpf</RootNamespace>
     <AssemblyName>Ruler.Wpf</AssemblyName>
@@ -34,29 +34,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>Ruler.Wpf.App</StartupObject>
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=9.0.0.10, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.9.0.10\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Extensions.DependencyInjection, Version=9.0.0.10, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.9.0.10\lib\net462\Microsoft.Extensions.DependencyInjection.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=9.0.0.10, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.9.0.10\lib\net462\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -75,56 +58,38 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Common\BooleanToVisibilityConverter.cs" />
-    <Compile Include="Common\CenterConverter.cs" />
-    <Compile Include="Converters\BooleanToResizeModeConverter.cs" />
-    <Compile Include="Services\DialogService.cs" />
-    <Compile Include="Services\IDialogService.cs" />
-    <Compile Include="Common\NativeMethods.cs" />
-    <Compile Include="Common\Orientation.cs" />
-    <Compile Include="Common\SaveTypes.cs" />
-    <Compile Include="Common\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <Compile Include="Common\TickType.cs" />
-    <Compile Include="Common\ValueToBooleanConverter.cs" />
-    <Compile Include="Controls\PassthroughBorder.cs" />
     <Compile Include="Converters\BooleanToVisibilityConverter.cs" />
-    <Compile Include="Models\IRulerInfo.cs" />
-    <Compile Include="Models\LabelInfo.cs" />
-    <Compile Include="Models\LineInfo.cs" />
-    <Compile Include="Models\ResizeRegion.cs" />
-    <Compile Include="Models\RulerDataTemplateSelector.cs" />
-    <Compile Include="Models\RulerInfo.cs" />
-    <Compile Include="Models\RulerTick.cs" />
-    <Compile Include="Models\RulerShapes.cs" />
-    <Compile Include="Services\ILoggingService.cs" />
-    <Compile Include="Services\LoggingService.cs" />
-    <Compile Include="Services\Persistence\CommandLineRulerFactory.cs" />
-    <Compile Include="Services\Persistence\SingleRulerPersistenceService.cs" />
-    <Compile Include="Services\Persistence\Strategy\IPersistenceStrategy.cs" />
-    <Compile Include="Services\Persistence\Strategy\SettingsPersistenceStrategy.cs" />
-    <Compile Include="SetSizeWindow.xaml.cs">
+    <Compile Include="Converters\EnumMatchConverter.cs" />
+    <Compile Include="Converters\NullToBooleanConverter.cs" />
+    <Compile Include="Converters\OpacityMatchConverter.cs" />
+    <Compile Include="Services\WindowManager.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="ViewModels\RulerviewModel.cs" />
+    <Compile Include="ViewModels\SetSizeViewModel.cs" />
+    <Compile Include="Views\RulerControl.xaml.cs">
+      <DependentUpon>RulerControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RulerWindow.xaml.cs">
+      <DependentUpon>RulerWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SetSizeWindow.xaml.cs">
       <DependentUpon>SetSizeWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ViewModels\RulerViewModel.cs" />
-    <Compile Include="ViewModels\ViewModelBase.cs" />
-    <Page Include="MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Common\RelayCommand.cs" />
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Page Include="SetSizeWindow.xaml">
+    <Compile Include="Commands\RelayCommand.cs" />
+    <Compile Include="Converters\OpacityToPercentConverter.cs" />
+    <Page Include="Views\RulerControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\RulerWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SetSizeWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -147,10 +112,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Common\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -161,8 +122,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Presemters\" />
-    <Folder Include="Views\" />
+    <ProjectReference Include="..\Ruler.Shared\Ruler.Shared.csproj">
+      <Project>{b66439ff-bc75-469f-99fa-70ac0bac4e7a}</Project>
+      <Name>Ruler.Shared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

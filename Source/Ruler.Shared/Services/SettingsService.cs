@@ -39,7 +39,7 @@ namespace Ruler.Shared.Services
             catch (Exception ex)
             {
                 // In a real app, log this error to a file or console
-              
+                Console.WriteLine(ex.ToString());
                 return string.Empty;
             }
         }
@@ -64,6 +64,7 @@ namespace Ruler.Shared.Services
             catch (JsonException ex)
             {
                 // Return default state so the user doesn't open an empty app on corruption
+                Console.WriteLine(ex.ToString());
                 return new List<RulerInfo> { RulerFactory.CreateDefault() };
             }
         }
