@@ -224,10 +224,10 @@ namespace Ruler.Forms
             _contextMenuStrip.Items.Add(miSetSize);
             _contextMenuStrip.Items.Add(miDuplicate);
             ToolStripMenuItem miShowGuideline = new ToolStripMenuItem("Show Guideline");
-            miShowGuideline.Tag = nameof(_rulerInfo.IsGuidelineEnabled); // Link to the IsGuidelineEnabled property
+            miShowGuideline.Tag = nameof(_rulerInfo.Guideline.IsEnabled); // Link to the IsGuidelineEnabled property
             miShowGuideline.Click += (s, e) =>
             {
-                _rulerInfo.IsGuidelineEnabled = !_rulerInfo.IsGuidelineEnabled;
+                _rulerInfo.Guideline.IsEnabled = !_rulerInfo.Guideline.IsEnabled;
                 this.Invalidate(); // Trigger a repaint to show/hide the guideline
             };
             _contextMenuStrip.Items.Add(miShowGuideline);
@@ -251,7 +251,7 @@ namespace Ruler.Forms
                     MessageBox.Show("All saved rulers have been cleared.");
                     foreach (MainForm form in Application.OpenForms.OfType<MainForm>())
                     {
-                        form._rulerInfo.SaveType = SaveTypes.none;
+                        form._rulerInfo.SaveType = SaveTypes.None;
                         RulerApplicationContext.Register(form); // Re-register to update the context's tracking of open forms
                     }
                     MessageBox.Show("All ruler's save type set to 'Do not Save' to reflect cleared saved data.");
@@ -361,7 +361,7 @@ namespace Ruler.Forms
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-          if (_rulerInfo.IsGuidelineEnabled)
+          if (_rulerInfo.Guideline.IsEnabled)
             {
               if (_rulerInfo.Guideline.IsLocked)
                 {
@@ -374,7 +374,7 @@ namespace Ruler.Forms
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
-            if (_rulerInfo.IsGuidelineEnabled)
+            if (_rulerInfo.Guideline.IsEnabled)
             {
                 this.Invalidate();
             }
@@ -392,7 +392,7 @@ namespace Ruler.Forms
                 _hasMoved = false;
 
 
-                if (_rulerInfo.IsGuidelineEnabled && _rulerInfo.Guideline != null)
+                if (_rulerInfo.Guideline.IsEnabled && _rulerInfo.Guideline != null)
                 {
                     int distanceToGuideline = _rulerInfo.IsVertical
                         ? Math.Abs(e.Y - (int)_rulerInfo.Guideline.Position)
@@ -423,7 +423,7 @@ namespace Ruler.Forms
                 // Only trigger the guideline toggle if no significant movement occurred
                 if (!_hasMoved)
                 {
-                    _rulerInfo.IsGuidelineEnabled = true;
+                    _rulerInfo.Guideline.IsEnabled = true;
                     _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
                     this.Invalidate();
                 }
@@ -440,7 +440,7 @@ namespace Ruler.Forms
         {
             base.OnMouseMove(e);
             bool d = _hasMoved;
-            if (_rulerInfo.IsGuidelineEnabled)
+            if (_rulerInfo.Guideline.IsEnabled)
             {
                 if (!_rulerInfo.Guideline.IsLocked && _rulerInfo.Guideline != null  )
                 {
@@ -619,7 +619,7 @@ namespace Ruler.Forms
             }
             bool isMouseOver = this.ClientRectangle.Contains(this.PointToClient(Cursor.Position));
 
-            if (_rulerInfo.IsGuidelineEnabled && (isMouseOver || _rulerInfo.IsLocked))
+            if (_rulerInfo.Guideline.IsEnabled && (isMouseOver || _rulerInfo.IsLocked))
             {
                 DrawGuideline(e.Graphics);
             }
@@ -632,7 +632,7 @@ namespace Ruler.Forms
                 // 2. Define the area you want the text to be centered in
                 RectangleF centerRect = new RectangleF(0, 0, this.Width, this.Height);
 
-                if (_rulerInfo.IsGuidelineEnabled)
+                if (_rulerInfo.Guideline.IsEnabled)
                 {
                     string toolTipText = $"Size: {this.Width} x {this.Height}\nGuideline at: {(int)_rulerInfo.Guideline.Position}";
                     // 3. Draw the shadow (shifted 1 pixel)

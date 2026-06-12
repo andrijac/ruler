@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 using Newtonsoft.Json;
+using Ruler.Shared.Models;
 
 using Ruler.Shared.Enums;
 using Ruler.Shared.Interfaces;
@@ -12,6 +13,9 @@ namespace Ruler.Shared.Models
 {
     public class RulerInfo : ModelBase
     {
+       
+        private RulerGuideline _guideline;
+       
         [JsonProperty("Width")]
         public int Width
         {
@@ -85,19 +89,18 @@ namespace Ruler.Shared.Models
             get;
             set;
         }
-        [JsonIgnore]
-        public Point DisplayLocation
+        public RulerGuideline Guideline
         {
-            get
-            {
-                return new Point(Left, Top);
-            }
+            get => _guideline;
+            set { _guideline = value; }
         }
+
+       
         // The property the Serializer uses
         [JsonProperty("DisplayLocation")]
         public string DisplayLocationString
         {
-            get => $"{DisplayLocation.X},{DisplayLocation.Y}"; 
+            get => $"{Left},{Top}"; 
             set
             {
                 var parts = value.Split(',');
@@ -115,36 +118,27 @@ namespace Ruler.Shared.Models
         {
             get => IsVertical ? Orientation.Vertical : Orientation.Horizontal;
         }
-      public RulerGuideline Guideline
-        {
-            get;
-            set;
-        } = new RulerGuideline();
-        public bool IsGuidelineEnabled
-        {
-            get;
-            set;
-        }
         public override string ToString()
         {
             return $"[RulerInfo Details]" + Environment.NewLine +
-                   $"  Orientation: {RulerOrientation} (IsVertical: {IsVertical})" + Environment.NewLine +
+                   $"  IsVertical: {IsVertical})" + Environment.NewLine +
                    $"  Size: {Width}x{Height}" + Environment.NewLine +
                    $"  Location: {Left},{Top} (Display: {DisplayLocationString})" + Environment.NewLine +
                    $"  Opacity: {Opacity}" + Environment.NewLine +
                    $"  TopMost: {TopMost} | ShowToolTip: {ShowToolTip}" + Environment.NewLine +
                    $"  IsLocked: {IsLocked}" + Environment.NewLine +
-                   $"  Guideline: {Guideline.ToString()}" + Environment.NewLine +
-                   $"  SaveType: {SaveType}";
+                   $"  SaveType: {SaveType}" +
+                   $"  Guideline:  {Guideline}"; ;
         }
         public void ToggleOrientation()
         {
+            Console.WriteLine(this.ToString());
             IsVertical = !IsVertical;
-
-            // Swap dimensions
-            var temp = Width;
+            var oldWidth = Width;
             Width = Height;
-            Height = temp;
+            Height = oldWidth;
+            Console.WriteLine("Orientation toggled. New state:");
+            Console.WriteLine(this.ToString());
         }
     }
 
