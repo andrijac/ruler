@@ -1,1228 +1,501 @@
-﻿using Ruler.Wpf;
-using Ruler.Wpf.Common;
-using Ruler.Wpf.Models;
+﻿using Ruler.Shared.Enums;
+using Ruler.Shared.Factories;
+using Ruler.Shared.Models;
+using Ruler.Wpf.Commands;
 using Ruler.Wpf.Services;
-using Ruler.Wpf.Services.Persistence;
+using Ruler.Wpf.Views;
 
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace Ruler.Wpf.ViewModels
 {
-    // The core ViewModel class for the Ruler application
-    public class RulerViewModel : ViewModelBase
+    public class RulerViewModel : ModelBase
     {
-        // The RulerInfo class would be our Model
-        private RulerInfo _rulerInfo;
-        private IDialogService _dialogService;
-        private ILoggingService _loggingService;
+        private readonly WindowManager _windowManager;
+        public RulerInfo Model { get; }
+        private bool _isFlipping = false;
 
-        // Collections for the ItemsControls to bind to
-        private ObservableCollection<RulerTick> _topRulerTicks = new ObservableCollection<RulerTick>();
-        private ObservableCollection<RulerTick> _bottomRulerTicks = new ObservableCollection<RulerTick>();
-        //Opacity boolean flags
-        private bool _isOpacity5Percent;
-        private bool _isOpacity10Percent;
-        private bool _isOpacity15Percent;
-        private bool _isOpacity20Percent;
-        private bool _isOpacity25Percent;
-        private bool _isOpacity30Percent;
-        private bool _isOpacity35Percent;
-        private bool _isOpacity40Percent;
-        private bool _isOpacity45Percent;
-        private bool _isOpacity50Percent;
-        private bool _isOpacity55Percent;
-        private bool _isOpacity60Percent;
-        private bool _isOpacity65Percent;
-        private bool _isOpacity70Percent;
-        private bool _isOpacity75Percent;
-        private bool _isOpacity80Percent;
-        private bool _isOpacity85Percent;
-        private bool _isOpacity90Percent;
-        private bool _isOpacity95Percent;
-        private bool _isOpacity100Percent;
+        // Interaction Threshold Buffers
+        private const double MinimumDragDistance = 4.0;
+        private Point _mouseDownScreenPos;
 
-        private bool _isInitialized = false;
+        // Two-Way Data-Bound Properties linked directly to the Window boundaries
+        public int Width { get => Model.Width; 
+            set { if (_isFlipping) return; Model.Width = value; OnPropertyChanged(); } }
+        public int Height { get => Model.Height; 
+            set { if (_isFlipping) return; Model.Height = value; OnPropertyChanged(); } }
+        public double Top { get => Model.Top; set { Model.Top = (int)value; OnPropertyChanged(); } }
+        public double Left { get => Model.Left; set { Model.Left = (int)value; OnPropertyChanged(); } }
+        public bool IsVertical { get => Model.IsVertical; set { Model.IsVertical = value; OnPropertyChanged(); } }
+        public bool TopMost { get => Model.TopMost; set { Model.TopMost = value; OnPropertyChanged(); } }
+        public bool IsLocked { get => Model.IsLocked; set { Model.IsLocked = value; OnPropertyChanged(); } }
+        public bool ShowToolTip { get => Model.ShowToolTip; set { Model.ShowToolTip = value; OnPropertyChanged(); } }
+        public double Opacity { get => Model.Opacity; set { Model.Opacity = value; OnPropertyChanged(); } }
+        public SaveTypes SaveType { get => Model.SaveType; set { Model.SaveType = value; OnPropertyChanged(); } }
 
-        private Dictionary<int, Action<bool>> _opacitySetterMap;
-        private Dictionary<SaveTypes, Action<bool>> _saveTypeSetterMap;
+        public RulerGuideline CurrentGuideline { get => Model.Guideline; set { Model.Guideline = value; OnPropertyChanged(); } }
+        public ICommand ModifySettingCommand { get; private set; }
 
-        //SaveType boolean flags
-        private bool _isSaveTypeNone;
-        private bool _isSaveTypeSize;
-        private bool _isSaveTypeLocation;
-        private bool _isSaveTypeAll;
+        // Context Menu / Direct UI Element Commands
+        public ICommand ExitApplicationCommand { get; private set; }
+        public ICommand ResetToDefaultCommand { get; private set; }
+        public ICommand ShowAboutDialogCommand { get; private set; }
+        public ICommand DuplicateRulerCommand { get; private set; }
+        public ICommand ToggleOrientationCommand { get; private set; }
+        public ICommand ToggleLockCommand { get; private set; }
+        public ICommand ToggleToolTipCommand { get; private set; }
+        public ICommand ToggleGuidelineCommand { get; private set; }
+        public ICommand CloseRulerCommand { get; private set; }
+        public ICommand ShowKeyboardShortcutsCommand { get; private set; }  
+
+        // Parameter-Driven Payload Commands
+        public ICommand ChangeOpacityCommand { get; private set; }
+        public ICommand SetSaveTypeCommand { get; private set; }
+        public ICommand ResizeRulerCommand { get; private set; }
 
 
-        private ICommand _toggleLockCommand;
-        private ICommand _exitCommand;
-        private ICommand _toggleVerticalCommand;
-        private ICommand _toggleTopMostCommand;
-        private ICommand _toggleToolTipCommand;
-        private ICommand _setOpacityCommand;
-        private ICommand _setSaveTypeCommand;
-        private ICommand _showSetSizeFormCommand;
-        private ICommand _showAboutCommand;
-        private ICommand _duplicateCommand;
-        private ICommand _resetToDefaultCommand;
+        public RulerViewModel(RulerInfo model, WindowManager windowManager)
+        {
+            Model = model ?? throw new ArgumentNullException(nameof(model));
+            _windowManager = windowManager ?? throw new ArgumentNullException(nameof(windowManager));
+            InitializeCommands();
+        }
+        public RulerViewModel(RulerInfo ruler)
+        {
+            Model = ruler;
+            InitializeCommands();
+        }
 
-        private int _horizontalMinHeight = 85;
-        private int _vericalMinWidth = 93;
+        /// <summary>
+        /// Anchors the mouse cursor position when clicked.
+        /// </summary>
+        public void HandleMouseDown(Point screenPosition)
+        {
+            _mouseDownScreenPos = screenPosition;
+        }
 
-        #region  SaveTypeBooleans
-        public bool IsSaveTypeNone
+        /// <summary>
+        /// Runs Pythagorean displacement validation logic on release to differentiate dragging from clicks.
+        /// </summary>
+        public void HandleMouseUp(Point screenPosition)
         {
-            get => _isSaveTypeNone;
-            set
-            {
-                if (_isSaveTypeNone != value)
-                {
-                    _isSaveTypeNone = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsSaveTypeSize
-        {
-            get => _isSaveTypeSize;
-            set
-            {
-                if (_isSaveTypeSize != value)
-                {
-                    _isSaveTypeSize = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsSaveTypeLocation
-        {
-            get => _isSaveTypeLocation;
-            set
-            {
-                if (_isSaveTypeLocation != value)
-                {
-                    _isSaveTypeLocation = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsSaveTypeAll
-        {
-            get => _isSaveTypeAll;
-            set
-            {
-                if (_isSaveTypeAll != value)
-                {
-                    _isSaveTypeAll = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        #endregion
-        #region OpacityBooleans
-        public bool IsOpacity5Percent
-        {
-            get => _isOpacity5Percent;
-            set
-            {
-                if (_isOpacity5Percent != value)
-                {
-                    _isOpacity5Percent = value; 
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity10Percent
-        {
-            get => _isOpacity10Percent;
-            set
-            {
-                if (_isOpacity10Percent != value)
-                {
-                    _isOpacity10Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity15Percent
-        {
-            get => _isOpacity15Percent;
-            set
-            {
-                if (_isOpacity15Percent != value)
-                {
-                    _isOpacity15Percent = value;   
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity20Percent
-        {
-            get => _isOpacity20Percent;
-            set
-            {
-                if (_isOpacity20Percent != value)
-                {
-                    _isOpacity20Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity25Percent
-        {
-            get => _isOpacity25Percent;
-            set
-            {
-                if (_isOpacity25Percent != value)
-                {
-                    _isOpacity25Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity30Percent
-        {
-            get => _isOpacity30Percent;
-            set
-            {
-                if (_isOpacity30Percent != value)
-                {
-                    _isOpacity30Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity35Percent
-        {
-            get => _isOpacity35Percent;
-            set
-            {
-                if (_isOpacity35Percent != value)
-                {
-                    _isOpacity35Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity40Percent
-        {
-            get => _isOpacity40Percent;
-            set
-            {
-                if (_isOpacity40Percent != value)
-                {
-                    _isOpacity40Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity45Percent
-        {
-            get => _isOpacity45Percent;
-            set
-            {
-                if (_isOpacity45Percent != value)
-                {
-                    _isOpacity45Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity50Percent
-        {
-            get => _isOpacity50Percent;
-            set
-            {
-                if (_isOpacity50Percent != value)
-                {
-                    _isOpacity50Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity55Percent
-        {
-            get => _isOpacity55Percent;
-            set
-            {
-                if (_isOpacity55Percent != value)
-                {
-                    _isOpacity55Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity60Percent
-        {
-            get => _isOpacity60Percent;
-            set
-            {
-                if (_isOpacity60Percent != value)
-                {
-                    _isOpacity60Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity65Percent
-        {
-            get => _isOpacity65Percent;
-            set
-            {
-                if (_isOpacity65Percent != value)
-                {
-                    _isOpacity65Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity70Percent
-        {
-            get => _isOpacity70Percent;
-            set
-            {
-                if (_isOpacity70Percent != value)
-                {
-                    _isOpacity70Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity75Percent
-        {
-            get => _isOpacity75Percent;
-            set
-            {
-                if (_isOpacity75Percent != value)
-                {
-                    _isOpacity75Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity80Percent
-        {
-            get => _isOpacity80Percent;
-            set
-            {
-                if (_isOpacity80Percent != value)
-                {
-                    _isOpacity80Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity85Percent
-        {
-            get => _isOpacity85Percent;
-            set
-            {
-                if (_isOpacity85Percent != value)
-                {
-                    _isOpacity85Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity90Percent
-        {
-            get => _isOpacity90Percent;
-            set
-            {
-                if (_isOpacity90Percent != value)
-                {
-                    _isOpacity90Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity95Percent
-        {
-            get => _isOpacity95Percent;
-            set
-            {
-                if (_isOpacity95Percent != value)
-                {
-                    _isOpacity95Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public bool IsOpacity100Percent
-        {
-            get => _isOpacity100Percent;
-            set
-            {
-                if (_isOpacity100Percent != value)
-                {
-                    _isOpacity100Percent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        #endregion      
-        // State variables for mouse interaction
-        private Point _startPoint;
-        private Size _startSize;
-        private bool _isResizing;
-        private bool _isMoving;
-        private double _length;
-        private bool _isLocked;
-        private int leftMargin = 111;
-        private double actualWidth = 203;
-        private bool _isLoadingState;
-        private double _middlewidth = 1;
-        private readonly SingleRulerPersistenceService _persistenceService;
-        private double _topRowHeight;
-        private bool _isGuideLineVisible = false;
-        private double _guideLinePosition;
-        private double _minheight = 45;
-        private double _minwidth = 40;
+            double deltaX = screenPosition.X - _mouseDownScreenPos.X;
+            double deltaY = screenPosition.Y - _mouseDownScreenPos.Y;
 
-        public bool IsGuideLineVisible
-        {
-            get => _isGuideLineVisible;
-            set {
-                if (_isGuideLineVisible!=value)
-                {
-                    _isGuideLineVisible = value;   
-                    OnPropertyChanged();
-                }
+            // Straight line calculation: a² + b² = c²
+            double totalDistanceMoved = Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
+
+            if (totalDistanceMoved >= MinimumDragDistance)
+            {
+                // Process intentional drag completion workflow actions (e.g., auto-save new location settings)
+                System.Diagnostics.Debug.WriteLine($"VM Drag Processed: Moved {totalDistanceMoved:F1}px.");
+            }
+            else
+            {
+                // Process static frame execution actions
+                System.Diagnostics.Debug.WriteLine("VM Static Click Registered cleanly.");
             }
         }
 
         /// <summary>
-        /// Represents the X coordinate (for horizontal ruler) 
-        /// or the Y coordinate (for vertical ruler) of the guide line.
+        /// Handles mouse wheel scrolling coefficients for active magnifier instances.
+        /// Returns true if input was captured and handled; otherwise false.
         /// </summary>
-        public double GuideLinePosition
+        public bool HandleMouseWheel(int delta)
         {
-            get => _guideLinePosition;
-            set
-            {
-                if (_guideLinePosition!=value)
-                {
-                    _guideLinePosition = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public ResizeMode WindowResizeMode
-        {
-            get => IsLocked ? ResizeMode.NoResize : ResizeMode.CanResize;
-        }
-        public Color GuideLineColor 
-        {
-            get;
-            set; 
-        } = Colors.Red;
-        public Double ActualWidth
-        {
-            get => actualWidth;
-            set
-            {
-                if (actualWidth != value)
-                {
-                    if (IsVertical)
-                    {
-                        if (value < 110)
-                        {
-                            actualWidth = 110;
-                        }
-                    }
-                    else
-                    { 
-                    actualWidth = value;
-                    }
-                   
-                }
-                OnPropertyChanged();
-            }
-        }
-        public double MiddleWidth
-        {
-            get
-            {
-                if (IsVertical)
-                {                 
-                    return _minwidth + (Width - 77);
-                }
-                return  _minheight+( Height - 82);
-
-            }
-            set
-            {
-                if (_middlewidth != value)
-                {
-                    _middlewidth = value;
-                }
-            }
-        }
-        public RulerViewModel(IDialogService dialogService, RulerInfo initialInfo, SingleRulerPersistenceService persistenceService, ILoggingService loggingService)
-        {
-            _dialogService = dialogService ?? throw new ArgumentException(nameof(dialogService));
-            _persistenceService = persistenceService ?? throw new ArgumentException(nameof(persistenceService));
-            _loggingService = loggingService ?? throw new ArgumentException(nameof(loggingService));
-            _rulerInfo = initialInfo ?? throw new ArgumentException(nameof(initialInfo));
-            InitializeCommands();
-            _opacitySetterMap = new Dictionary<int, Action<bool>>()
-            {
-                {5, (val) => { IsOpacity5Percent = val; } },
-                {10, (val) => { IsOpacity10Percent = val; } },
-                {15, (val) => { IsOpacity15Percent = val; } },
-                {20, (val) => { IsOpacity20Percent = val; } },
-                {25, (val) => { IsOpacity25Percent = val; } },
-                {30, (val) => { IsOpacity30Percent = val; } },
-                {35, (val) => { IsOpacity35Percent = val; } },
-                {40, (val) => { IsOpacity40Percent = val; } },
-                {45, (val) => { IsOpacity45Percent = val; } },
-                {50, (val) => { IsOpacity50Percent = val; } },
-                {55, (val) => { IsOpacity55Percent = val; } },
-                {60, (val) => { IsOpacity60Percent = val; } },
-                {65, (val) => { IsOpacity65Percent = val; } },
-                {70, (val) => { IsOpacity70Percent = val; } },
-                {75, (val) => { IsOpacity75Percent = val; } },
-                {80, (val) => { IsOpacity80Percent = val; } },
-                {85, (val) => { IsOpacity85Percent = val; } },
-                {90, (val) => { IsOpacity90Percent = val; } },
-                {95, (val) => { IsOpacity95Percent = val; } },
-                {100, (val) => { IsOpacity100Percent = val; } }
-            };
-            _saveTypeSetterMap = new Dictionary<SaveTypes, Action<bool>>()
-            {
-                {SaveTypes.none, (val) => { IsSaveTypeNone = val; } },
-                {SaveTypes.size, (val) => { IsSaveTypeSize = val; } },
-                {SaveTypes.location, (val) => { IsSaveTypeLocation = val; } },
-                {SaveTypes.all, (val) => { IsSaveTypeAll = val; } }
-            };
-            CheckSingleRuler();
-            if (IsVertical)
-            {
-
-                GenerateVerticalTicks(Height);
-            }
-            else
-            {
-
-                GenerateHorizontalTicks(Width);
-            }
-            SetOpacityFlags(_rulerInfo.Opacity);
-            SetSaveTypeFlags(_rulerInfo.SaveType);
+            return false;
         }
 
-        public void CheckSingleRuler()
+
+        private void InitializeCommands()
         {
-            if (IsVertical)
-            {
-                _isOnlySingleRulerVisible = Width < _vericalMinWidth;
-            }
-            else
-            {
-                _isOnlySingleRulerVisible = Height < _horizontalMinHeight;
-            }
-        }
-        public void InitializeCommands()
-        {
-            _showSetSizeFormCommand = new RelayCommand(GetNavigateSetSizeForm);
-            _resetToDefaultCommand = new RelayCommand(ResetDefault);
-            _toggleLockCommand = new RelayCommand(ToggleLock);
-            _exitCommand = new RelayCommand(ExitApplication);
-            _toggleVerticalCommand = new RelayCommand(ToggleVertical);
-            _toggleTopMostCommand = new RelayCommand(ToggleTopMost);
-            _toggleToolTipCommand = new RelayCommand(ToggleToolTip);
-            _setOpacityCommand = new RelayCommand(SetOpacity);
-            _setSaveTypeCommand = new RelayCommand(SetSaveType);
-            _showAboutCommand = new RelayCommand(NavigateAbout);
-            _duplicateCommand = new RelayCommand(DuplicateRuler);
+            // 1. The Multi-Shortcut Switchboard Command
+            ModifySettingCommand = new RelayCommand<object>(param => ExecuteModifySetting(param));
+
+            // 2. Explicit Parameterless UI Mappings
+            ExitApplicationCommand = new RelayCommand(() => ExecuteExitApplication());
+            ResetToDefaultCommand = new RelayCommand(() => ExecuteResetToDefault());
+            ShowAboutDialogCommand = new RelayCommand(() => ExecuteShowAboutDialog());
+            DuplicateRulerCommand = new RelayCommand(() => ExecuteDuplicateRuler());
+            ToggleOrientationCommand = new RelayCommand(() => ExecuteToggleOrientation());
+            ToggleLockCommand = new RelayCommand(() => ExecuteToggleLock());
+            ToggleToolTipCommand = new RelayCommand(() => ExecuteToggleToolTip());
+            CloseRulerCommand = new RelayCommand(() => ExecuteClose());
+            ToggleGuidelineCommand = new RelayCommand(() => ToggleGuideline());
+            ShowKeyboardShortcutsCommand = new RelayCommand(() => ExecuteShowKeyboardShortcuts());
+
+
+            // 3. Explicit Parameterized UI Payload Mappings
+            ChangeOpacityCommand = new RelayCommand<object>(param => ExecuteChangeOpacity(param));
+            SetSaveTypeCommand = new RelayCommand<object>(param => ExecuteSetSaveType(param));
+            ResizeRulerCommand = new RelayCommand(() => ExecuteResizeRuler());
         }
 
-        public void SetOpacityFlags(double opacity)
+        public void UpdateGuideline()
         {
-            int percentage = (int)Math.Round((opacity * 100));
-            foreach (var sets in _opacitySetterMap.Values)
-            {
-                sets.Invoke(false);
-            }
-            if (_opacitySetterMap.TryGetValue(percentage, out Action<bool> setter))
-            {
-                setter.Invoke(true);
-            }
-        }
-        public void SetSaveTypeFlags(SaveTypes saveType)
-        {
-
-            foreach (var sets in _saveTypeSetterMap.Values)
-            {
-                sets.Invoke(false);
-            }
-            if (_saveTypeSetterMap.TryGetValue(saveType, out Action<bool> setter))
-            {
-                setter.Invoke(true);
-            }
+            OnPropertyChanged(nameof(CurrentGuideline));
         }
 
-        private void GetNavigateSetSizeForm(object parameters)
+        #region Command Execution Stubs
+        private void ExecuteToggleOrientation()
         {
-            var s = _dialogService.ShowSetSizeDialog(this.Width, this.Height);
-            SetRulerDimensions(s.Width, s.Height);
-        }
-
-        private void DuplicateRuler(object parameters)
-        {
-            RulerInfo ri = new RulerInfo();
-
-            RulerInfo.CopyInto(_rulerInfo, ri);
-            _dialogService.ShowNewRuler(ri);
-        }
-
-        public ObservableCollection<RulerTick> TopRulerTicks
-        {
-            get => _topRulerTicks;
-            set
+            try
             {
-                if (_topRulerTicks != value)
-                {
-                    _topRulerTicks = value;
-                    OnPropertyChanged(nameof(TopRulerTicks));
-                }
+                Model.ToggleOrientation();
             }
-        }
-
-        public ObservableCollection<RulerTick> BottomRulerTicks
-        {
-            get => _bottomRulerTicks;
-            set
+            finally
             {
-                if (_bottomRulerTicks != value)
-                {
-                    _bottomRulerTicks = value;
-                    OnPropertyChanged(nameof(BottomRulerTicks));
-                }
-
+                OnPropertyChanged(nameof(IsVertical));
             }
+            Console.WriteLine(Model.ToString());
+            // OnPropertyChanged(nameof(CurrentGuideline));
         }
-        public ObservableCollection<RulerTick> LeftRulerTicks
+        private void ExecuteClose()
         {
-            get => _topRulerTicks;
-            set
-            {
-                if (_topRulerTicks != value)
-                {
-                    _topRulerTicks = value;
-                    OnPropertyChanged();
-                }
-            }
+            _windowManager.CloseRuler(this);
         }
-
-        public ObservableCollection<RulerTick> RightRulerTicks
+        private void ExecuteDuplicateRuler()
         {
-            get => _bottomRulerTicks;
-            set
-            {
-                if (_bottomRulerTicks != value)
-                {
-                    _bottomRulerTicks = value;
-                    OnPropertyChanged();
-                }
-            }
+            RulerInfo newRuler = new RulerInfo();
+            RulerFactory.CopyValues(Model, newRuler);
+            _windowManager.CreateRulerWindow(newRuler);
         }
-        // Property for the ruler's width, with change notification
-        public double Width
-        {
-            get => _rulerInfo.Width;
-            set
-            {
-                if (_rulerInfo.Width != value)
-                {
-                    _rulerInfo.Width = value;                   
-                    CheckSingleRuler();
-                    if (IsVertical)
-                    {
-                        GenerateVerticalTicks(Height);
-                        OnPropertyChanged();
-                        OnPropertyChanged(nameof(MiddleWidth));
-                    }
-                    else
-                    {
-                        GenerateHorizontalTicks(Width);
-                        OnPropertyChanged();
-                        OnPropertyChanged(nameof(MiddleWidth));
-                    }                    
-                }
-            }
-        }
-
-        // Property for the ruler's height, with change notification
-        public double Height
-        {
-            get => _rulerInfo.Height;
-            set
-            {
-                // 1. Check the state flag to bypass logic during reset/load
-                if (_rulerInfo.Height != value)
-                {
-                    if (!_isLoadingState)
-                    {
-                        if (IsVertical)
-                        {
-                            // If vertical, Height is the measurement dimension (enforce minimum 75)
-                            value = Math.Max(value, 75);
-                            _rulerInfo.Height = value;
-                        }
-                        else
-                        {
-                            // If horizontal, enforce a reasonable minimum for the ruler thickness (75)
-                            // (I'm changing this from 120 to 75 to match the default)
-                            value = Math.Max(value, 75);
-                            _rulerInfo.Height = value;
-                        }
-                    }
-
-                    _rulerInfo.Height = value;
-
-                    // 2. Suppress side effects if loading state
-                    if (!_isLoadingState)
-                    {
-                        CheckSingleRuler();
-                        if (IsVertical)
-                        {
-                            GenerateVerticalTicks(Height);
-                        }
-                        else
-                        {
-                            GenerateHorizontalTicks(Width);
-                        }
-                    }
-
-                    // Always notify the change after setting the value
-                    OnPropertyChanged(); // Notifies change for 'Height'
-                    OnPropertyChanged(nameof(MiddleWidth));
-                }
-            }
-        }
-        public double LocationX
-        {
-            get => _rulerInfo.LocationX;
-            set
-            {
-                if (_rulerInfo.LocationX != value)
-                {
-                    _rulerInfo.LocationX = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-        public double LocationY
-        {
-            get => _rulerInfo.LocationY;
-            set
-            {
-                if (_rulerInfo.LocationY != value)
-                {
-                    _rulerInfo.LocationY = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        // Property for the ruler's location, with change notification
-        public Point DisplayedLocation
-        {
-            get => new Point(LocationX, LocationY);
-            set
-            {
-                if (_rulerInfo.DisplayedLocation != value)
-                {
-                    _rulerInfo.DisplayedLocation = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        // Property for the lock state, with change notification
-        public bool IsLocked
-        {
-            get => _rulerInfo.IsLocked;
-            set
-            {
-                if (_rulerInfo.IsLocked != value)
-                {
-                    _rulerInfo.IsLocked = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(WindowResizeMode));
-                }
-            }
-        }
-
-        // Property for opacity, with change notification
-        public double Opacity
-        {
-            get => _rulerInfo.Opacity;
-            set
-            {
-                if (_rulerInfo.Opacity != value)
-                {
-                    _rulerInfo.Opacity = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        // Property for the TopMost state
-        public bool TopMost
-        {
-            get => _rulerInfo.TopMost;
-            set
-            {
-                if (_rulerInfo.TopMost != value)
-                {
-                    _rulerInfo.TopMost = value;
-                    OnPropertyChanged(nameof(TopMost));
-                }
-            }
-        }
-
-        // Property for the vertical state
-        public bool IsVertical
-        {
-            get => _rulerInfo.IsVertical;
-            set
-            {
-                if (_rulerInfo.IsVertical != value)
-                {
-                   _rulerInfo.IsVertical = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(MiddleWidth));
-                }
-            }
-        }
-
-        // Property for the tooltip state
-        public bool ShowToolTip
-        {
-            get => _rulerInfo.ShowToolTip;
-            set
-            {
-                if (_rulerInfo.ShowToolTip != value)
-                {
-                    _rulerInfo.ShowToolTip = value;
-                    OnPropertyChanged(nameof(ShowToolTip));
-                    OnPropertyChanged(nameof(IsToolTipVisible));
-                }
-            }
-        }
-
-        // Property for the save type
-        public SaveTypes SaveType
-        {
-            get => _rulerInfo.SaveType;
-            set
-            {
-                if (_rulerInfo.SaveType != value)
-                {
-                    _rulerInfo.SaveType = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-      
-        
-    
-        // Determines the height of the top/bottom rows (0 when vertical, 25 when horizontal)
-        public double TopRowHeight => _rulerInfo.IsVertical ? 0 : 25;
-        public double BottomRowHeight => _rulerInfo.IsVertical ? 0 : 25;
-
-        // Determines the width of the left/right columns (25 when vertical, 0 when horizontal)
-        public double TopColumnWidth => _rulerInfo.IsVertical ? 25 : 0;
-        public double BottomColumnWidth => _rulerInfo.IsVertical ? 25 : 0;       
-        public void SetRulerDimensions(double newWidth, double newHeight)
-        {
-            if (this.Width == newWidth && this.Height == newHeight)
-            {
-                return;
-            }
-            Width = newWidth;
-            Height = newHeight;
-            if (IsVertical)
-            {
-                this.actualWidth = Width;
-                GenerateVerticalTicks(Height);
-            }
-            else
-            {
-                GenerateHorizontalTicks(Width);
-            }
-            OnPropertyChanged(nameof(TopRulerTicks));
-            OnPropertyChanged(nameof(BottomRulerTicks));
-        }
-        public void UpdateLocation(double left, double top)
-        {
-            LocationX = left;
-            LocationY = top;
-        }
-        public bool IsInitialized
-        {
-            get => _isInitialized;
-            set
-            {
-                SetProperty(ref _isInitialized, value);
-            }
-        }
-        public string RulerMeasurementsText
-        {
-            get
-            {
-                return IsVertical ? $"Height: {Height} x Width: {Width}" : $"Width: {Width} x Height: {Height}";
-            }
-        }
-        public bool IsToolTipVisible
-        {
-            get => ShowToolTip;
-        }
-
-        // Command properties for UI actions
-        public ICommand ToggleLockCommand => _toggleLockCommand;
-        public ICommand ExitCommand => _exitCommand;
-        public ICommand ToggleVerticalCommand => _toggleVerticalCommand;
-        public ICommand ToggleTopMostCommand => _toggleTopMostCommand;
-        public ICommand ToggleToolTipCommand => _toggleToolTipCommand;
-        public ICommand SetOpacityCommand => _setOpacityCommand;
-        public ICommand SetSaveTypeCommand => _setSaveTypeCommand;
-        public ICommand ShowSetSizeFormCommand => _showSetSizeFormCommand;
-        public ICommand ShowAboutCommand => _showAboutCommand;
-        public ICommand DuplicateCommand => _duplicateCommand;
-        public ICommand ResetToDefaultCommand => _resetToDefaultCommand;
-
-        // Logic for the ToggleLockCommand
-        private void ToggleLock(object parameter)
+        private void ExecuteToggleLock()
         {
             IsLocked = !IsLocked;
         }
-        public void ResetDefault(object parameter)
-        {
-            RulerInfo defaultRuler = RulerInfo.GetDefaultRulerInfo();
-            _isLoadingState = true;
-            Console.WriteLine("Current Ruler Information:");
-            Console.WriteLine($"Width: {_rulerInfo.Width}, Height: {_rulerInfo.Height}, IsVertical: {_rulerInfo.IsVertical}, Opacity: {_rulerInfo.Opacity}, ShowToolTip: {_rulerInfo.ShowToolTip}, IsLocked: {_rulerInfo.IsLocked}, TopMost: {_rulerInfo.TopMost}, LocationX: {_rulerInfo.LocationX}, LocationY: {_rulerInfo.LocationY}, SaveType: {_rulerInfo.SaveType}");
-            _rulerInfo.IsVertical = defaultRuler.IsVertical;
-            //  RulerInfo.CopyInto(defaultRuler, _rulerInfo);
-            IsVertical = defaultRuler.IsVertical;
-            Height = defaultRuler.Height;
-            Width = defaultRuler.Width;
-            Opacity = defaultRuler.Opacity;
-            ShowToolTip = defaultRuler.ShowToolTip;
-            IsLocked = defaultRuler.IsLocked;
-            TopMost = defaultRuler.TopMost;
-            LocationX = defaultRuler.LocationX;
-            LocationY = defaultRuler.LocationY;
-            SaveType = defaultRuler.SaveType;
-            
-            _isLoadingState = false;    
-            Console.WriteLine("Reset to default called.");
-            Console.WriteLine($"Width: {_rulerInfo.Width}, Height: {_rulerInfo.Height}, IsVertical: {_rulerInfo.IsVertical}, Opacity: {_rulerInfo.Opacity}, ShowToolTip: {_rulerInfo.ShowToolTip}, IsLocked: {_rulerInfo.IsLocked}, TopMost: {_rulerInfo.TopMost}, LocationX: {_rulerInfo.LocationX}, LocationY: {_rulerInfo.LocationY}, SaveType: {_rulerInfo.SaveType}");
-            //RulerInfo.CopyInto(defaultRuler, _rulerInfo);
-            OnPropertyChanged(nameof(IsVertical));
-            Console.WriteLine($"Vertical was set: {IsVertical}");
-            OnPropertyChanged(nameof(Height));
-            Console.WriteLine($"Height was set: {Height}"); 
-
-            OnPropertyChanged(nameof(Width));
-            Console.WriteLine($"Width was set: {Width}");
-            OnPropertyChanged(nameof(Opacity));
-            Console.WriteLine($"Opacity was set: {Opacity}");
-            OnPropertyChanged(nameof(ShowToolTip));
-            Console.WriteLine($"ShowToolTip was set: {ShowToolTip}");
-            OnPropertyChanged(nameof(IsLocked));
-            Console.WriteLine($"IsLocked was set: {IsLocked}");
-            OnPropertyChanged(nameof(TopMost));
-            Console.WriteLine($"TopMost was set: {TopMost}");
-            OnPropertyChanged(nameof(LocationX));
-            Console.WriteLine($"LocationX was set: {LocationX}");
-            OnPropertyChanged(nameof(LocationY));
-            Console.WriteLine($"LocationY was set: {LocationX}");
-            OnPropertyChanged(nameof(SaveType));
-            Console.WriteLine($"SaveType was set: {SaveType}");
-        }
-
-        // Logic for the ExitCommand
-        private void ExitApplication(object parameter)
-        {
-            if (parameter is Window windowToClose)
-            {
-                _persistenceService.SaveRulerState(_rulerInfo);
-                bool isLastRuler = _dialogService.OpenRulers.Count() == 1;
-                windowToClose.Close();
-                if (isLastRuler)
-                {
-                    Application.Current.Shutdown();
-                }
-            }
-
-        }
-
-        // Logic for the ToggleVerticalCommand
-        private void ToggleVertical(object parameter)
-        {
-            IsVertical = !IsVertical;
-            double oldWidth = Width;
-            double oldHeight = Height;
-            SetRulerDimensions(oldHeight, oldWidth);
-        }
-        private bool _isOnlySingleRulerVisible = false;
-        public bool IsOnlySingleRulerVisible
-        {
-            get => _isOnlySingleRulerVisible;
-            set
-            {
-                _isOnlySingleRulerVisible = value;
-                OnPropertyChanged();
-            }
-        }
-
-
-
-        // Logic for the ToggleTopMostCommand
-        private void ToggleTopMost(object parameter)
-        {
-            TopMost = !TopMost;
-        }
-
-        // Logic for the ToggleToolTipCommand
-        private void ToggleToolTip(object parameter)
+        private void ExecuteToggleToolTip()
         {
             ShowToolTip = !ShowToolTip;
         }
-
-        // Logic for the SetOpacityCommand
-        private void SetOpacity(object parameter)
+        private void ExecuteChangeOpacity(object param)
         {
-            if (parameter is string opacityValue && double.TryParse(opacityValue, out double result))
+            // 1. Check if it's already a raw double
+            if (param is double newOpacity)
             {
-                Opacity = result;
-                SetOpacityFlags(result);
+                Opacity = newOpacity;
+            }
+            // 2. Check if it's a string, and safely parse it inline
+            else if (param is string strParam && double.TryParse(strParam, out double parsedOpacity))
+            {
+                Opacity = parsedOpacity;
             }
         }
-
-        // Logic for the SetSaveTypeCommand
-        private void SetSaveType(object parameter)
+        private void ExecuteSetSaveType(object param)
         {
-            SaveTypes saveTypes;
-            if (parameter is string s && Enum.TryParse(s, true, out saveTypes))
+            // 1. Check if it's already a save type enum
+            if (param is SaveTypes newSaveType)
             {
-                SaveType = saveTypes;
-                SetSaveTypeFlags(saveTypes);
+                SaveType = newSaveType;
+            }
+            // 2. Check if it's a string, and safely parse it inline
+            else if (param is string strParam && Enum.TryParse(strParam, out SaveTypes parsedSaveType))
+            {
+                SaveType = parsedSaveType;
             }
         }
-        private void GenerateHorizontalTicks(double length)
+        private void ToggleGuideline()
         {
-            // Calculate ticks based on Width
-            _topRulerTicks.Clear();
-            _bottomRulerTicks.Clear();
-            var ticks = GenerateRulerTicks(length); // Assuming 100 pixels per major mark
-
-            foreach (var tick in ticks)
+            if (Model.Guideline == null)
             {
-                // Horizontal: Position is Canvas.Left. No coordinate inversion needed.
-                // Both top and bottom sides use the same position data.
-                _topRulerTicks.Add(tick);
-                if (!IsVertical && _isOnlySingleRulerVisible)
+                Model.Guideline = new RulerGuideline()
                 {
-                    tick.IsLabelVisible = false;
-                }
-                _bottomRulerTicks.Add(tick);
-            }
-            OnPropertyChanged(nameof(BottomRulerTicks));
-            OnPropertyChanged(nameof(TopRulerTicks));
-        }
-        private void GenerateVerticalTicks(double length)
-        {
-            // Calculate ticks based on the effective height of the content area
-            _topRulerTicks.Clear();
-            _bottomRulerTicks.Clear();
-            var ticks = GenerateRulerTicks(length);
-
-            foreach (var tick in ticks)
-            {
-                // The tick's original position is the distance FROM THE TOP (0 at top, length at bottom).
-                // This is the correct value for the LEFT SIDE (Grid.Column="0").
-                _topRulerTicks.Add(tick);
-                if (IsVertical && _isOnlySingleRulerVisible)
-                {
-                    tick.IsLabelVisible = false;
-                }
-
-
-                _bottomRulerTicks.Add(tick);
-            }
-            OnPropertyChanged(nameof(BottomRulerTicks));
-            OnPropertyChanged(nameof(TopRulerTicks));
-        }
-        public static IEnumerable<RulerTick> GenerateRulerTicks(double rulerLength)
-        {
-            var ticks = new List<RulerTick>();
-
-            // We iterate through the entire length of the ruler to determine tick positions.
-            for (int i = 0; i < (int)rulerLength; i++)
-            {
-                // Every 100 pixels, we create a major tick with a label.
-                if (i % 100 == 0)
-                {
-                    ticks.Add(new RulerTick
-                    {
-                        Position = i,
-                        Label = i.ToString(),
-                        TickSize = 25,
-                        IsLabelVisible = true
-                    });
-                }
-                // Every 50 pixels, we create a major tick without a label.
-                else if (i % 50 == 0)
-                {
-                    ticks.Add(new RulerTick
-                    {
-                        Position = i,
-                        TickSize = 20
-
-                    });
-                }
-                // Every 10 pixels, we create a minor tick.
-                else if (i % 10 == 0)
-                {
-                    ticks.Add(new RulerTick
-                    {
-                        Position = i,
-                        TickSize = 10
-                    });
-                }
-                // Every 5 pixels, we create an even smaller minor tick.
-                else if (i % 5 == 0)
-                {
-                    ticks.Add(new RulerTick
-                    {
-                        Position = i,
-                        TickSize = 5
-                    });
-                }
-                // Every 2 pixels, we create the smallest minor tick.
-                else if (i % 2 == 0)
-                {
-                    ticks.Add(new RulerTick
-                    {
-                        Position = i,
-                        TickSize = 2
-                    });
-                }
-            }
-
-            return ticks;
-        }
-
-        private void NavigateAbout(object parameter)
-        {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            Version version = assembly.GetName().Version;
-            string message = string.Format(
-                "Original Ruler implemented by Jeff Key\n" +
-                "www.sliver.com\n" +
-                "ruler.codeplex.com\n" +
-                "Icon by Kristen Magee @ www.kbecca.com.\n" +
-                "Maintained by Andrija Cacanovic\n" +
-                "Hosted on \n" +
-                "https://github.com/andrijac/ruler\n" +
-                "Version {0}",
-                $"{version.Major}.{version.Minor}.{version.Build}.{version.MajorRevision}");
-            MessageBox.Show(message, "About Ruler", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        internal void SetInitialState(RulerInfo initialInfo)
-        {
-            _isLoadingState = true;
-
-            // 1. Set all non-dimension/non-orientation properties directly on the model
-            _rulerInfo.Opacity = initialInfo.Opacity;
-            _rulerInfo.ShowToolTip = initialInfo.ShowToolTip;
-            _rulerInfo.IsLocked = initialInfo.IsLocked;
-            _rulerInfo.TopMost = initialInfo.TopMost;
-            _rulerInfo.LocationY = initialInfo.LocationY;
-            _rulerInfo.LocationX = initialInfo.LocationX;
-            _rulerInfo.DisplayedLocation = initialInfo.DisplayedLocation;
-            _rulerInfo.SaveType = initialInfo.SaveType;
-
-
-            // 2. IMPORTANT: Set IsVertical first for reconciliation
-            _rulerInfo.IsVertical = initialInfo.IsVertical;
-
-
-            // 3. Reconciliation Logic for Width and Height based on IsVertical
-            double w = initialInfo.Width;
-            double h = initialInfo.Height;
-
-            // Determine if the saved dimensions are 'horizontal' (width >= height)
-            bool savedHorizontal = w >= h;
-
-            // If the saved orientation clashes with the saved dimensions, swap them.
-            if ((_rulerInfo.IsVertical && savedHorizontal) || (!_rulerInfo.IsVertical && !savedHorizontal))
-            {
-                // Swap dimensions in the model to match the orientation
-                _rulerInfo.Width = h;
-                _rulerInfo.Height = w;
+                    IsEnabled = true,
+                    IsLocked = false,
+                    Position = 0
+                };
+                OnPropertyChanged(nameof(CurrentGuideline));
             }
             else
             {
-                // Dimensions are already correctly oriented
-                _rulerInfo.Width = w;
-                _rulerInfo.Height = h;
+                CurrentGuideline = null;
+                OnPropertyChanged(nameof(CurrentGuideline));
             }
-
-            // 4. Set flags for the UI
-            SetOpacityFlags(_rulerInfo.Opacity);
-            SetSaveTypeFlags(_rulerInfo.SaveType);
-
-
-            // 5. Trigger UI updates for all properties
-            // We use OnPropertyChanged for all properties to ensure the UI updates correctly from the reconciled model state.
-            OnPropertyChanged(nameof(Width));
-            OnPropertyChanged(nameof(Height));
-            OnPropertyChanged(nameof(IsVertical));
-            OnPropertyChanged(nameof(Opacity));
-            OnPropertyChanged(nameof(ShowToolTip));
-            OnPropertyChanged(nameof(IsLocked));
-            OnPropertyChanged(nameof(TopMost));
-            OnPropertyChanged(nameof(LocationY));
-            OnPropertyChanged(nameof(LocationX));
-            OnPropertyChanged(nameof(DisplayedLocation));
-            OnPropertyChanged(nameof(SaveType));
-            // 6. Reset flag after loading is complete
-            _isLoadingState = false;
-
         }
-
-        internal void SetGuideLinePosition(double position)
+        private void ExecuteResetToDefault()
         {
-            GuideLinePosition = position;
+            Width = 400;
+            Height = 150;
+            Opacity = 1.0;
+            IsLocked = false;
+            ShowToolTip = true;
         }
-
-        internal void UpdateRulerContentDimensions(double canvasContentHeight, double canvasContentWidth, double topRulerContentHeight, double leftRulerContentWidth, double rightRulerContentWidth, double bottomRulerContentHeight)
+        private void ExecuteExitApplication()
         {
-            if (topRulerContentHeight > 0 && bottomRulerContentHeight > 0)
+            _windowManager.SaveAllActiveRulers();
+            Application.Current.Shutdown();
+        }
+        private void ExecuteResizeRuler()
+        {
+            // FIX: Filter specifically for RulerWindow instead of the base Window class
+            RulerWindow activeWindow = Application.Current.Windows
+                .OfType<RulerWindow>()
+                .FirstOrDefault(w => w.DataContext == this);
+
+            SetSizeViewModel resizeVM = new SetSizeViewModel(Width, Height);
+            SetSizeWindow resizeWindow = new SetSizeWindow
             {
-                MiddleWidth = canvasContentHeight - topRulerContentHeight - bottomRulerContentHeight;
-            }
-            else if (leftRulerContentWidth > 0 && rightRulerContentWidth > 0)
+                DataContext = resizeVM,
+                Owner = activeWindow // WPF easily handles a RulerWindow as an Owner
+            };
+
+            if (resizeWindow.ShowDialog() == true)
             {
-                MiddleWidth = canvasContentWidth - leftRulerContentWidth - rightRulerContentWidth;
+                int targetWidth = (int)resizeVM.Width;
+                int targetHeight = (int)resizeVM.Height;
+
+                // Now C# safely recognizes the method without any compilation errors!
+                if (activeWindow != null)
+                {
+                    activeWindow.ApplyExplicitDimensions(targetWidth, targetHeight);
+                }
+
+                // Synchronize the backing ViewModel properties
+                this.Width = targetWidth;
+                this.Height = targetHeight;
+
+                OnPropertyChanged(nameof(Width));
+                OnPropertyChanged(nameof(Height));
             }
         }
+        private void ExecuteShowAboutDialog()
+        {
+            MessageBox.Show("Ruler Utility\nVersion 2.0", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        private void ExecuteShowKeyboardShortcuts()
+        {
+            // 1. Instantiate the Shortcuts Window view
+            ShortcutWindow shortcutView = new ShortcutWindow();
+
+            // 2. Safely locate the active WPF Window matching this ViewModel instance
+            Window parentWindow = Application.Current.Windows
+                .OfType<Window>()
+                .FirstOrDefault(w => w.DataContext == this);
+
+            if (parentWindow != null)
+            {
+                // Set the owner so it locks to and centers over the active ruler view context
+                shortcutView.Owner = parentWindow;
+            }
+
+            // 3. Open modally
+            shortcutView.ShowDialog();
+        }
+        private void ExecuteToggleOnTop()
+        {
+            TopMost = !TopMost;
+        }
+        private void SetLeft(double newLeft)
+        {
+            Left = newLeft;
+        }
+        private void SetTop(double newTop)
+        {   
+            Top = newTop;
+        }
+        private void ExecuteMouseClick()
+        {
+            if (CurrentGuideline != null && CurrentGuideline.IsEnabled)
+            {
+                // 1. Toggle the lock state atomically
+                bool newLockState = !CurrentGuideline.IsLocked;
+
+                this.IsLocked = newLockState;
+                CurrentGuideline.IsLocked = newLockState;
+
+                // 2. Broadcast the change to WPF to redraw the line state
+                OnPropertyChanged(nameof(CurrentGuideline));
+
+                System.Diagnostics.Debug.WriteLine($"Guideline Lock Toggled Via Mouse! IsLocked: {CurrentGuideline.IsLocked}");
+            }
+        }
+        private void ExecuteModifySetting(object parameter)
+        {
+            string commandKey = string.Empty;
+            System.Windows.Point? clickPoint = null;
+
+            // 1. Check if the incoming data is our packed mouse array
+            if (parameter is object[] dataPackage && dataPackage.Length == 2)
+            {
+                commandKey = dataPackage[0] as string;
+                clickPoint = dataPackage[1] as System.Windows.Point?;
+            }
+            else
+            {
+                // Otherwise, treat it as a standard keyboard shortcut string key
+                commandKey = parameter as string;
+            }
+            if (string.IsNullOrEmpty(commandKey)) return;
+
+            switch (commandKey)
+            {
+                // --- MOUSE & LOCK ACTIONS ---
+                case "MOUSE_LEFT_CLICK":
+                    if (CurrentGuideline != null && CurrentGuideline.IsEnabled)
+                    {
+                        // Toggle the lock state
+                        bool newLockState = !CurrentGuideline.IsLocked;
+                        this.IsLocked = newLockState;
+                        CurrentGuideline.IsLocked = newLockState;
+
+                        // If we just unlocked it, snap its position to the exact click coordinate!
+                        if (!newLockState && clickPoint.HasValue)
+                        {
+                            CurrentGuideline.Position = clickPoint.Value.X;
+                        }
+
+                        OnPropertyChanged(nameof(CurrentGuideline));
+                        OnPropertyChanged(nameof(IsLocked));
+
+                        System.Diagnostics.Debug.WriteLine($"Guideline Toggled at X: {CurrentGuideline.Position}");
+                    }
+                    break;
+
+                case "LOCKED":
+                  ExecuteToggleLock();
+                    break;
+
+                case "SHOW_GUIDELINE":
+                   ToggleGuideline();
+                    break;
+
+                // --- RULER LAYOUT & APPEARANCE ---
+                case "FLIP_ORIENTATION":
+                    ExecuteToggleOrientation();
+                    break;
+
+                case "RESIZE":
+                    ExecuteResizeRuler();   
+                    break;
+
+                case "RESET_RULER_DEFAULT":
+                    ExecuteResetToDefault();
+                    break;
+
+                case "TOGGLE_ONTOP":
+                    ExecuteToggleOnTop();
+                        break;
+
+                case "TOGGLE_TOOLTIP":
+                    ExecuteToggleToolTip();
+                    break;
+
+                // --- PERSISTENCE & SAVE TYPES ---
+                case "SAVETYPE_ALL":
+                    ExecuteSetSaveType(SaveTypes.All);
+                    break;
+
+                case "SAVETYPE_SIZE":
+                    ExecuteSetSaveType(SaveTypes.Size);
+                    break;
+
+                case "SAVETYPE_LOCATION":
+                    ExecuteSetSaveType(SaveTypes.Location);
+                    break;
+
+                case "SAVETYPE_NONE":
+                    ExecuteSetSaveType(SaveTypes.None);
+                    break;
+
+                // --- OPACITY CONFIGURATIONS ---
+                case "OPACITY_STEP_UP_10":
+                    var newOpacity = Math.Min(Opacity + 0.1, 1.0);
+                    ExecuteChangeOpacity(newOpacity);
+                    break;
+
+                case "OPACITY_STEP_TO_100":
+                    ExecuteChangeOpacity(1.0);
+                    break;
+
+                case "OPACITY_STEP_DOWN_10":
+                    var lowerOpacity = Math.Max(Opacity - 0.1, 0.0);
+                    ExecuteChangeOpacity(lowerOpacity);
+                    break;
+
+                case "OPACITY_STEP_TO_10":
+                    ExecuteChangeOpacity(0.10);
+                    break;
+
+                // --- PRECISION NUDGE NAVIGATION (10 PX) ---
+                case "NAVIGATE_LEFT_10":
+                    var newLeft = Left - 10;
+                    SetLeft(newLeft);
+                    break;
+
+                case "NAVIGATE_RIGHT_10":
+                    var  moveRight = Left + 10;
+                    SetLeft(moveRight);
+                    break;
+
+                case "NAVIGATE_UP_10":
+                    var moveUp = Top - 10;
+                    SetTop(moveUp);
+                    break;
+
+                case "NAVIGATE_DOWN_10":
+                    var moveDown = Top + 10;
+                    SetTop(moveDown);
+                    break;
+
+                // --- FINE-GRAINED NUDGE NAVIGATION (1 PX) ---
+                case "NAVIGATE_LEFT_1":
+                    var smallLeft = Left - 1;   
+                    SetLeft(smallLeft);
+                    break;
+
+                case "NAVIGATE_RIGHT_1":
+                    var smallRight = Left + 1;
+                    SetLeft(smallRight);
+                    break;
+
+                case "NAVIGATE_UP_1":
+                    var smallUp = Top - 1;
+                    SetTop(smallUp);
+                    break;
+
+                case "NAVIGATE_DOWN_1":
+                    var smallDown = Top + 1;
+                    SetTop(smallDown);
+                    break;
+
+                // --- APP LIFECYCLE & UTILITY ---
+                case "ABOUT":
+                    ExecuteShowAboutDialog();
+                    break;
+
+                case "CLOSE":
+                    ExecuteClose();
+                    break;
+
+                case "EXIT_ALL":
+                    ExecuteExitApplication();
+                    break;
+                case "DUPLICATE":
+                    ExecuteDuplicateRuler();
+                    break;
+                case "SHOW_SHORTCUTS":
+                    ExecuteShowKeyboardShortcuts();
+                    break;
+                case "OPACITY_UP_5":
+                    // Increase by 5%, stopping cleanly at 1.0 (100%)
+                    Opacity = Math.Min(1.0, Opacity + 0.05);
+                    break;
+
+                case "OPACITY_DOWN_5":
+                    // Decrease by 5%, stopping cleanly at your 0.1 (10%) baseline floor
+                    Opacity = Math.Max(0.1, Opacity - 0.05);
+                    break;
+
+                default:
+                    System.Diagnostics.Debug.WriteLine($"Unassigned command parameter received: {commandKey}");
+                    break;
+            }
+        }
+        #endregion
     }
 }

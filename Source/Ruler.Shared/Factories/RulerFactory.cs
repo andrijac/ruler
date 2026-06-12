@@ -25,7 +25,7 @@ namespace Ruler.Shared.Factories
                 TopMost = true,
                 Top = 0,
                 Left = 0,
-                SaveType = SaveTypes.none
+                SaveType = SaveTypes.None
             };
         }
         /// <summary>
