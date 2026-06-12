@@ -7,7 +7,7 @@
         xmlns:converters="clr-namespace:Ruler.Wpf.Converters"
         WindowStyle="None" 
         AllowsTransparency="True" 
-        Background="DarkCyan"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         Topmost="{Binding TopMost}"
         Width="{Binding Width, Mode=OneWay}" 
         Height="{Binding Height, Mode=OneWay}"
