@@ -9,10 +9,10 @@
     <StackPanel Margin="15" >
 
         <Label Content="Width (px):" />
-        <TextBox Text="{Binding Width, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Width="150"/>
+        <TextBox Text="{Binding WidthString, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Width="150"/>
 
         <Label Content="Height (px):" />
-        <TextBox Text="{Binding Height, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Width="150"/>
+        <TextBox Text="{Binding HeightString, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Width="150"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
             <Button Content="OK" Width="60" Click="OkButton_Click">

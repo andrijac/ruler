@@ -51,6 +51,7 @@ namespace Ruler.Wpf.ViewModels
         public ICommand ToggleToolTipCommand { get; private set; }
         public ICommand ToggleGuidelineCommand { get; private set; }
         public ICommand CloseRulerCommand { get; private set; }
+        public ICommand ShowKeyboardShortcutsCommand { get; private set; }  
 
         // Parameter-Driven Payload Commands
         public ICommand ChangeOpacityCommand { get; private set; }
@@ -126,6 +127,8 @@ namespace Ruler.Wpf.ViewModels
             ToggleToolTipCommand = new RelayCommand(() => ExecuteToggleToolTip());
             CloseRulerCommand = new RelayCommand(() => ExecuteClose());
             ToggleGuidelineCommand = new RelayCommand(() => ToggleGuideline());
+            ShowKeyboardShortcutsCommand = new RelayCommand(() => ExecuteShowKeyboardShortcuts());
+
 
             // 3. Explicit Parameterized UI Payload Mappings
             ChangeOpacityCommand = new RelayCommand<object>(param => ExecuteChangeOpacity(param));
@@ -226,25 +229,62 @@ namespace Ruler.Wpf.ViewModels
         {
             _windowManager.SaveAllActiveRulers();
             Application.Current.Shutdown();
-        }  
+        }
         private void ExecuteResizeRuler()
         {
+            // FIX: Filter specifically for RulerWindow instead of the base Window class
+            RulerWindow activeWindow = Application.Current.Windows
+                .OfType<RulerWindow>()
+                .FirstOrDefault(w => w.DataContext == this);
+
             SetSizeViewModel resizeVM = new SetSizeViewModel(Width, Height);
             SetSizeWindow resizeWindow = new SetSizeWindow
             {
                 DataContext = resizeVM,
-                Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                Owner = activeWindow // WPF easily handles a RulerWindow as an Owner
             };
+
             if (resizeWindow.ShowDialog() == true)
             {
-                // Only write changes back if validation passed and user clicked OK
-                this.Width = (int)resizeVM.Width;
-                this.Height = (int)resizeVM.Height;
+                int targetWidth = (int)resizeVM.Width;
+                int targetHeight = (int)resizeVM.Height;
+
+                // Now C# safely recognizes the method without any compilation errors!
+                if (activeWindow != null)
+                {
+                    activeWindow.ApplyExplicitDimensions(targetWidth, targetHeight);
+                }
+
+                // Synchronize the backing ViewModel properties
+                this.Width = targetWidth;
+                this.Height = targetHeight;
+
+                OnPropertyChanged(nameof(Width));
+                OnPropertyChanged(nameof(Height));
             }
         }
         private void ExecuteShowAboutDialog()
         {
             MessageBox.Show("Ruler Utility\nVersion 2.0", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        private void ExecuteShowKeyboardShortcuts()
+        {
+            // 1. Instantiate the Shortcuts Window view
+            ShortcutWindow shortcutView = new ShortcutWindow();
+
+            // 2. Safely locate the active WPF Window matching this ViewModel instance
+            Window parentWindow = Application.Current.Windows
+                .OfType<Window>()
+                .FirstOrDefault(w => w.DataContext == this);
+
+            if (parentWindow != null)
+            {
+                // Set the owner so it locks to and centers over the active ruler view context
+                shortcutView.Owner = parentWindow;
+            }
+
+            // 3. Open modally
+            shortcutView.ShowDialog();
         }
         private void ExecuteToggleOnTop()
         {
@@ -363,21 +403,21 @@ namespace Ruler.Wpf.ViewModels
                     break;
 
                 // --- OPACITY CONFIGURATIONS ---
-                case "OPACITY_STEP_UP_1":
+                case "OPACITY_STEP_UP_10":
                     var newOpacity = Math.Min(Opacity + 0.1, 1.0);
                     ExecuteChangeOpacity(newOpacity);
                     break;
 
-                case "OPACITY_STEP_UP_10":
+                case "OPACITY_STEP_TO_100":
                     ExecuteChangeOpacity(1.0);
                     break;
 
-                case "OPACITY_STEP_DOWN_1":
+                case "OPACITY_STEP_DOWN_10":
                     var lowerOpacity = Math.Max(Opacity - 0.1, 0.0);
                     ExecuteChangeOpacity(lowerOpacity);
                     break;
 
-                case "OPACITY_STEP_DOWN_10":
+                case "OPACITY_STEP_TO_10":
                     ExecuteChangeOpacity(0.10);
                     break;
 
@@ -438,7 +478,18 @@ namespace Ruler.Wpf.ViewModels
                 case "DUPLICATE":
                     ExecuteDuplicateRuler();
                     break;
+                case "SHOW_SHORTCUTS":
+                    ExecuteShowKeyboardShortcuts();
+                    break;
+                case "OPACITY_UP_5":
+                    // Increase by 5%, stopping cleanly at 1.0 (100%)
+                    Opacity = Math.Min(1.0, Opacity + 0.05);
+                    break;
 
+                case "OPACITY_DOWN_5":
+                    // Decrease by 5%, stopping cleanly at your 0.1 (10%) baseline floor
+                    Opacity = Math.Max(0.1, Opacity - 0.05);
+                    break;
 
                 default:
                     System.Diagnostics.Debug.WriteLine($"Unassigned command parameter received: {commandKey}");

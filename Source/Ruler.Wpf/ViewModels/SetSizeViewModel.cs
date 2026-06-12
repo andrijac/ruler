@@ -4,57 +4,33 @@ using System.ComponentModel;
 
 namespace Ruler.Wpf.ViewModels
 {
-    public class SetSizeViewModel : ModelBase, IDataErrorInfo
+    public class SetSizeViewModel : ModelBase
     {
-        private double _width;
-        private double _height;
+        private string _widthString;
+        private string _heightString;
 
-        public SetSizeViewModel(double width, double height)
+        // Bind your textboxes to these string properties
+        public string WidthString
         {
-            _width = width;
-            _height = height;
+            get => _widthString;
+            set { _widthString = value; OnPropertyChanged(); }
         }
 
-        public double Width
+        public string HeightString
         {
-            get => _width;
-            set => SetProperty(ref _width, value);
+            get => _heightString;
+            set { _heightString = value; OnPropertyChanged(); }
         }
 
-        public double Height
+        // Expose numeric properties for your RulerViewModel to read after ShowDialog returns
+        public int Width => int.TryParse(WidthString, out int w) ? w : 0;
+        public int Height => int.TryParse(HeightString, out int h) ? h : 0;
+
+        public SetSizeViewModel(double currentWidth, double currentHeight)
         {
-            get => _height;
-            set => SetProperty(ref _height, value);
-        }
-
-        // IDataErrorInfo Members
-        public string Error => null;
-
-        public string this[string columnName]
-        {
-            get
-            {
-                string error = null;
-
-                switch (columnName)
-                {
-                    case nameof(Width):
-                        if (Width < 10 || Width > 10000)
-                        {
-                            error = "Width must be between 10 and 10,000 pixels.";
-                        }
-                        break;
-
-                    case nameof(Height):
-                        if (Height < 10 || Height > 10000)
-                        {
-                            error = "Height must be between 10 and 10,000 pixels.";
-                        }
-                        break;
-                }
-
-                return error;
-            }
+            // Initialize strings with the current ruler coordinates
+            WidthString = ((int)currentWidth).ToString();
+            HeightString = ((int)currentHeight).ToString();
         }
     }
 }

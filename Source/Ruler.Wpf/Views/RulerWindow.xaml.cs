@@ -30,6 +30,7 @@ namespace Ruler.Wpf.Views
         private bool _isDragging = false;
         private Point _dragStartPoint;
         private bool _skipNextMouseMove = false;
+        private bool isloaded = false;
         public RulerWindow(RulerViewModel viewModel)
         {
             InitializeComponent();
@@ -73,9 +74,42 @@ namespace Ruler.Wpf.Views
                     }
                 }
             };
+            this.SizeChanged += (s, e) =>
+            {
+                if (DataContext is RulerViewModel vm)
+                {
+                    vm.OnPropertyChanged(nameof(vm.CurrentGuideline));
+                    if ((!_isSyncing) && (isloaded)) // Evaluates to true while you drag with the mouse!
+                    {
+
+                        vm.Width =(int) e.NewSize.Width;
+                        vm.Height = (int) e.NewSize.Height;
+                    }
+                }
+                
+            };
 
         }
+        public void ApplyExplicitDimensions(int newWidth, int newHeight)
+        {
+            // Turn on the syncing lock so SizeChanged skips its overwrite loop
+            _isSyncing = true;
 
+            try
+            {
+                // Set the window dimensions directly
+                this.Width = newWidth;
+                this.Height = newHeight;
+
+                // Force WPF to complete the UI layout arrangements instantly
+                this.UpdateLayout();
+            }
+            finally
+            {
+                // Release the lock safely
+                _isSyncing = false;
+            }
+        }
         private void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
             if (!(DataContext is RulerViewModel viewModel)) return;
@@ -102,22 +136,22 @@ namespace Ruler.Wpf.Views
             {
                 _isSyncing = false;
             }
+            isloaded = true;
         }
 
         private void OnWindowMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (!(DataContext is RulerViewModel viewModel)) return;
 
-            // Handle window movement interactions if clicking the primary canvas body
             if (e.ChangedButton == MouseButton.Left && e.LeftButton == MouseButtonState.Pressed)
             {
-                // Capture the absolute start point to let the VM process the click-distance threshold
                 Point relativePos = e.GetPosition(this);
                 viewModel.HandleMouseDown(PointToScreen(relativePos));
 
-                // Optional: If you aren't clicking an explicit resize border edge zone, 
-                // invoke native window drag-moving mechanics safely.
-                if (e.OriginalSource == MainCanvas)
+           
+                if (e.OriginalSource == MainCanvas &&
+                    relativePos.X > 5 && relativePos.X < (this.ActualWidth - 5) &&
+                    relativePos.Y > 5 && relativePos.Y < (this.ActualHeight - 5))
                 {
                     DragMove();
                 }
@@ -216,6 +250,8 @@ namespace Ruler.Wpf.Views
             if (_isDragging)
             {
                 _isDragging = false;
+
+                return;
             }
             if (DataContext is RulerViewModel viewModel && viewModel.ModifySettingCommand != null)
             {

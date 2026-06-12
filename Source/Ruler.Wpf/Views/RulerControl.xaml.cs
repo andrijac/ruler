@@ -39,7 +39,7 @@ namespace Ruler.Wpf.Views
             InitializeComponent();
 
             // Re-render whenever the dimensions alter
-            SizeChanged += (s, e) => InvalidatesOnRender();
+            SizeChanged += (s, e) => this.InvalidateVisual(); ;
         }
 
         protected override void OnRender(DrawingContext drawingContext)
@@ -65,8 +65,8 @@ namespace Ruler.Wpf.Views
 
             // Grab the dimensions directly from the verified data model, NOT the layout engine
             bool isVertical = viewModel.IsVertical;
-            double totalLength = isVertical ? viewModel.Height : viewModel.Width;
-            double crossDimension = isVertical ? viewModel.Width : viewModel.Height;
+            double totalLength = isVertical ? this.RenderSize.Height : this.RenderSize.Width;
+            double crossDimension = isVertical ? this.RenderSize.Width : this.RenderSize.Height;
 
             StreamGeometry geometry = new StreamGeometry();
 

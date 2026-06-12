@@ -26,6 +26,12 @@
         <converters:OpacityMatchConverter x:Key="OpacityMatchConverter"/>
         <converters:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
     </Window.Resources>
+    <WindowChrome.WindowChrome>
+        <WindowChrome ResizeBorderThickness="5" 
+                      CaptionHeight="0" 
+                      GlassFrameThickness="0" 
+                      CornerRadius="0" />
+    </WindowChrome.WindowChrome>
     <Window.InputBindings>
   
 
@@ -39,10 +45,10 @@
         <KeyBinding Key="G" Command="{Binding ModifySettingCommand}" CommandParameter="SHOW_GUIDELINE"/>
         <KeyBinding Key="T" Command="{Binding ModifySettingCommand}" CommandParameter="TOGGLE_ONTOP"/>
         <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="TOGGLE_TOOLTIP"/>
-        <KeyBinding Key="PageUp" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_UP_1"/>
-        <KeyBinding Key="PageUp" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_UP_10"/>
-        <KeyBinding Key="Next" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_DOWN_1"/>
-        <KeyBinding Key="Next" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_DOWN_10"/>
+        <KeyBinding Key="PageUp" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_UP_10"/>
+        <KeyBinding Key="PageUp" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_TO_100"/>
+        <KeyBinding Key="Next" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_DOWN_10"/>
+        <KeyBinding Key="Next" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_TO_10"/>
         <KeyBinding Key="Space" Command="{Binding ModifySettingCommand}" CommandParameter="FLIP_ORIENTATION"/>
         <KeyBinding Key="Esc" Command="{Binding ModifySettingCommand}" CommandParameter="CLOSE"/>
         <KeyBinding Key="Esc" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="EXIT_ALL"/>
@@ -58,6 +64,9 @@
         <KeyBinding Key="Up" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_UP_1"/>
         <KeyBinding Key="Down" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_DOWN_1"/>
         <KeyBinding Key="D" Command="{Binding ModifySettingCommand}" CommandParameter="DUPLICATE"/>
+        <KeyBinding Key="I" Command="{Binding ModifySettingCommand}" CommandParameter="SHOW_SHORTCUTS"/>
+        <KeyBinding Key="PageUp" Modifiers="Shift" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_UP_5" />
+        <KeyBinding Key="PageDown" Modifiers="Shift" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_DOWN_5" />
     </Window.InputBindings>
     <Grid Name="MainRootGrid">
         
@@ -65,20 +74,24 @@
             <ContextMenu>
             <MenuItem Header="Stay On Top" 
                       IsCheckable="True" 
-                      IsChecked="{Binding TopMost, Mode=TwoWay}"/>
+                      IsChecked="{Binding TopMost, Mode=TwoWay}"
+                      InputGestureText="T"/>
 
             <MenuItem Header="Lock Resizing" 
                       IsCheckable="True" 
-                      IsChecked="{Binding IsLocked, Mode=TwoWay}"/>
+                      IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                      InputGestureText="L"/>
 
             <MenuItem Header="Is Vertical?" 
                       IsCheckable="True" 
                       IsChecked="{Binding IsVertical, Mode=OneWay}" 
-                      Command="{Binding ToggleOrientationCommand}"/>
+                      Command="{Binding ToggleOrientationCommand}"
+                      InputGestureText="Space / O"/>
 
             <MenuItem Header="Show Tooltip" 
                       IsCheckable="True" 
-                      IsChecked="{Binding ShowToolTip, Mode=TwoWay}"/>
+                      IsChecked="{Binding ShowToolTip, Mode=TwoWay}"
+                      InputGestureText="Ctrl + T"/>
 
             <Separator/>
 
@@ -105,36 +118,45 @@
                     <MenuItem Header="5%"   Command="{Binding ChangeOpacityCommand}" CommandParameter="0.05" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.05, Mode=OneWay}"/>
                 </MenuItem>
 
-                <MenuItem Header="Set Size..." Command="{Binding ResizeRulerCommand}"/>
-            <MenuItem Header="Duplicate" Command="{Binding DuplicateRulerCommand}"/>
+                <MenuItem Header="Set Size..." Command="{Binding ResizeRulerCommand}"
+                          InputGestureText="R"/>
+            <MenuItem Header="Duplicate" Command="{Binding DuplicateRulerCommand}"
+                      InputGestureText="D"/>
                 <Separator/>
                 <MenuItem Header="Show Guideline" 
                       IsCheckable="True" 
                       IsChecked="{Binding CurrentGuideline.IsEnabled}" 
-                      Command="{Binding ToggleGuidelineCommand}"/>
+                      Command="{Binding ToggleGuidelineCommand}"
+                          InputGestureText="G"/>
             <Separator/>
 
             <MenuItem Header="Save Type?">
-                <MenuItem Header="None" Command="{Binding SetSaveTypeCommand}" CommandParameter="None" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=None, Mode=OneWay}"/>
-                <MenuItem Header="Position" Command="{Binding SetSaveTypeCommand}" CommandParameter="Location" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Location, Mode=OneWay}"/>
-                <MenuItem Header="Full" Command="{Binding SetSaveTypeCommand}" CommandParameter="All" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=All, Mode=OneWay}"/>
-                <MenuItem Header="Size" Command="{Binding SetSaveTypeCommand}" CommandParameter="Size" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Size, Mode=OneWay}"/> 
+                <MenuItem Header="None" Command="{Binding SetSaveTypeCommand}" CommandParameter="None" InputGestureText="N"   IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=None, Mode=OneWay}"/>
+                <MenuItem Header="Position" Command="{Binding SetSaveTypeCommand}" CommandParameter="Location" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Location, Mode=OneWay}" InputGestureText="L"/>
+                <MenuItem Header="Full" Command="{Binding SetSaveTypeCommand}" CommandParameter="All" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=All, Mode=OneWay}" InputGestureText="A"/>
+                <MenuItem Header="Size" Command="{Binding SetSaveTypeCommand}" CommandParameter="Size" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Size, Mode=OneWay}" InputGestureText="S"/> 
             </MenuItem>
 
            
-                <MenuItem Header="Reset To Default" Command="{Binding ResetToDefaultCommand}"/>
+                <MenuItem Header="Reset To Default" Command="{Binding ResetToDefaultCommand}" InputGestureText="Ctrl + R"/>
         
 
-            <MenuItem Header="About..." Command="{Binding ShowAboutDialogCommand}"/>
+            <MenuItem Header="About..." Command="{Binding ShowAboutDialogCommand}" InputGestureText="Ctrl + A"/>
+                <MenuItem Header="Keyboard Shortcuts" 
+          Command="{Binding ModifySettingCommand}" 
+          CommandParameter="SHOW_SHORTCUTS"
+                          InputGestureText="I"/>
                 <Separator/>
 
                 <MenuItem Header="Close Ruler" 
-              Command="{Binding CloseRulerCommand}"/>
+              Command="{Binding CloseRulerCommand}"
+                          InputGestureText="Esc"/>
 
                 <Separator/>
 
                 <MenuItem Header="Close All Rulers" 
-              Command="{Binding ExitApplicationCommand}">
+              Command="{Binding ExitApplicationCommand}"
+                          InputGestureText="Ctrl + Esc">
                     <MenuItem.Style>
                         <Style TargetType="MenuItem">
                             <!-- Very soft muted red tint -->
