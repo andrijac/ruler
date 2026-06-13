@@ -57,7 +57,7 @@ namespace Ruler.Forms
 
             _rulerInfo = info;
             InitializeComponent();
-          
+            this.KeyPreview = true; // Enable form to receive key events
             this.FormBorderStyle = FormBorderStyle.None;
             this.AutoScaleMode = AutoScaleMode.None;
             this.SetStyle(ControlStyles.ResizeRedraw, true);
@@ -93,6 +93,28 @@ namespace Ruler.Forms
         }
         protected override void WndProc(ref Message m)
         {
+            // Hardware message identifiers for standard key presses and system/Alt hotkeys
+            const int WM_KEYDOWN = 0x0100;
+            const int WM_SYSKEYDOWN = 0x0104;
+
+            // 1. Intercept keyboard inputs directly from the OS Message Pump
+            if (m.Msg == WM_KEYDOWN || m.Msg == WM_SYSKEYDOWN)
+            {
+                // Extract the base key value from the message parameters
+                Keys pressedKey = (Keys)m.WParam.ToInt32();
+
+                // Blend the base key with active keyboard modifier flags (Ctrl, Shift, Alt)
+                if (ModifierKeys.HasFlag(Keys.Control)) pressedKey |= Keys.Control;
+                if (ModifierKeys.HasFlag(Keys.Shift)) pressedKey |= Keys.Shift;
+                if (ModifierKeys.HasFlag(Keys.Alt)) pressedKey |= Keys.Alt;
+
+                // Force feed the fully constructed key bundle into your shortcut logic
+                if (ProcessCmdKey(ref m, pressedKey))
+                {
+                    m.Result = IntPtr.Zero; // Signal to Windows that the key message was consumed
+                    return; // Halt further window message routing for this key press
+                }
+            }
             // If the ruler is locked, we want to block resize messages
             if (_rulerInfo.IsLocked)
             {
@@ -161,131 +183,80 @@ namespace Ruler.Forms
         }
         private void CreateMenuItems()
         {
-
             ToolStripMenuItem miTopMost = new ToolStripMenuItem("Stay On Top");
             miTopMost.Tag = nameof(_rulerInfo.TopMost); // Use Tag to link to the property for syncing
-            miTopMost.Click += (s, e) =>
-            {
-                this.TopMost = _rulerInfo.TopMost = !_rulerInfo.TopMost;
-            };
+            miTopMost.Click += ToggleTopMost_Click; // Point directly to the method
+            miTopMost.ShortcutKeyDisplayString = "T";
             _contextMenuStrip.Items.Add(miTopMost);
+
             ToolStripMenuItem miLockResize = new ToolStripMenuItem("Lock Resizing");
             miLockResize.Tag = nameof(_rulerInfo.IsLocked); // Link to the IsLocked property
-            miLockResize.Click += (s, e) =>
-            {
-                _rulerInfo.IsLocked = !_rulerInfo.IsLocked;
-            }; // Sync the checkmark
+            miLockResize.Click += ToggleLockResize_Click;
+            miLockResize.ShortcutKeyDisplayString = "Ctrl + L";
             _contextMenuStrip.Items.Add(miLockResize);
+
             ToolStripMenuItem miIsVertical = new ToolStripMenuItem("Is Vertical?");
             miIsVertical.Tag = nameof(_rulerInfo.IsVertical); // Link to the IsVertical property
-            miIsVertical.Click += (s, e) =>
-            {
-                _rulerInfo.ToggleOrientation();
-                this.Size = new Size(_rulerInfo.Width, _rulerInfo.Height); // Ensure size is correct after orientation change
-                miIsVertical.Checked = _rulerInfo.IsVertical; // Sync the checkmark
-                this.Invalidate();
-                // Handle the actual rotation logic
-            };
+            miIsVertical.Click += ToggleOrientation_Click;
+            miIsVertical.ShortcutKeyDisplayString = "Space/ O";
             _contextMenuStrip.Items.Add(miIsVertical);
+
             ToolStripMenuItem miShowTooltip = new ToolStripMenuItem("Show Tootip");
             miShowTooltip.Tag = nameof(_rulerInfo.ShowToolTip); // Link to the ShowToolTip property
-            miShowTooltip.Click += (s, e) =>
-            {
-                _rulerInfo.ShowToolTip = !_rulerInfo.ShowToolTip;
-                miShowTooltip.Checked = _rulerInfo.ShowToolTip; // Sync the checkmark
-            };
+            miShowTooltip.Click += ToggleTooltip_Click;
+            miShowTooltip.ShortcutKeyDisplayString = "Ctrl + T";
             _contextMenuStrip.Items.Add(miShowTooltip);
+
             _contextMenuStrip.Items.Add(CreateOpacityMenu("Opacity"));
+
             ToolStripMenuItem miSetSize = new ToolStripMenuItem("Set Size");
-            miSetSize.Click += (s, e) =>
-            {
-                using (SetSizeForm form = new SetSizeForm(_rulerInfo.Width, _rulerInfo.Height))
-                {
-                    // Keep the dialog accessible if the ruler is pinned
-                    if (this.TopMost) form.TopMost = true;
-                    if (form.ShowDialog() == DialogResult.OK)
-                    {
-                        Size size = form.GetNewSize();
-                        // Update through properties to sync with _rulerInfo
-                        _rulerInfo.Width = size.Width;
-                        _rulerInfo.Height = size.Height;
-                    }
-                }
-            };
+            miSetSize.Click += SetSize_Click;
+            miSetSize.ShortcutKeyDisplayString = "R";
+
             ToolStripMenuItem miDuplicate = new ToolStripMenuItem("Duplicate");
-            miDuplicate.Click += (s, e) =>
-            {
-                RulerInfo newInfo = new RulerInfo();
-                RulerFactory.CopyValues(this._rulerInfo, newInfo);
-                MainForm newForm = new MainForm(newInfo);
-                RulerApplicationContext.Register(newForm);
-                newForm.Show();
-            };
+            miDuplicate.Click += DuplicateRuler_Click;
+            miDuplicate.ShortcutKeyDisplayString = "D";
+
             _contextMenuStrip.Items.Add(miSetSize);
             _contextMenuStrip.Items.Add(miDuplicate);
+
             ToolStripMenuItem miShowGuideline = new ToolStripMenuItem("Show Guideline");
             miShowGuideline.Tag = nameof(_rulerInfo.Guideline.IsEnabled); // Link to the IsGuidelineEnabled property
-            miShowGuideline.Click += (s, e) =>
-            {
-                _rulerInfo.Guideline.IsEnabled = !_rulerInfo.Guideline.IsEnabled;
-                this.Invalidate(); // Trigger a repaint to show/hide the guideline
-            };
+            miShowGuideline.Click += ToggleGuideline_Click;
+            miShowGuideline.ShortcutKeyDisplayString = "G";
             _contextMenuStrip.Items.Add(miShowGuideline);
-          
+
             ToolStripMenuItem miReset = new ToolStripMenuItem("Reset");
             ToolStripMenuItem miResetDefault = new ToolStripMenuItem("Reset To Default");
-            miResetDefault.Click += (s, e) =>
-            {
-                // Get fresh defaults from the Library Factory
-                var defaults = RulerFactory.CreateDefault();
-                RulerFactory.CopyValues(defaults, _rulerInfo);
-                // Refresh UI by invalidating the form (which triggers a repaint)
-                this.Invalidate();
-            };
-            ToolStripMenuItem miClearSaved = new ToolStripMenuItem("Reset All Saved Rulers to Default");
-            miClearSaved.Click += (s, e) =>
-            {
-                if (MessageBox.Show("Are you sure you want to clear all saved rulers? This cannot be undone.", "Confirm Clear", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                {
-                    RulerApplicationContext.ClearAll();
-                    MessageBox.Show("All saved rulers have been cleared.");
-                    foreach (MainForm form in Application.OpenForms.OfType<MainForm>())
-                    {
-                        form._rulerInfo.SaveType = SaveTypes.None;
-                        RulerApplicationContext.Register(form); // Re-register to update the context's tracking of open forms
-                    }
-                    MessageBox.Show("All ruler's save type set to 'Do not Save' to reflect cleared saved data.");
-                }
-            };
+            miResetDefault.Click += ResetToDefault_Click;
+            miResetDefault.ShortcutKeyDisplayString = "Ctrl + R";
+
             miReset.DropDownItems.Add(miResetDefault);
-            miReset.DropDownItems.Add(miClearSaved);
+            _contextMenuStrip.Items.Add(miReset); // Added to ensure the Reset menu item displays
+
             _contextMenuStrip.Items.Add(CreateEnumMenu("Save Type?"));
+
             ToolStripMenuItem miAbout = new ToolStripMenuItem("About...");
-            miAbout.Click += (s, e) =>
-            {
-                string message = string.Format(
-              "Original Ruler implemented by Jeff Key\n" +
-              "www.sliver.com\n" +
-              "ruler.codeplex.com\n" +
-              "Icon by Kristen Magee @ www.kbecca.com.\n" +
-              "Maintained by Andrija Cacanovic\n" +
-              "Hosted on \n" +
-              "https://github.com/andrijac/ruler\n" +
-              "Version {0}",
-              Application.ProductVersion);
-                MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            };
+            miAbout.Click += ShowAbout_Click;
+            miAbout.ShortcutKeyDisplayString = "Ctrl + A";
             _contextMenuStrip.Items.Add(miAbout);
+
             ToolStripMenuItem miClose = new ToolStripMenuItem("Close");
-            miClose.Click += (s, e) => { this.Close(); };
+            miClose.Click += CloseRuler_Click;
+            miClose.ShortcutKeyDisplayString = "Esc";
+
             ToolStripMenuItem miExitApplication = new ToolStripMenuItem("Exit");
-            miExitApplication.Click += (s, e) =>
-            {
-                RulerApplicationContext.CloseAll();
-                Application.Exit();
-            };
+            miExitApplication.Click += ExitApplication_Click;
+            miExitApplication.ShortcutKeyDisplayString = "Ctrl + Esc";
+
+            ToolStripMenuItem miKeyShort = new ToolStripMenuItem("Keyboard Shortcuts");
+            // If you implemented a separate view or handler for this item:
+            // miKeyShort.Click += KeyboardShortcuts_Click; 
+            miKeyShort.ShortcutKeyDisplayString = "I";
+
             _contextMenuStrip.Items.Add(miClose);
             _contextMenuStrip.Items.Add(miExitApplication);
+            _contextMenuStrip.Items.Add(miKeyShort);
         }
         private ToolStripMenuItem CreateEnumMenu(string label)
         {
@@ -295,48 +266,403 @@ namespace Ruler.Forms
             {
                 var item = new ToolStripMenuItem(type.ToString());
 
-                // 1. Click logic: Update the source of truth
-                item.Click += (s, e) => _rulerInfo.SaveType = type;
+                // 1. Point to your new named menu click wrapper instead of the lambda
+                item.Click += SaveTypeMenuItem_Click;
+
+                // 2. Keep storing the type in the Tag so the named handler can read it
                 item.Tag = type;
-                // Initial state
+
+                // 3. Keep the initial checked state logic
                 item.Checked = (_rulerInfo.SaveType == type);
+
+                // 4. Your custom shortcut display strings
+                switch (type)
+                {
+                    case SaveTypes.All:
+                        item.ShortcutKeyDisplayString = "A";
+                        break;
+                    case SaveTypes.Size:
+                        item.ShortcutKeyDisplayString = "S";
+                        break;
+                    case SaveTypes.Location:
+                        item.ShortcutKeyDisplayString = "L";
+                        break;
+                    case SaveTypes.None:
+                        item.ShortcutKeyDisplayString = "N";
+                        break;
+                }
+
                 subMenu.DropDownItems.Add(item);
             }
 
             return subMenu;
         }
+        /// <summary>
+        /// Menu wrapper that extracts the enum value and safely manages checkmarks.
+        /// </summary>
+        private void SaveTypeMenuItem_Click(object sender, EventArgs e)
+        {
+            if (sender is ToolStripMenuItem clickedItem && clickedItem.Tag is SaveTypes selectedType)
+            {
+                // Call our pure worker method
+                ApplySaveType(selectedType);
+
+                // Manage checkmarks cleanly across siblings
+                if (clickedItem.Owner is ToolStripDropDown parentMenu)
+                {
+                    foreach (ToolStripItem sibling in parentMenu.Items)
+                    {
+                        if (sibling is ToolStripMenuItem menuSibling)
+                        {
+                            menuSibling.Checked = false;
+                        }
+                    }
+                }
+                clickedItem.Checked = true;
+            }
+        }
 
         private ToolStripMenuItem CreateOpacityMenu(string label)
         {
             var subMenu = new ToolStripMenuItem(label);
-            subMenu.Tag = nameof(_rulerInfo.Opacity); // Tag to identify this menu for syncing      
+            subMenu.Tag = nameof(_rulerInfo.Opacity);
             double[] doubles = { 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0 };
+
             foreach (double op in doubles)
             {
                 var item = new ToolStripMenuItem((op * 100).ToString());
-                item.Tag = op; // Use Tag to store the actual double value for comparison
-                // 1. Click logic: Update the source of truth
-                item.Click += (s, e) =>
-                {
-                    _rulerInfo.Opacity = op;
-                    if (item.Owner is ToolStripDropDown parentMenu)
-                    {
-                        foreach (ToolStripItem sibling in parentMenu.Items)
-                        {
-                            if (sibling is ToolStripMenuItem menuSibling)
-                            {
-                                menuSibling.Checked = false;
-                            }
-                        }
-                    }
-                    item.Checked = _rulerInfo.Opacity == op; // Sync the checkmark immediately on click
-                    this.Invalidate();
-                };
-
+                item.Tag = op; // Keep the double value stored here
+                item.Click += OpacityMenuItem_Click; // Point to our menu handler below
                 subMenu.DropDownItems.Add(item);
             }
-
             return subMenu;
+        }
+        private void OpacityMenuItem_Click(object sender, EventArgs e)
+        {
+            if (sender is ToolStripMenuItem clickedItem && clickedItem.Tag is double opValue)
+            {
+                // Call the pure worker method
+                ApplyOpacity(opValue);
+
+                // Clear sibling checkmarks safely
+                if (clickedItem.Owner is ToolStripDropDown parentMenu)
+                {
+                    foreach (ToolStripItem sibling in parentMenu.Items)
+                    {
+                        if (sibling is ToolStripMenuItem menuSibling)
+                        {
+                            menuSibling.Checked = false;
+                        }
+                    }
+                }
+                clickedItem.Checked = true;
+            }
+        }
+        private void ToggleTopMost_Click(object sender, EventArgs e)
+        {
+            this.TopMost = _rulerInfo.TopMost = !_rulerInfo.TopMost;
+        }
+
+        private void ToggleLockResize_Click(object sender, EventArgs e)
+        {
+            _rulerInfo.IsLocked = !_rulerInfo.IsLocked;
+        }
+
+        private void ToggleOrientation_Click(object sender, EventArgs e)
+        {
+            _rulerInfo.ToggleOrientation();
+            SetRulerOrientation(_rulerInfo.IsVertical);
+
+            if (sender is ToolStripMenuItem miIsVertical)
+            {
+                miIsVertical.Checked = _rulerInfo.IsVertical;
+            }
+        }
+
+        private void ToggleTooltip_Click(object sender, EventArgs e)
+        {
+            _rulerInfo.ShowToolTip = !_rulerInfo.ShowToolTip;
+            if (sender is ToolStripMenuItem miShowTooltip)
+            {
+                miShowTooltip.Checked = _rulerInfo.ShowToolTip;
+            }
+        }
+
+        private void SetSize_Click(object sender, EventArgs e)
+        {
+            using (SetSizeForm form = new SetSizeForm(_rulerInfo.Width, _rulerInfo.Height))
+            {
+                if (this.TopMost) form.TopMost = true;
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    Size size = form.GetNewSize();
+                    _rulerInfo.Width = size.Width;
+                    _rulerInfo.Height = size.Height;
+                }
+            }
+        }
+
+        private void DuplicateRuler_Click(object sender, EventArgs e)
+        {
+            RulerInfo newInfo = new RulerInfo();
+            RulerFactory.CopyValues(this._rulerInfo, newInfo);
+            MainForm newForm = new MainForm(newInfo);
+            RulerApplicationContext.Register(newForm);
+            newForm.Show();
+        }
+
+        private void ToggleGuideline_Click(object sender, EventArgs e)
+        {
+            _rulerInfo.Guideline.IsEnabled = !_rulerInfo.Guideline.IsEnabled;
+            this.Invalidate();
+        }
+
+        private void ResetToDefault_Click(object sender, EventArgs e)
+        {
+            // 1. Get default configurations from the factory
+            var defaults = RulerFactory.CreateDefault();
+
+            // 2. Overwrite values inside your model state
+            RulerFactory.CopyValues(defaults, _rulerInfo);
+
+            // 3. FORCE THE PHYSICAL UI TO MATCH THE RESET VALUES INSTANTLY
+            this.TopMost = _rulerInfo.TopMost;
+            this.Opacity = _rulerInfo.Opacity;
+            this.Size = new Size(_rulerInfo.Width, _rulerInfo.Height);
+
+            // 4. Force context menu checkmarks to instantly recalculate their visual state
+            if (_contextMenuStrip != null)
+            {
+                ValidateAllItems(_contextMenuStrip.Items);
+            }
+
+            // 5. Trigger a full repaint of the tick marks
+            this.Invalidate();
+        }
+
+        private void ClearAllSavedRulers_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Are you sure you want to clear all saved rulers? This cannot be undone.", "Confirm Clear", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                RulerApplicationContext.ClearAll();
+                MessageBox.Show("All saved rulers have been cleared.");
+                foreach (MainForm form in Application.OpenForms.OfType<MainForm>())
+                {
+                    form._rulerInfo.SaveType = SaveTypes.None;
+                    RulerApplicationContext.Register(form);
+                }
+                MessageBox.Show("All ruler's save type set to 'Do not Save' to reflect cleared saved data.");
+            }
+        }
+
+        private void ShowAbout_Click(object sender, EventArgs e)
+        {
+            string message = string.Format(
+                "Original Ruler implemented by Jeff Key\n" +
+                "www.sliver.com\n" +
+                "ruler.codeplex.com\n" +
+                "Icon by Kristen Magee @ www.kbecca.com.\n" +
+                "Maintained by Andrija Cacanovic\n" +
+                "Hosted on \n" +
+                "https://github.com/andrijac/ruler\n" +
+                "Version {0}",
+                Application.ProductVersion);
+            MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void CloseRuler_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void ExitApplication_Click(object sender, EventArgs e)
+        {
+            RulerApplicationContext.CloseAll();
+            Application.Exit();
+        }
+        /// <summary>
+        /// Moves the ruler's screen position by a pixel delta.
+        /// </summary>
+        private void NudgeLocation(int deltaX, int deltaY)
+        {
+            this.Location = new Point(this.Location.X + deltaX, this.Location.Y + deltaY);
+            _rulerInfo.Left = this.Location.X;
+            _rulerInfo.Top = this.Location.Y;
+            this.Invalidate();
+        }
+
+        /// <summary>
+        /// Resizes the ruler by a pixel delta.
+        /// </summary>
+        private void NudgeSize(int deltaWidth, int deltaHeight)
+        {
+            // Ensure the ruler doesn't shrink into oblivion (keep a minimum size of 50)
+            int newWidth = Math.Max(50, this.Width + deltaWidth);
+            int newHeight = Math.Max(50, this.Height + deltaHeight);
+
+            this.Size = new Size(newWidth, newHeight);
+            _rulerInfo.Width = this.Width;
+            _rulerInfo.Height = this.Height;
+            this.Invalidate();
+        }
+
+        // ==========================================
+        // OPACITY SHORTCUT FUNCTIONS
+        // ==========================================
+
+        /// <summary>
+        /// Changes the opacity smoothly up or down by a percentage step (e.g., 0.05 for 5%).
+        /// </summary>
+        private void AdjustOpacityStep(double step)
+        {
+            double newOpacity = _rulerInfo.Opacity + step;
+
+            // Clamp the value between 5% and 100% to match your menu limits
+            if (newOpacity < 0.05) newOpacity = 0.05;
+            if (newOpacity > 1.0) newOpacity = 1.0;
+
+            _rulerInfo.Opacity = newOpacity;
+            this.Opacity = newOpacity;
+            this.Invalidate();
+        }
+        private void SetRulerOrientation(bool vertical)
+        {
+            _rulerInfo.IsVertical = vertical;
+            this.Size = new Size(_rulerInfo.Width, _rulerInfo.Height);
+            this.Invalidate();
+        }
+        private void ApplyOpacity(double opacityValue)
+        {
+            _rulerInfo.Opacity = opacityValue;
+            this.Opacity = opacityValue;
+            this.Invalidate();
+        }
+
+
+        /// <summary>
+        /// Sets the opacity directly to a specific value (e.g., 1.0 for 100%, 0.5 for 50%).
+        /// </summary>
+        private void SetDirectOpacity(double value)
+        {
+            _rulerInfo.Opacity = value;
+            this.Opacity = value;
+            this.Invalidate();
+        }
+        /// <summary>
+        /// Pure worker method to change how/where the ruler saves its configuration.
+        /// </summary>
+        private void ApplySaveType(SaveTypes type)
+        {
+            _rulerInfo.SaveType = type;
+
+            // Optional: If your app needs to save immediately when changed, 
+            // you can invoke your save service here.
+        }
+        protected override bool ProcessDialogKey(Keys keyData)
+        {
+            // Pass the message to your ProcessCmdKey manually!
+            // Message.Create creates a blank windows message to satisfy the signature
+            Message msg = new Message();
+            if (ProcessCmdKey(ref msg, keyData))
+            {
+                return true; // We handled the key, don't let anyone else have it
+            }
+
+            return base.ProcessDialogKey(keyData);
+        }
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // --- CATEGORY 1: CORE CONTROLS ---
+            switch (keyData)
+            {
+                case Keys.Space:
+                case Keys.O:
+                    SetRulerOrientation(!_rulerInfo.IsVertical);
+                    return true; // Returns true to notify Windows the key event was handled
+                case Keys.R:
+                    SetSize_Click(null, null);
+                    return true;
+                case Keys.L:
+                    ToggleLockResize_Click(this, EventArgs.Empty);
+                    return true;
+
+                case Keys.G:
+                   ToggleGuideline_Click(this, EventArgs.Empty);
+                    return true;
+
+                case Keys.D:
+                    DuplicateRuler_Click(this, EventArgs.Empty);
+                    return true;
+
+                case Keys.Escape:
+                    this.Close(); // Closes the active ruler window instance
+                    return true;
+
+                case Keys.Control | Keys.Escape:
+                    ExitApplication_Click(this, EventArgs.Empty);
+                    return true;
+
+                // --- CATEGORY 2: NUDGING & SIZING ---
+                case Keys.Up:
+                    NudgeLocation(0, -10); // Nudge Up 10px
+                    return true;
+                case Keys.Down:
+                    NudgeLocation(0, 10);  // Nudge Down 10px
+                    return true;
+                case Keys.Left:
+                    NudgeLocation(-10, 0); // Nudge Left 10px
+                    return true;
+                case Keys.Right:
+                    NudgeLocation(10, 0);  // Nudge Right 10px
+                    return true;
+
+                case Keys.Control | Keys.Up:
+                    NudgeLocation(0, -1);  // Fine Nudge Up 1px
+                    return true;
+                case Keys.Control | Keys.Down:
+                    NudgeLocation(0, 1);   // Fine Nudge Down 1px
+                    return true;
+                case Keys.Control | Keys.Left:
+                    NudgeLocation(-1, 0);  // Fine Nudge Left 1px
+                    return true;
+                case Keys.Control | Keys.Right:
+                    NudgeLocation(1, 0);   // Fine Nudge Right 1px
+                    return true;
+
+                case Keys.Control | Keys.R:
+                    ResetToDefault_Click(this, EventArgs.Empty);
+                    return true;
+
+                // --- CATEGORY 3: OPACITY TWEAKS ---
+                case Keys.PageUp:
+                    AdjustOpacityStep(0.10);  // Increase opacity by 10%
+                    return true;
+                case Keys.PageDown:
+                    AdjustOpacityStep(-0.10); // Decrease opacity by 10%
+                    return true;
+
+                case Keys.Shift | Keys.PageUp:
+                    AdjustOpacityStep(0.05);  // Fine increase opacity by 5%
+                    return true;
+                case Keys.Shift | Keys.PageDown:
+                    AdjustOpacityStep(-0.05); // Fine decrease opacity by 5%
+                    return true;
+
+                case Keys.Control | Keys.PageUp:
+                    SetDirectOpacity(1.0); // Instant Snap to 100%
+                    return true;
+                case Keys.Control | Keys.PageDown:
+                    SetDirectOpacity(0.1); // Instant Snap to 10%
+                    return true;
+            }
+
+            // Fallback to the base form processing if the pressed key isn't mapped
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void ShowResizeDialog()
+        {
+            
         }
 
         private void ValidateScreenBounds()
@@ -361,9 +687,9 @@ namespace Ruler.Forms
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-          if (_rulerInfo.Guideline.IsEnabled)
+          if (_rulerInfo?.Guideline?.IsEnabled == true)
             {
-              if (_rulerInfo.Guideline.IsLocked)
+              if (_rulerInfo?.Guideline?.IsLocked==true)
                 {
                     return;
                 }     
@@ -374,7 +700,7 @@ namespace Ruler.Forms
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
-            if (_rulerInfo.Guideline.IsEnabled)
+            if (_rulerInfo?.Guideline?.IsEnabled == true)
             {
                 this.Invalidate();
             }
@@ -392,7 +718,7 @@ namespace Ruler.Forms
                 _hasMoved = false;
 
 
-                if (_rulerInfo.Guideline.IsEnabled && _rulerInfo.Guideline != null)
+                if (_rulerInfo?.Guideline != null && _rulerInfo.Guideline.IsEnabled)
                 {
                     int distanceToGuideline = _rulerInfo.IsVertical
                         ? Math.Abs(e.Y - (int)_rulerInfo.Guideline.Position)
@@ -408,8 +734,10 @@ namespace Ruler.Forms
                
                 _activeArea = GetHitArea(e.Location);
                 _currentMode = (_activeArea == HitArea.None) ? InteractionMode.Drag : InteractionMode.Resize;
-
-                _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
+                if (_rulerInfo?.Guideline?.IsEnabled == true)
+                {
+                    _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
+                }
             }
          
            
@@ -423,9 +751,12 @@ namespace Ruler.Forms
                 // Only trigger the guideline toggle if no significant movement occurred
                 if (!_hasMoved)
                 {
-                    _rulerInfo.Guideline.IsEnabled = true;
-                    _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
-                    this.Invalidate();
+                    if (_rulerInfo?.Guideline != null)
+                    {
+                        _rulerInfo.Guideline.IsEnabled = true;
+                        _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
+                        this.Invalidate();
+                    }
                 }
             }
             else if (e.Button == MouseButtons.Right)
@@ -440,9 +771,9 @@ namespace Ruler.Forms
         {
             base.OnMouseMove(e);
             bool d = _hasMoved;
-            if (_rulerInfo.Guideline.IsEnabled)
+            if (_rulerInfo?.Guideline?.IsEnabled == true)
             {
-                if (!_rulerInfo.Guideline.IsLocked && _rulerInfo.Guideline != null  )
+                if (_rulerInfo?.Guideline != null && _rulerInfo.Guideline.IsEnabled && !_rulerInfo.Guideline.IsLocked)
                 {
                     _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? e.Location.Y : e.Location.X;
                     this.Invalidate(); // Trigger a repaint to move the guideline
@@ -619,7 +950,7 @@ namespace Ruler.Forms
             }
             bool isMouseOver = this.ClientRectangle.Contains(this.PointToClient(Cursor.Position));
 
-            if (_rulerInfo.Guideline.IsEnabled && (isMouseOver || _rulerInfo.IsLocked))
+            if (_rulerInfo?.Guideline != null && _rulerInfo.Guideline.IsEnabled )
             {
                 DrawGuideline(e.Graphics);
             }
@@ -632,7 +963,7 @@ namespace Ruler.Forms
                 // 2. Define the area you want the text to be centered in
                 RectangleF centerRect = new RectangleF(0, 0, this.Width, this.Height);
 
-                if (_rulerInfo.Guideline.IsEnabled)
+                if (_rulerInfo?.Guideline != null && _rulerInfo.Guideline.IsEnabled)
                 {
                     string toolTipText = $"Size: {this.Width} x {this.Height}\nGuideline at: {(int)_rulerInfo.Guideline.Position}";
                     // 3. Draw the shadow (shifted 1 pixel)
