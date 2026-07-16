@@ -15,6 +15,7 @@ namespace Ruler.Shared.Models
     {
        
         private RulerGuideline _guideline;
+        
        
         [JsonProperty("Width")]
         public int Width
@@ -128,7 +129,7 @@ namespace Ruler.Shared.Models
                    $"  TopMost: {TopMost} | ShowToolTip: {ShowToolTip}" + Environment.NewLine +
                    $"  IsLocked: {IsLocked}" + Environment.NewLine +
                    $"  SaveType: {SaveType}" +
-                   $"  Guideline:  {Guideline}"; ;
+                   $"  Guideline:  {Guideline}"; 
         }
         public void ToggleOrientation()
         {
