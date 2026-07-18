@@ -17,9 +17,9 @@ namespace Ruler.Shared.Services
         {
             lock (_lock)
             {
-                if (!_rulers.ContainsKey(ruler.RulerData.Id))
+                if (!_rulers.ContainsKey(ruler.RulerData.ID))
                 {
-                    _rulers.Add(ruler.RulerData.Id, ruler);
+                    _rulers.Add(ruler.RulerData.ID, ruler);
                 }
             }
         }
@@ -28,9 +28,9 @@ namespace Ruler.Shared.Services
         {
             lock (_lock)
             {
-                if (_rulers.ContainsKey(ruler.RulerData.Id))
+                if (_rulers.ContainsKey(ruler.RulerData.ID))
                 {
-                    _rulers.Remove(ruler.RulerData.Id);
+                    _rulers.Remove(ruler.RulerData.ID);
                 }
             }
         }

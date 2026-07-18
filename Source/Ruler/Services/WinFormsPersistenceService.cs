@@ -1,24 +1,15 @@
 ﻿using Newtonsoft.Json;
 
 using Ruler.Shared.Interfaces;
-using Ruler.Shared.Factories;
 using Ruler.Shared.Models;
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Configuration;
+using System.Diagnostics;
 
-namespace Ruler.Shared.Services
+namespace Ruler
 {
-    /// <summary>
-    /// Logic for converting Ruler data to and from string formats for persistence.
-    /// This keeps the UI project from needing to know the details of serialization.
-    /// </summary>
-    public class SettingsService : IPersistanceService
+    public class PersistenceManager :IPersistanceService
     {
         private const string SettingKey = "RulerData";
 

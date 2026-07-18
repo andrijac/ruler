@@ -1,4 +1,6 @@
-﻿using Ruler.Properties;
+﻿using Ruler.Factories;
+using Ruler.Properties;
+using Ruler.Shared.Attributes;
 using Ruler.Shared.Enums;
 using Ruler.Shared.Factories;
 using Ruler.Shared.Interfaces;
@@ -22,7 +24,7 @@ using System.Windows.Forms.VisualStyles;
 
 namespace Ruler.Forms
 {
-    public partial class MainForm : Form
+    public partial class MainForm : Form, IRuler
     {
         private const int WM_SYSCOMMAND = 0x0112;
         private const int SC_SIZE = 0xF000;
@@ -52,10 +54,17 @@ namespace Ruler.Forms
         private Size _dragStartFormSize;
 
         public RulerInfo RulerData => _rulerInfo; // Expose the RulerInfo for external use (e.g., duplication)  
-        public MainForm(RulerInfo info)
+       
+        private readonly IRulerFactory _rulerFactory;
+        private readonly IMainFormFactory _mainFormFactory;
+        private readonly IRulerRegistry _rulerRegistry;
+        public MainForm(RulerInfo info, IRulerFactory factory, IMainFormFactory mainFormFactory, IRulerRegistry rulerRegistry)
         {
-
+                    
             _rulerInfo = info;
+            _rulerFactory = factory;
+            _mainFormFactory = mainFormFactory;
+            _rulerRegistry = rulerRegistry;
             InitializeComponent();
             this.KeyPreview = true; // Enable form to receive key events
             this.FormBorderStyle = FormBorderStyle.None;
@@ -405,9 +414,8 @@ namespace Ruler.Forms
         private void DuplicateRuler_Click(object sender, EventArgs e)
         {
             RulerInfo newInfo = new RulerInfo();
-            RulerFactory.CopyValues(this._rulerInfo, newInfo);
-            MainForm newForm = new MainForm(newInfo);
-            RulerApplicationContext.Register(newForm);
+            _rulerFactory.CopyValues(this._rulerInfo, newInfo);
+            IRuler newForm = _mainFormFactory.Create(newInfo);
             newForm.Show();
         }
 
@@ -420,36 +428,52 @@ namespace Ruler.Forms
         private void ResetToDefault_Click(object sender, EventArgs e)
         {
             // 1. Get default configurations from the factory
-            var defaults = RulerFactory.CreateDefault();
+            var defaults = _rulerFactory.CreateDefault();
 
             // 2. Overwrite values inside your model state
-            RulerFactory.CopyValues(defaults, _rulerInfo);
+            _rulerFactory.CopyValues(defaults, _rulerInfo);
+            UpdateUIFromModel();
 
-            // 3. FORCE THE PHYSICAL UI TO MATCH THE RESET VALUES INSTANTLY
-            this.TopMost = _rulerInfo.TopMost;
-            this.Opacity = _rulerInfo.Opacity;
-            this.Size = new Size(_rulerInfo.Width, _rulerInfo.Height);
+        
+        }
+        private void UpdateUIFromModel()
+        {
+            // 1. Reflection Loop: Handles Width, Height, Opacity, etc.
+            // (This loop ignores Top and Left because they have no attribute)
+            var modelType = _rulerInfo.GetType();
+            var formType = this.GetType();
 
-            // 4. Force context menu checkmarks to instantly recalculate their visual state
-            if (_contextMenuStrip != null)
+            foreach (var prop in modelType.GetProperties())
             {
-                ValidateAllItems(_contextMenuStrip.Items);
+                if (prop.GetCustomAttribute<SyncWithUIAttribute>() != null)
+                {
+                    var formProp = formType.GetProperty(prop.Name);
+                    if (formProp != null && formProp.CanWrite)
+                    {
+                        formProp.SetValue(this, prop.GetValue(_rulerInfo));
+                    }
+                }
             }
 
-            // 5. Trigger a full repaint of the tick marks
+            // 2. Manual Atomic Update: Handles Position
+            // This happens only once, so the window jumps exactly once.
+            this.Location = new System.Drawing.Point(_rulerInfo.Left, _rulerInfo.Top);
+
+            // 3. Cleanup
+            if (_contextMenuStrip != null) ValidateAllItems(_contextMenuStrip.Items);
             this.Invalidate();
         }
-
         private void ClearAllSavedRulers_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Are you sure you want to clear all saved rulers? This cannot be undone.", "Confirm Clear", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                RulerApplicationContext.ClearAll();
                 MessageBox.Show("All saved rulers have been cleared.");
                 foreach (MainForm form in Application.OpenForms.OfType<MainForm>())
                 {
+                    _rulerFactory.CopyValues(_rulerFactory.CreateDefault(),this.RulerData);
+
                     form._rulerInfo.SaveType = SaveTypes.None;
-                    RulerApplicationContext.Register(form);
+                    _rulerRegistry.Register(form);
                 }
                 MessageBox.Show("All ruler's save type set to 'Do not Save' to reflect cleared saved data.");
             }
@@ -457,18 +481,8 @@ namespace Ruler.Forms
 
         private void ShowAbout_Click(object sender, EventArgs e)
         {
-            string message = string.Format(
-                "Original Ruler implemented by Jeff Key\n" +
-                "www.sliver.com\n" +
-                "ruler.codeplex.com\n" +
-                "Icon by Kristen Magee @ www.kbecca.com.\n" +
-                "Maintained by Andrija Cacanovic\n" +
-                "Hosted on \n" +
-                "https://github.com/andrijac/ruler\n" +
-                "Version {0}",
-                Application.ProductVersion);
-            MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
+            ShowAbout();
+          }
 
         private void CloseRuler_Click(object sender, EventArgs e)
         {
@@ -477,7 +491,7 @@ namespace Ruler.Forms
 
         private void ExitApplication_Click(object sender, EventArgs e)
         {
-            RulerApplicationContext.CloseAll();
+            _rulerRegistry.CloseAll();
             Application.Exit();
         }
         /// <summary>
@@ -1032,6 +1046,38 @@ namespace Ruler.Forms
         private void MainForm_Click(object sender, EventArgs e)
         {
    //         MessageBox.Show("Main form clicked!");
+        }
+        public void InvalidateView()
+        {
+            this.Invalidate();  
+        }
+        public ImageData GetCurrentSnapshot()
+        {
+
+            return ImageData;
+        }
+        public void ShowAbout()
+        {
+            string message = string.Format(
+              "Original Ruler implemented by Jeff Key\n" +
+              "www.sliver.com\n" +
+              "ruler.codeplex.com\n" +
+              "Icon by Kristen Magee @ www.kbecca.com.\n" +
+              "Maintained by Andrija Cacanovic\n" +
+              "Hosted on \n" +
+              "https://github.com/andrijac/ruler\n" +
+              "Version {0}",
+              Application.ProductVersion);
+            MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        }
+        public void ShowShortcuts()
+        {
+
+        }
+        public async Task CheckForUpdatesAsync()
+        {
+
         }
     }
 }

@@ -8,6 +8,7 @@ using Ruler.Shared.Models;
 
 using Ruler.Shared.Enums;
 using Ruler.Shared.Interfaces;
+using Ruler.Shared.Attributes;
 
 namespace Ruler.Shared.Models
 {
@@ -15,14 +16,16 @@ namespace Ruler.Shared.Models
     {
        
         private RulerGuideline _guideline;
-        
-       
+        [JsonIgnore]
+        public Guid ID { get; set; }= Guid.NewGuid();
+        [SyncWithUI]
         [JsonProperty("Width")]
         public int Width
         {
             get;
             set;
         }
+        [SyncWithUI]
         [JsonProperty("Height")]
         public int Height
         {
@@ -39,7 +42,7 @@ namespace Ruler.Shared.Models
             get;
             set;
         }
-        
+        [SyncWithUI]
         [JsonProperty("Opacity")]
         public double Opacity
         {
@@ -66,7 +69,7 @@ namespace Ruler.Shared.Models
             get;
             set;
         }
-
+        [SyncWithUI]
         [JsonProperty("TopMost")]
         public bool TopMost
         {
