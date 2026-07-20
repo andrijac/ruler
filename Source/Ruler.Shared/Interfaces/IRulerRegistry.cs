@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Ruler.Shared.Models;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,5 +21,8 @@ namespace Ruler.Shared.Interfaces
 
         // Closes and unregisters all active rulers
         void CloseAll();
+        void Clear();
+        bool RulerExists(Guid rulerID);
+        void UpdateRulerByID(RulerInfo rulerInfo);
     }
 }

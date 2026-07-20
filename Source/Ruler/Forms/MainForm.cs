@@ -45,7 +45,7 @@ namespace Ruler.Forms
         
         private Point _startLocation;
         private bool _hasMoved=false;
-        private readonly RulerInfo _rulerInfo;
+        private RulerInfo _rulerInfo;
         private ContextMenuStrip _contextMenuStrip;
         private InteractionMode _currentMode = InteractionMode.None;
         private HitArea _activeArea;
@@ -58,6 +58,19 @@ namespace Ruler.Forms
         private readonly IRulerFactory _rulerFactory;
         private readonly IMainFormFactory _mainFormFactory;
         private readonly IRulerRegistry _rulerRegistry;
+
+        public event EventHandler<RulerInfo> DuplicateRequested;
+        event EventHandler<RulerInfo> IRuler.DuplicateRequested
+        {
+            add { DuplicateRequested += value; }
+            remove { DuplicateRequested -= value; }
+        }
+        public void SetRulerInfo(RulerInfo ruler)
+        {
+            _rulerInfo = ruler;
+            UpdateUIFromModel();
+        }
+
         public MainForm(RulerInfo info, IRulerFactory factory, IMainFormFactory mainFormFactory, IRulerRegistry rulerRegistry)
         {
                     
@@ -66,6 +79,7 @@ namespace Ruler.Forms
             _mainFormFactory = mainFormFactory;
             _rulerRegistry = rulerRegistry;
             InitializeComponent();
+            System.Diagnostics.Debug.WriteLine($"NEW INSTANCE CREATED: {this.GetHashCode()}");
             this.KeyPreview = true; // Enable form to receive key events
             this.FormBorderStyle = FormBorderStyle.None;
             this.AutoScaleMode = AutoScaleMode.None;
@@ -413,10 +427,15 @@ namespace Ruler.Forms
 
         private void DuplicateRuler_Click(object sender, EventArgs e)
         {
-            RulerInfo newInfo = new RulerInfo();
-            _rulerFactory.CopyValues(this._rulerInfo, newInfo);
-            IRuler newForm = _mainFormFactory.Create(newInfo);
-            newForm.Show();
+            System.Diagnostics.Debug.WriteLine($"Button clicked on instance: {this.GetHashCode()}");
+
+            // DEBUG: Is DuplicateRequested null?
+            if (DuplicateRequested == null)
+            {
+                System.Diagnostics.Debug.WriteLine("WARNING: Event is null! Nothing is listening.");
+            }
+
+            DuplicateRequested?.Invoke(this, this.RulerData);
         }
 
         private void ToggleGuideline_Click(object sender, EventArgs e)
@@ -1050,11 +1069,6 @@ namespace Ruler.Forms
         public void InvalidateView()
         {
             this.Invalidate();  
-        }
-        public ImageData GetCurrentSnapshot()
-        {
-
-            return ImageData;
         }
         public void ShowAbout()
         {

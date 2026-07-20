@@ -13,6 +13,7 @@ namespace Ruler.Shared.Interfaces
         RulerInfo CreateDefault();
         RulerInfo CreateFromArguments(string[] args);
         void CopyValues(RulerInfo source, RulerInfo target);
+        void CopyValuesWithGUID(RulerInfo source, RulerInfo target);
         string ToParameterString(RulerInfo info);
     }
 }

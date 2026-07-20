@@ -2,40 +2,37 @@
 
 using Ruler.Shared.Interfaces;
 using Ruler.Shared.Models;
+using Ruler.Shared.Services;
 
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Linq;
 
-namespace Ruler
+namespace Ruler.Services
 {
-    public class PersistenceManager :IPersistanceService
+    public class WinformsPersistanceService :IPersistanceService
     {
         private const string SettingKey = "RulerData";
-
+        private readonly IRulerInfoPreprocessor _processor;
+        private readonly IRulerSerializer _settingsService;
+        private readonly IRulerRegistry _registry;
+        public WinformsPersistanceService(IRulerInfoPreprocessor rulerInfoPreprocessor, IRulerSerializer settings,IRulerRegistry registry)
+        {
+            _processor = rulerInfoPreprocessor; 
+            _settingsService = settings;
+            _registry = registry;
+        }
         public List<RulerInfo> LoadAll()
         {
             var json = ConfigurationManager.AppSettings[SettingKey];
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                // Note: If you need RulerFactory here, you can inject it via constructor
-                return new List<RulerInfo>();
-            }
-            try
-            {
-                var rulers = JsonConvert.DeserializeObject<List<RulerInfo>>(json);
-                return rulers ?? new List<RulerInfo>();
-            }
-            catch (JsonException ex)
-            {
-                Debug.WriteLine(ex);
-                return new List<RulerInfo>();
-            }
+           return _settingsService.DeserializeRulers(json);
         }
 
         public void SaveAll(IEnumerable<RulerInfo> rulers)
         {
-            var json = JsonConvert.SerializeObject(rulers);
+            var rulersToSave = _processor.Preprocess(rulers);
+            var json = _settingsService.SerializeRulers(rulersToSave);
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             if (config.AppSettings.Settings[SettingKey] == null)
@@ -49,13 +46,26 @@ namespace Ruler
 
         public void Update(RulerInfo info)
         {
-            var currentRulers = LoadAll();
-            var index = currentRulers.FindIndex(r => r.ID == info.ID);
+            if(_registry.RulerExists(info.ID))
+            {
+                _registry.UpdateRulerByID(info);
+            }
+            SaveAll((_registry.GetActiveRulers()).Select(r=>r.RulerData).ToList());
+        }
+        public void Reset()
+        {
+            // 1. Open the configuration file for the current exe
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
-            if (index != -1) currentRulers[index] = info;
-            else currentRulers.Add(info);
+            // 2. Clear the app settings
+            config.AppSettings.Settings.Clear();
 
-            SaveAll(currentRulers);
+            // 3. Save the changes to the config file
+            config.Save(ConfigurationSaveMode.Modified);
+
+            // 4. IMPORTANT: Refresh the section so the application 
+            // realizes the settings have changed without needing a restart
+            ConfigurationManager.RefreshSection("appSettings");
         }
     }
 }

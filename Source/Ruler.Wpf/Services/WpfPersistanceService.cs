@@ -13,33 +13,33 @@ using System.Threading.Tasks;
 
 namespace Ruler.Wpf.Services
 {
-    public class WpfPersistanceService : IPersistanceService
+    public class WpfPersistenceService : IPersistanceService
     {
         private const string SettingKey = "RulerData";
+        private readonly IRulerInfoPreprocessor _processor;
+        private readonly IRulerSerializer _settingsService;
+        private readonly IRulerRegistry _registry;
+
+        public WpfPersistenceService(
+            IRulerInfoPreprocessor rulerInfoPreprocessor,
+            IRulerSerializer settings,
+            IRulerRegistry registry)
+        {
+            _processor = rulerInfoPreprocessor;
+            _settingsService = settings;
+            _registry = registry;
+        }
 
         public List<RulerInfo> LoadAll()
         {
             var json = ConfigurationManager.AppSettings[SettingKey];
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                // Note: If you need RulerFactory here, you can inject it via constructor
-                return new List<RulerInfo>();
-            }
-            try
-            {
-                var rulers = JsonConvert.DeserializeObject<List<RulerInfo>>(json);
-                return rulers ?? new List<RulerInfo>();
-            }
-            catch (JsonException ex)
-            {
-                Debug.WriteLine(ex);
-                return new List<RulerInfo>();
-            }
+            return _settingsService.DeserializeRulers(json);
         }
 
         public void SaveAll(IEnumerable<RulerInfo> rulers)
         {
-            var json = JsonConvert.SerializeObject(rulers);
+            var rulersToSave = _processor.Preprocess(rulers);
+            var json = _settingsService.SerializeRulers(rulersToSave);
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             if (config.AppSettings.Settings[SettingKey] == null)
@@ -53,13 +53,19 @@ namespace Ruler.Wpf.Services
 
         public void Update(RulerInfo info)
         {
-            var currentRulers = LoadAll();
-            var index = currentRulers.FindIndex(r => r.ID == info.ID);
+            if (_registry.RulerExists(info.ID))
+            {
+                _registry.UpdateRulerByID(info);
+            }
+            SaveAll(_registry.GetActiveRulers().Select(r => r.RulerData).ToList());
+        }
 
-            if (index != -1) currentRulers[index] = info;
-            else currentRulers.Add(info);
-
-            SaveAll(currentRulers);
+        public void Reset()
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            config.AppSettings.Settings.Clear();
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Ruler.Shared.Interfaces
     {
         // Data Access
         RulerInfo RulerData { get; }
+        event EventHandler<RulerInfo> DuplicateRequested;
 
         // Window Management
         void Show();
@@ -19,9 +20,10 @@ namespace Ruler.Shared.Interfaces
         void InvalidateView();
         void SetBounds(int left, int top, int width, int height);
         void SetTooltip(string text);
+        void SetRulerInfo(RulerInfo info);
 
         // Visual Capture
-        ImageData GetCurrentSnapshot();
+       // ImageData GetCurrentSnapshot();
 
         // User Commands
         void ShowAbout();

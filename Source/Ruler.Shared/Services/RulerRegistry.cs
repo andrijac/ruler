@@ -1,10 +1,12 @@
 ﻿using Ruler.Shared.Interfaces;
+using Ruler.Shared.Models;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Ruler.Shared.Services
 {
@@ -42,6 +44,27 @@ namespace Ruler.Shared.Services
                 return _rulers.Values.ToList();
             }
         }
+        public bool RulerExists(Guid rulerID)
+        {
+            bool found = false;
+            lock (_lock)
+            {
+                if (_rulers.TryGetValue(rulerID,out var ruler))
+                {
+                    found = true;
+                }
+              
+            }
+            return found;
+        }
+        public void UpdateRulerByID(RulerInfo rulerInfo)
+        {
+            if(RulerExists(rulerInfo.ID))
+            {
+                var ruler = GetRulerById(rulerInfo.ID);
+                ruler.SetRulerInfo(rulerInfo);
+            }    
+        }
 
         public IRuler GetRulerById(Guid id)
         {
@@ -64,6 +87,16 @@ namespace Ruler.Shared.Services
             {
                 ruler.Close(); // This should ideally unregister itself via the Closed event
             }
+        }
+        public void Clear()
+        {
+            // Close all forms currently in memory
+            foreach (var ruler in _rulers.ToList())
+            {
+                var form = ruler.Value as IRuler;
+                form?.Close(); // This triggers your OnFormClosed logic
+            }
+            _rulers.Clear();
         }
     }
 }

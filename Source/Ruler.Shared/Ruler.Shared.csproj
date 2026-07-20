@@ -60,6 +60,7 @@
     <Compile Include="Interfaces\IRulerInfoPreprocessor.cs" />
     <Compile Include="Interfaces\IRulerRegistry.cs" />
     <Compile Include="Interfaces\IPersistanceService.cs" />
+    <Compile Include="Interfaces\IRulerSerializer.cs" />
     <Compile Include="Models\GithubAsset.cs" />
     <Compile Include="Models\GitHubRelease.cs" />
     <Compile Include="Interfaces\IRulerInfo.cs" />
@@ -73,7 +74,7 @@
     <Compile Include="Factories\RulerFactory.cs" />
     <Compile Include="Services\RulerInfoPreprocessor.cs" />
     <Compile Include="Services\RulerRegistry.cs" />
-    <Compile Include="Services\SettingsService.cs" />
+    <Compile Include="Services\RulerSerializer.cs" />
     <Compile Include="Attributes\SyncWithUIAttribute.cs" />
   </ItemGroup>
   <ItemGroup>

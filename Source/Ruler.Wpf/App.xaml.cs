@@ -1,18 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 using Ruler.Shared.Factories;
-using Ruler.Shared.Models;
-using Ruler.Wpf.Properties;
+using Ruler.Shared.Interfaces;
+using Ruler.Shared.Services;
+using Ruler.Wpf.Factories;
 using Ruler.Wpf.Services;
-using Ruler.Wpf.ViewModels;
-using Ruler.Wpf.Views;
+using Ruler.Wpf.Windows;
 
 using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Ruler.Wpf
@@ -22,51 +17,40 @@ namespace Ruler.Wpf
     /// </summary>
     public partial class App : Application
     {
-        private void Application_Startup(object sender, StartupEventArgs e)
+        public static IServiceProvider ServiceProvider { get; private set; }
+
+        protected override void OnStartup(StartupEventArgs e)
         {
-            List<RulerInfo> rulerInfos = null;
+            base.OnStartup(e);
 
-            // 1. Pull raw JSON string from settings
-            string jsonSettings = Settings.Default.RulerCollection;
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            ServiceProvider = services.BuildServiceProvider();
 
-            // 2. Deserialize into data contracts if string exists
-            if (!string.IsNullOrWhiteSpace(jsonSettings))
-            {
-                try
-                {
-                    rulerInfos = JsonConvert.DeserializeObject<List<RulerInfo>>(jsonSettings);
-                }
-                catch (JsonException)
-                {
-                    rulerInfos = null; // Safety fallback on corruption
-                }
-            }
+            // Resolve the AppController (which replaced RulerApplicationContext)
+            var controller = ServiceProvider.GetRequiredService<AppController>();
 
-            // 3. Fallback to factory if list is null or empty
-            if (rulerInfos == null || rulerInfos.Count == 0)
-            {
-                // Assuming factory can generate a default info contract or view model
-                RulerInfo defaultInfo = RulerFactory.CreateDefault();
-                rulerInfos = new List<RulerInfo> { defaultInfo };
-            }
+            // Hand off the command line arguments and start the logic
+            controller.Run(e.Args);
+        }
 
-            // //Current.Dispatcher.InvokeAsync(() =>
-            // //{
-            // //    var windowManager = new WindowManager();
-            // //    windowManager.InitializeWorkspace(rulerInfos);
-            // //}, System.Windows.Threading.DispatcherPriority.ContextIdle);
-            var windowManager = new WindowManager();
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            // 1. Shared Infrastructure
+            services.AddSingleton<IRulerSerializer, RulerSerializer>();
+            services.AddSingleton<IRulerInfoPreprocessor, RulerInfoPreprocessor>();
+            services.AddSingleton<IRulerRegistry, RulerRegistry>();
 
-            //  5.Hand off the active ViewModels to the Window Manager
+            // 2. WPF-specific Services (Converted from WinForms versions)
+            services.AddSingleton<IPersistanceService, WpfPersistenceService>();
 
-            windowManager.InitializeWorkspace(rulerInfos);
-            //RulerInfo info = RulerFactory.CreateDefault();
-            //var mainViewModel = new RulerViewModel(info);
-            //RulerWindow window = new RulerWindow
-            //{
-            //    DataContext = mainViewModel
-            //};
-            //window.Show();
+            // 3. Factories (Converted for WPF)
+            services.AddTransient<IRulerFactory, RulerFactory>();
+            services.AddTransient<IMainFormFactory, RulerWindowFactory>();
+
+            // 4. Controller & UI
+            services.AddSingleton<AppController>();
+            services.AddTransient<MainWindow>();
         }
     }
 }

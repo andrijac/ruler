@@ -13,5 +13,6 @@ namespace Ruler.Shared.Interfaces
         List<RulerInfo> LoadAll();
         void SaveAll(IEnumerable<RulerInfo> rulers);
         void Update(RulerInfo info);
+        void Reset();
     }
 }

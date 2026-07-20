@@ -44,6 +44,7 @@ namespace Ruler.Shared.Services
 
             // Creates a fresh instance with its own default property allocations
             RulerInfo strippedCopy = _factory.CreateDefault();
+            strippedCopy.ID = item.ID;
             strippedCopy.SaveType = item.SaveType;
 
             // Explicitly copy over historical identity so it updates correctly on reload
@@ -61,6 +62,7 @@ namespace Ruler.Shared.Services
                     strippedCopy.Left = item.Left;
                     strippedCopy.Top = item.Top;
                     strippedCopy.IsVertical = item.IsVertical;
+                   
                     break;
 
                 case SaveTypes.Size:

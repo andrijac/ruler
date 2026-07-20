@@ -1,6 +1,8 @@
 ﻿using Ruler.Forms;
 using Ruler.Shared.Interfaces;
+using Ruler.Shared.Models;
 
+using System;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -93,44 +95,82 @@ namespace Ruler
     {
         private readonly IRulerRegistry _registry;
         private readonly IPersistanceService _settings;
-        private readonly IRulerFactory _factory;
+        private readonly IRulerFactory _rulerFactory;
+        private readonly IMainFormFactory _mainFormFactory;
 
         public RulerApplicationContext(
             IRulerRegistry registry,
             IPersistanceService settings,
-            IRulerFactory factory)
+            IRulerFactory factory,
+            IMainFormFactory mainform)
         {
             _registry = registry;
             _settings = settings;
-            _factory = factory;
+            _rulerFactory = factory;
+            _mainFormFactory = mainform;
         }
 
         public void LoadAll()
         {
             var rulers = _settings.LoadAll();
-            foreach (var info in rulers)
+            if (rulers != null && rulers.Any())
             {
-                // You are now using the UI project to decide what to build
-                var form = new MainForm(info);
-
-                // Register it with your shared registry
-                _registry.Register(form);
-
-                form.FormClosed += OnFormClosed;
-                form.Show();
+                foreach (var info in rulers)
+                {
+                    ShowRuler(info);
+                }
+            }
+            else
+            {
+                ShowRuler(_rulerFactory.CreateDefault());
             }
         }
 
-        private void OnFormClosed(object sender, FormClosedEventArgs e)
+        public void Initialize(string[] args)
         {
+            // 1. Check if ANY arguments were provided
+            if (args != null && args.Length > 0)
+            {
+                // Use your new Factory method to parse the command line
+                var settings = _rulerFactory.CreateFromArguments(args);
+                ShowRuler(settings);  
+            }
+            else
+            {
+              LoadAll();
+            }
+        }
+        private void ShowRuler(RulerInfo info)
+        {
+            // 1. Create the ruler via the factory, passing the lifecycle handler
+            // The factory handles the actual event wiring (FormClosed -> OnFormClosed)
+            var ruler = _mainFormFactory.Create(info, OnFormClosed);
+            System.Diagnostics.Debug.WriteLine("Attempting to subscribe...");
+            // 2. Wire up the "Behavior" event (Duplication)
+            // We handle this here because it involves logic only the Context should know
+            ruler.DuplicateRequested += (sender, newInfo) =>
+            {
+                var copy = new RulerInfo();
+                _rulerFactory.CopyValues(newInfo, copy);
+                System.Diagnostics.Debug.WriteLine("Event fired!");
+                ShowRuler(copy);
+            };
+
+            ruler.Show();
+        }
+        private void OnFormClosed(object sender, EventArgs e)
+        {
+            if (sender is IRuler ruler)
+            {
+                _settings.Update(ruler.RulerData);
+                _registry.Unregister(ruler);
+            }
             // Use the registry to check count instead of Application.OpenForms
             var active = _registry.GetActiveRulers();
+            
 
             if (!active.Any())
             {
-                // Logic to Save
-               _settings.SaveAll(active.Select(r => r.RulerData));
-                // Save json to file...
                 Application.Exit();
             }
         }

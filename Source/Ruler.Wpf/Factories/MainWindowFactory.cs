@@ -1,19 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-using Ruler.Forms;
 using Ruler.Shared.Interfaces;
 using Ruler.Shared.Models;
+using Ruler.Wpf.Windows;
 
 using System;
+using System.Windows;
 
-namespace Ruler.Factories
+namespace Ruler.Wpf.Factories
 {
-    public class MainFormFactory : IMainFormFactory
+    public class RulerWindowFactory : IMainFormFactory
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IRulerRegistry _registry;
 
-        public MainFormFactory(IServiceProvider serviceProvider, IRulerRegistry registry)
+        public RulerWindowFactory(IServiceProvider serviceProvider, IRulerRegistry registry)
         {
             _serviceProvider = serviceProvider;
             _registry = registry;
@@ -21,18 +22,21 @@ namespace Ruler.Factories
 
         public IRuler Create(RulerInfo info, EventHandler handler = null)
         {
-            // ActivatorUtilities automatically matches 'info' to the constructor argument 
-            // in MainForm and resolves all other parameters (like IRulerFactory) 
-            // from the _serviceProvider.
-            var ruler = ActivatorUtilities.CreateInstance<MainForm>(_serviceProvider, info);
+            // 1. Create the WPF Window using DI
+            // 'RulerWindow' replaces your old 'MainForm'
+            var ruler = ActivatorUtilities.CreateInstance<MainWindow>(_serviceProvider, info);
+
+            // 2. Wire up the event handler if provided
             if (handler != null)
             {
+                // WPF Windows use the 'Closed' event just like WinForms
                 if (ruler is IRuler rulers)
                 {
                     rulers.Closed += handler;
                 }
             }
-            // Register the ruler in your shared registry immediately
+
+            // 3. Register the ruler in your shared registry
             _registry.Register(ruler);
 
             return ruler;
