@@ -58,6 +58,7 @@ namespace Ruler.Wpf.Windows
                 _hwndSource = PresentationSource.FromVisual(this) as HwndSource;
                 _hwndSource?.AddHook(WndProc);
             };
+            this.InvalidateVisual();
         }
 
         // Equivalent to WinForms WndProc
@@ -80,13 +81,93 @@ namespace Ruler.Wpf.Windows
         }
 
         // Equivalent to OnPaint
-        protected override void OnRender(DrawingContext drawingContext)
+        protected override void OnRender(DrawingContext dc)
         {
-            base.OnRender(drawingContext);
+            base.OnRender(dc);
+            
+            dc.DrawRectangle(SystemColors.ControlBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
+            // Force a high-contrast pen for testing
+            var testPen = new Pen(Brushes.Red, 2.0);
 
-            // Use drawingContext.DrawLine, drawingContext.DrawText
-            // NOTE: You will need to rewrite your DrawHorizontalRuler/DrawVerticalRuler logic 
-            // to use DrawingContext primitives instead of System.Drawing.Graphics
+            // Draw a single line to see if ANYTHING shows up
+            dc.DrawLine(testPen, new Point(0, 0), new Point(400, 75));
+
+            var testpen2 = new Pen(Brushes.Green, 2.0);
+            dc.DrawLine(testpen2, new Point(0, this.Height), new Point(400, 0));
+        
+        // 1. Setup Pens and Resources once
+        // Reusing the pen is more efficient than creating it in the loop
+        var tickPen = new Pen(Brushes.Black, 1.0);
+            var typeface = new Typeface("Arial");
+            var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
+            // 2. Choose orientation
+            if (!_rulerInfo.IsVertical)
+            {
+                DrawHorizontalRuler(dc, tickPen, typeface, dpi);
+            }
+            else
+            {
+                DrawVerticalRuler(dc, tickPen, typeface, dpi);
+            }
+        }
+
+        private void DrawHorizontalRuler(DrawingContext dc, Pen pen, Typeface tf, double dpi)
+        {
+            double width = this.Width;
+            double height = this.Height;
+            // Debug: Check if the loop is even running
+            System.Diagnostics.Debug.WriteLine($"Ruler Size: {width} x {height}");
+            for (int i = 0; i <= this.Width; i += 2)
+            {
+                // Logic from your original MainForm[cite: 4]
+                int tickHeight = (i % 100 == 0) ? 15 : ((i % 10 == 0) ? 10 : 5);
+
+                // Draw Ticks
+                dc.DrawLine(pen, new Point(i, 0), new Point(i, tickHeight));
+                dc.DrawLine(pen, new Point(i, this.Height), new Point(i, this.Height - tickHeight));
+
+                // Draw Labels
+                if (i % 100 == 0 || i == 85)
+                {
+                    DrawLabel(dc, i.ToString(), i, tf, dpi, true);
+                }
+            }
+        }
+        private void DrawVerticalRuler(DrawingContext dc, Pen pen, Typeface tf, double dpi)
+        {
+            for (int i = 0; i <= this.Height; i += 2)
+            {
+                // Logic from your original MainForm[cite: 4]
+                int tickHeight = (i % 100 == 0) ? 15 : ((i % 10 == 0) ? 10 : 5);
+
+                // Draw Ticks
+                dc.DrawLine(pen, new Point(0, i), new Point(tickHeight, i));
+                dc.DrawLine(pen, new Point(this.Width, i), new Point(this.Width - tickHeight,i));
+
+                // Draw Labels
+                if (i % 100 == 0 || i == 85)
+                {
+                    DrawLabel(dc, i.ToString(), i, tf, dpi, true);
+                }
+            }
+        }
+        private void DrawLabel(DrawingContext dc, string text, int pos, Typeface tf, double dpi, bool isHorizontal)
+        {
+            var formattedText = new FormattedText(
+                text,
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                tf,
+                12,
+                Brushes.Black,
+                dpi);
+
+            // Calculate position (logic mirrored from original MainForm[cite: 4])
+            double x = isHorizontal ? (pos - formattedText.Width / 2) : 22;
+            double y = isHorizontal ? 22 : (pos - formattedText.Height / 2);
+
+            dc.DrawText(formattedText, new Point(x, y));
         }
 
         // Mouse Events
