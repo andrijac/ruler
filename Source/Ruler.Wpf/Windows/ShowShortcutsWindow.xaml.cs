@@ -42,18 +42,21 @@ namespace Ruler.Wpf.Windows
             AddShortcutHeader("Nudging & Sizing");
             AddShortcutRow("Arrow Keys", "Ruler Nudge (10px)", Brushes.White);
             AddShortcutRow("Ctrl + Arrow Keys", "Fine Nudge (1px)", Brushes.White);
+            AddShortcutRow("Shift + Arrow Keys","Resize Ruler (1px)",Brushes.White);
+            AddShortcutRow("Ctrl + Shift + Arrow Keys", "Resize Ruler (10px)", Brushes.White);
             AddShortcutRow("Ctrl + R", "Reset Ruler to Defaults", Brushes.White);
 
             // --- SECTION 3: OPACITY TWEAKS ---
             AddShortcutHeader("Opacity Tweaks");
             AddShortcutRow("Page Up / Dn", "Nudge Opacity 10%", Brushes.White);
-            AddShortcutRow("Shift + PgUp / Dn", "Nudge Opacity 5%", Brushes.DarkCyan, isBold: true);
+            AddShortcutRow("Shift + PgUp / Dn", "Nudge Opacity 5%", Brushes.White, isBold: true);
             AddShortcutRow("Ctrl + Page Up", "Instant Snap to 100% Opacity", Brushes.White);
             AddShortcutRow("Ctrl + Page Down", "Instant Snap to 10% Opacity", Brushes.White);
         }
 
         private void AddShortcutHeader(string categoryTitle)
         {
+            ShortcutGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var header = new TextBlock
             {
                 Text = categoryTitle,
