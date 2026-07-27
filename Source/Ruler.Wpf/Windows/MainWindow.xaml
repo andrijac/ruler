@@ -4,11 +4,47 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ruler.Wpf.Windows"
+        xmlns:menu ="clr-namespace:Ruler.Shared.Models;assembly=Ruler.Shared"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        WindowStyle="None"
+        Title="Ruler Window"
+       WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent">
+    <Window.Resources>
+        <HierarchicalDataTemplate DataType="{x:Type menu:MenuItemModel}" 
+                                  ItemsSource="{Binding Items}">
+            <MenuItem Header="{Binding Header}" 
+                      IsCheckable="{Binding IsCheckable}"
+                      IsChecked="{Binding IsChecked}"
+                      Command="{Binding Command}"
+                      InputGestureText="{Binding InputGestureText}"
+                      CommandParameter="{Binding}"/>
+        </HierarchicalDataTemplate>
+       
+    </Window.Resources>
+    <Window.ContextMenu>
+        <ContextMenu ItemsSource="{Binding MenuItems}" />
+    </Window.ContextMenu>
+    <Window.InputBindings>
+        <KeyBinding Key="O" Command="{Binding ToggleOrientationCommand}" />
+        <KeyBinding Key="Space" Command="{Binding ToggleOrientationCommand}" />
+        <KeyBinding Key="R" Command="{Binding ToggleSetSizeCommand}" />
+        <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding ToggleLockResizingCommand}" />
+        <KeyBinding Key="G" Command="{Binding ToggleShowGuidelineCommand}" />
+        <KeyBinding Key="D" Command="{Binding ToggleDuplicateCommand}" />
+        <KeyBinding Key="Esc" Command="{Binding ToggleCloseCommand}" />
+        <KeyBinding Key="Esc" Modifiers="Ctrl" Command="{Binding ToggleExitCommand}" />
+        <KeyBinding Key="I" Command="{Binding ToggleShowShortcutsCommand}" />
+        <KeyBinding Key="A" Command="{Binding ToggleAboutCommand}" />
+        <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding ToggleResetToDefaultCommand}" />
+        <KeyBinding Key="T" Command="{Binding ToggleTopMostCommand}" />
+        <KeyBinding Key="PageUp" Command="{Binding SetOpacityCommand}" CommandParameter="10"/>
+        <KeyBinding Key="PageDown" Command="{Binding SetOpacityCommand}" CommandParameter="-10" />
+        <KeyBinding Key="PageUp" Modifiers="Shift" Command="{Binding SetOpacityCommand}" CommandParameter="5" />
+        <KeyBinding Key="PageDown" Modifiers="Shift" Command="{Binding SetOpacityCommand}" CommandParameter="-5" />
+        <KeyBinding Key="PageUp" Modifiers="Control" Command="{Binding MaxOpacityCommand}" />
+        <KeyBinding Key="PageDown" Modifiers="Control" Command="{Binding MinOpacityCommand}" />
+    </Window.InputBindings>
     <Grid>
         
     </Grid>

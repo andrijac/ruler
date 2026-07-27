@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Enums\HitArea.cs" />
     <Compile Include="Enums\InteractionMode.cs" />
     <Compile Include="Enums\MenuItemEnum.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="Models\ImageData.cs" />
     <Compile Include="Models\MenuItemHolder.cs" />
     <Compile Include="Models\MenuItemMetadata.cs" />
+    <Compile Include="Models\MenuItemModel.cs" />
     <Compile Include="Models\ModelBase.cs" />
     <Compile Include="Models\RulerGuideline.cs" />
     <Compile Include="Models\RulerInfo.cs" />
@@ -81,5 +83,6 @@
     <None Include="packages.config" />
     <None Include="Settings.StyleCop" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
