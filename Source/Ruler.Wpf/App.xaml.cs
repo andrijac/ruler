@@ -8,6 +8,7 @@ using Ruler.Wpf.Services;
 using Ruler.Wpf.Windows;
 
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace Ruler.Wpf
@@ -22,7 +23,7 @@ namespace Ruler.Wpf
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
+            NativeHelpers.MagInitialize();
             var services = new ServiceCollection();
             ConfigureServices(services);
             ServiceProvider = services.BuildServiceProvider();
@@ -52,5 +53,11 @@ namespace Ruler.Wpf
             services.AddSingleton<AppController>();
             services.AddTransient<MainWindow>();
         }
+        protected override void OnExit(ExitEventArgs e)
+        {
+         NativeHelpers.MagUninitialize();
+            base.OnExit(e);
+        }
+
     }
 }

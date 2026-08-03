@@ -1,4 +1,6 @@
 ﻿using Ruler.Shared.Commands;
+using Ruler.Shared.Enums;
+using Ruler.Shared.Helpers;
 using Ruler.Shared.Interfaces;
 using Ruler.Shared.Models;
 
@@ -43,7 +45,7 @@ namespace Ruler.Wpf.Windows
                 SetProperty(ref _showToolTips,value);
             }
         }
-
+        private MagnifierWindow _magnifierWindow;
         public ICommand ToggleTopMostCommand { get; private set; }
         public ICommand ToggleLockResizingCommand { get; private set; }
         public ICommand ToggleOrientationCommand { get; private set; }
@@ -60,6 +62,10 @@ namespace Ruler.Wpf.Windows
         public ICommand MaxOpacityCommand { get; private set; }
         
         public ICommand MinOpacityCommand { get; private set; }
+        
+        public ICommand ToggleMagnifierCommand { get; private set; }
+        public ICommand SetSaveTypeCommand { get; private set; }
+        public ICommand SetMagnficationScaleCommand { get; private set; }
 
         // DI Dependencies
         private readonly IRulerFactory _rulerFactory;
@@ -209,13 +215,113 @@ namespace Ruler.Wpf.Windows
                 shortcut.Owner = this;
                 shortcut.ShowDialog();
             });
-            SetOpacityCommand = new DelegateCommand<string>(parameter =>
+            SetSaveTypeCommand = new DelegateCommand<object>(param =>
             {
-                if (int.TryParse(parameter, out int percentValue))
+                if (param is MenuItemModel model && model.Value is SaveTypes selectedType)
                 {
-                    double step = percentValue / 100.0;
-                    AdjustOpacityStep(step);
+                    if (selectedType == SaveTypes.None)
+                    {
+                        _rulerInfo.SaveType = SaveTypes.None;
+                    }
+                    else if (selectedType == SaveTypes.All)
+                    {
+                        _rulerInfo.SaveType = SaveTypes.All;
+                    }
+                    else
+                    {
+                        // Toggle individual flag
+                        if (_rulerInfo.SaveType.HasFlag(selectedType))
+                        {
+                            _rulerInfo.SaveType &= ~selectedType;
+                        }
+                        else
+                        {
+                            _rulerInfo.SaveType |= selectedType;
+                        }
+                    }
+
+                    UpdateSaveTypeMenuStates();
                 }
+            });
+
+            SetMagnficationScaleCommand = new DelegateCommand<object>(param =>
+            {
+                double scale = 0;
+
+                // Handles whether the command parameter passes the MenuItemModel or the direct double value
+                if (param is MenuItemModel model && model.Value is double dVal)
+                {
+                    scale = dVal;
+                }
+                else if (param is double directVal)
+                {
+                    scale = directVal;
+                }
+
+                if (scale > 0)
+                {
+                    _rulerInfo.Magnifier.ZoomLevel = scale;
+
+                    // Optional: Update check states for magnification menu items if you have a state-updater method
+                    UpdateMagnificationMenuStates();
+                }
+            });
+            SetOpacityCommand = new DelegateCommand<object>(parameter =>
+            {
+                double targetOpacity = this.Opacity;
+                bool isRelative = false;
+                double relativeDelta = 0;
+
+                if (parameter is MenuItemModel model && model.Value is double modelVal)
+                {
+                    // 1. Absolute value from the Context Menu item
+                    targetOpacity = modelVal;
+                }
+                else if (parameter is string strVal)
+                {
+                    strVal = strVal.Trim();
+
+                    // Check if it's a relative change starting with '+' or '-' (e.g., "-5" or "+5")
+                    if (strVal.StartsWith("+") || strVal.StartsWith("-"))
+                    {
+                        if (double.TryParse(strVal, out double delta))
+                        {
+                            isRelative = true;
+                            relativeDelta = delta / 100.0; // Converts -5 to -0.05
+                        }
+                    }
+                    else
+                    {
+                        // Absolute string value (e.g., "50%" or "0.5")
+                        string cleanStr = strVal.Replace("%", "").Trim();
+                        if (double.TryParse(cleanStr, out double parsedVal))
+                        {
+                            targetOpacity = parsedVal > 1.0 ? parsedVal / 100.0 : parsedVal;
+                        }
+                    }
+                }
+                else if (parameter is int intVal)
+                {
+                    targetOpacity = intVal > 1.0 ? intVal / 100.0 : intVal;
+                }
+                else if (parameter is double doubleVal)
+                {
+                    targetOpacity = doubleVal > 1.0 ? doubleVal / 100.0 : doubleVal;
+                }
+
+                // Apply the change
+                if (isRelative)
+                {
+                    AdjustOpacityStep(relativeDelta); // Uses your existing step logic
+                }
+                else
+                {
+                    double finalOpacity = Math.Max(0.1, Math.Min(1.0, targetOpacity));
+                    this.Opacity = finalOpacity;
+                    _rulerInfo.Opacity = finalOpacity;
+                }
+
+                UpdateOpacityMenuStates();
                 InvalidateView();
             });
             MaxOpacityCommand = new DelegateCommand(_ =>
@@ -231,6 +337,27 @@ namespace Ruler.Wpf.Windows
                     this.InvalidateView();
                 }
                 );
+            ToggleMagnifierCommand = new DelegateCommand(_ =>
+            {
+                if (_magnifierWindow != null)
+                {
+                    // If it's already open, close it
+                    _magnifierWindow.Close();
+                }
+                else
+                {
+                    // If it's closed, create, track, and show it
+                    _magnifierWindow = new MagnifierWindow(RulerData)
+                    {
+                        Owner = this
+                    };
+
+                    // Clear the reference automatically when the window closes
+                    _magnifierWindow.Closed += (s, args) => _magnifierWindow = null;
+
+                    _magnifierWindow.Show();
+                }
+            });
         }
 
         public void PopulateMenu()
@@ -297,6 +424,29 @@ namespace Ruler.Wpf.Windows
                 InputGestureText = "G",
                 Command = ToggleShowGuidelineCommand
             });
+             var magnificationMenu = MenuHelper.CreateRangeMenuItems(
+    start: 1.5,
+    end: 10.0,
+    step: 0.5,
+    formatString: "{0:0.#}x Zoom", // {0:0.#} ensures clean formatting like "1.5x Zoom" or "2x Zoom"
+    valueSelector: i => i,          // Value is already a double
+    command: SetMagnficationScaleCommand
+);
+            MenuItems.Add(new MenuItemModel()
+            {
+                Header = "Show Magnifier",
+                IsCheckable = true,
+                IsChecked = _rulerInfo.Magnifier.IsActive,
+                InputGestureText = "M",
+                Command = ToggleMagnifierCommand
+            });
+            MenuItems.Add(new MenuItemModel()
+            {
+                Header = "Magnification Scale",
+                IsCheckable = false,
+                IsChecked = false,
+                Items = magnificationMenu
+            });
             MenuItems.Add(new MenuItemModel()
             {
                 Header = "Reset to Default",
@@ -332,17 +482,29 @@ namespace Ruler.Wpf.Windows
                 InputGestureText = "I",
                 Command = ToggleShowShortcutsCommand
             });
+            var opacitymenuitems = MenuHelper.CreateRangeMenuItems(
+    start: 10,
+    end: 100,
+    step: 5,
+    formatString: "{0}%",
+    valueSelector: i => (double)i / 100.0, // Converts 50 to 0.5
+    command: SetOpacityCommand
+);
             MenuItemModel opacity = new MenuItemModel()
             {
                 Header = "Opacity",
                 ToolTip = "Select i and see the different opacity commands on the short cuts page",
-                Items = new ObservableCollection<MenuItemModel>
+                Items = opacitymenuitems
+               
             };
+            var saveMenuItems = SaveTypes.None.ToMenuItems(SetSaveTypeCommand);
             MenuItemModel saveTypes = new MenuItemModel()
             {
-                Header = "Save Rule Data?"
+                Header = "Save Rule Data?",
+                Items = saveMenuItems
                 
             };
+
             MenuItems.Add(new MenuItemModel
             {
                 Header = "Show Menu Tooltips",
@@ -353,7 +515,78 @@ namespace Ruler.Wpf.Windows
             });
 
         }
+        private void UpdateOpacityMenuStates()
+        {
+            double currentOpacity = _rulerInfo.Opacity;
 
+            foreach (var item in MenuItems)
+            {
+                if (!item.IsCheckable || item.Value == null) continue;
+
+                double itemOpacity = 0.0;
+                bool isValid = false;
+
+                // Pattern matching handles int, double, or string automatically
+                if (item.Value is int intVal)
+                {
+                    itemOpacity = intVal / 100.0;
+                    isValid = true;
+                }
+                else if (item.Value is double doubleVal)
+                {
+                    itemOpacity = doubleVal > 1.0 ? doubleVal / 100.0 : doubleVal;
+                    isValid = true;
+                }
+                else if (item.Value is string strVal && double.TryParse(strVal.Replace("%", "").Trim(), out double parsedVal))
+                {
+                    itemOpacity = parsedVal > 1.0 ? parsedVal / 100.0 : parsedVal;
+                    isValid = true;
+                }
+
+                if (isValid)
+                {
+                    // Use a small epsilon tolerance for floating-point comparison
+                    item.IsChecked = Math.Abs(itemOpacity - currentOpacity) < 0.001;
+                }
+            }
+        }
+        private void UpdateSaveTypeMenuStates()
+        {
+            var saveTypeParent = MenuItems.FirstOrDefault(i => i.Header == "Save Settings");
+            if (saveTypeParent?.Items == null) return;
+
+            foreach (var item in saveTypeParent.Items)
+            {
+                if (item.Value is SaveTypes enumValue)
+                {
+                    if (enumValue == SaveTypes.None)
+                    {
+                        item.IsChecked = (_rulerInfo.SaveType == SaveTypes.None);
+                    }
+                    else if (enumValue == SaveTypes.All)
+                    {
+                        item.IsChecked = (_rulerInfo.SaveType == SaveTypes.All);
+                    }
+                    else
+                    {
+                        item.IsChecked = _rulerInfo.SaveType.HasFlag(enumValue);
+                    }
+                }
+            }
+        }
+        private void UpdateMagnificationMenuStates()
+        {
+            var magnificationParent = MenuItems.FirstOrDefault(i => i.Header == "Magnification Scale");
+            if (magnificationParent?.Items == null) return;
+
+            foreach (var item in magnificationParent.Items)
+            {
+                if (item.Value is double scaleValue)
+                {
+                    item.IsChecked = Math.Abs(_rulerInfo.Magnifier.ZoomLevel - scaleValue) < 0.0001;
+                }
+            }
+        }
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -421,69 +654,9 @@ namespace Ruler.Wpf.Windows
         }
 
         // Equivalent to OnPaint
-        protected override void OnRender(DrawingContext dc)
+        protected override void OnRender(DrawingContext drawingContext)
         {
-            base.OnRender(dc);
-            
-            dc.DrawRectangle(SystemColors.ControlBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
-            // Force a high-contrast pen for testing
-            var testPen = new Pen(Brushes.Red, 2.0);
-
-            // Draw a single line to see if ANYTHING shows up
-            dc.DrawLine(testPen, new Point(0, 0), new Point(400, 75));
-
-            var testpen2 = new Pen(Brushes.Green, 2.0);
-            dc.DrawLine(testpen2, new Point(0, this.Height), new Point(400, 0));
-        
-        // 1. Setup Pens and Resources once
-        // Reusing the pen is more efficient than creating it in the loop
-        var tickPen = new Pen(Brushes.Black, 1.0);
-            var typeface = new Typeface("Arial");
-            var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
-
-            // 2. Choose orientation
-            if (!_rulerInfo.IsVertical)
-            {
-                DrawHorizontalRuler(dc, tickPen, typeface, dpi);
-            }
-            else
-            {
-                DrawVerticalRuler(dc, tickPen, typeface, dpi);
-            }
-        }
-
-        private void DrawHorizontalRuler(DrawingContext dc, Pen pen, Typeface tf, double dpi)
-        {
-            double width = this.Width;
-            double height = this.Height;
-            // Debug: Check if the loop is even running
-            System.Diagnostics.Debug.WriteLine($"Ruler Size: {width} x {height}");
-            for (int i = 0; i <= this.Width; i += 2)
-            {
-                // Logic from your original MainForm[cite: 4]
-                int tickHeight = (i % 100 == 0) ? 15 : ((i % 10 == 0) ? 10 : 5);
-
-                // Draw Ticks
-                dc.DrawLine(pen, new Point(i, 0), new Point(i, tickHeight));
-                dc.DrawLine(pen, new Point(i, this.Height), new Point(i, this.Height - tickHeight));
-
-                // Draw Labels
-                if (i % 100 == 0 || i == 85)
-                {
-                    DrawLabel(dc, i.ToString(), i, tf, dpi, true);
-                }
-            }
-        }
-        private void DrawVerticalRuler(DrawingContext dc, Pen pen, Typeface tf, double dpi)
-        {
-            for (int i = 0; i <= this.Height; i += 2)
-            {
-                // Logic from your original MainForm[cite: 4]
-                int tickHeight = (i % 100 == 0) ? 15 : ((i % 10 == 0) ? 10 : 5);
-
-                // Draw Ticks
-                dc.DrawLine(pen, new Point(0, i), new Point(tickHeight, i));
-                dc.DrawLine(pen, new Point(this.Width, i), new Point(this.Width - tickHeight,i));
+            base.OnRender(drawingContext);
 
             if (ActualWidth <= 0 || ActualHeight <= 0) return;
 
@@ -492,7 +665,6 @@ namespace Ruler.Wpf.Windows
             var fontTypeface = new Typeface("Segoe UI");
             double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
 
-            // Draw the base rectangle for the entire ruler body once here
             var rulerRect = new Rect(0, 0, ActualWidth, ActualHeight);
             drawingContext.DrawRectangle(Brushes.LightSlateGray, tickPen, rulerRect);
 
@@ -518,7 +690,6 @@ namespace Ruler.Wpf.Windows
                 bool isMedium = (x % 25 == 0);
                 double tickLength = isMajor ? 12 : (isMedium ? 8 : 4);
 
-                // Ticks coming off the top and bottom edges inward
                 dc.DrawLine(pen, new Point(x, 0), new Point(x, tickLength));
                 dc.DrawLine(pen, new Point(x, ActualHeight), new Point(x, ActualHeight - tickLength));
 
@@ -535,13 +706,11 @@ namespace Ruler.Wpf.Windows
 
                     if (dualSided)
                     {
-                        // 2 labels: one near top, one near bottom
                         dc.DrawText(formattedText, new Point(x - (formattedText.Width / 2), 15));
                         dc.DrawText(formattedText, new Point(x - (formattedText.Width / 2), ActualHeight - 25));
                     }
                     else
                     {
-                        // 1 label centered vertically if less than 100 pixels high
                         dc.DrawText(formattedText, new Point(x - (formattedText.Width / 2), (ActualHeight / 2) - (formattedText.Height / 2)));
                     }
                 }
@@ -558,7 +727,6 @@ namespace Ruler.Wpf.Windows
                 bool isMedium = (y % 25 == 0);
                 double tickLength = isMajor ? 12 : (isMedium ? 8 : 4);
 
-                // Ticks coming off the left and right edges inward
                 dc.DrawLine(pen, new Point(0, y), new Point(tickLength, y));
                 dc.DrawLine(pen, new Point(ActualWidth, y), new Point(ActualWidth - tickLength, y));
 
@@ -575,13 +743,11 @@ namespace Ruler.Wpf.Windows
 
                     if (dualSided)
                     {
-                        // 2 labels: one near left, one near right
                         dc.DrawText(formattedText, new Point(22, y - (formattedText.Height / 2)));
                         dc.DrawText(formattedText, new Point(ActualWidth - 28, y - (formattedText.Height / 2)));
                     }
                     else
                     {
-                        // 1 label centered horizontally if less than 100 pixels wide
                         dc.DrawText(formattedText, new Point((ActualWidth / 2) - (formattedText.Width / 2), y - (formattedText.Height / 2)));
                     }
                 }

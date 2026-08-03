@@ -196,7 +196,23 @@ namespace Ruler.Shared.Models
             {
                    SetProperty(ref _guideline,value); 
             }
-        } 
+        }
+        private MagnifierState _magnifier;
+        public MagnifierState Magnifier
+        {
+            get
+            {
+                if (_magnifier==null)
+                {
+                    _magnifier = new MagnifierState();
+                }
+                return _magnifier;
+            }
+            set
+            {
+                SetProperty(ref _magnifier,value);
+            }
+        }
 
 
         // The property the Serializer uses

@@ -35,6 +35,7 @@
         <KeyBinding Key="Esc" Command="{Binding ToggleCloseCommand}" />
         <KeyBinding Key="Esc" Modifiers="Ctrl" Command="{Binding ToggleExitCommand}" />
         <KeyBinding Key="I" Command="{Binding ToggleShowShortcutsCommand}" />
+        <KeyBinding Key="M" Command="{Binding ToggleMagnifierCommand}" />
         <KeyBinding Key="A" Command="{Binding ToggleAboutCommand}" />
         <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding ToggleResetToDefaultCommand}" />
         <KeyBinding Key="T" Command="{Binding ToggleTopMostCommand}" />
