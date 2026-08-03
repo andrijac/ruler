@@ -56,6 +56,7 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
@@ -97,9 +98,14 @@
     <Compile Include="ShortcutWindow.xaml.cs">
       <DependentUpon>ShortcutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\MagnifierHost.cs" />
+    <Compile Include="Windows\MagnifierWindow.xaml.cs">
+      <DependentUpon>MagnifierWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\NativeHelpers.cs" />
     <Compile Include="Windows\SetSizeWindow.xaml.cs">
       <DependentUpon>SetSizeWindow.xaml</DependentUpon>
     </Compile>
@@ -107,6 +113,10 @@
       <DependentUpon>ShowShortcutsWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="ShortcutWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\MagnifierWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
