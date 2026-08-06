@@ -63,6 +63,10 @@
       <Project>{b66439ff-bc75-469f-99fa-70ac0bac4e7a}</Project>
       <Name>Ruler.Shared</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Ruler\Ruler.csproj">
+      <Project>{fcb0ddb2-ad8b-4080-a17d-732efbf448c7}</Project>
+      <Name>Ruler</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

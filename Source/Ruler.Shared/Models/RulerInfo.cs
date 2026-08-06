@@ -1,220 +1,101 @@
-﻿using Newtonsoft.Json;
-using Ruler.Shared.Attributes;
-using Ruler.Shared.Enums;
-using System;
+﻿using System;
+using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+
+using Newtonsoft.Json;
+using Ruler.Shared.Models;
+
+using Ruler.Shared.Enums;
+using Ruler.Shared.Interfaces;
 
 namespace Ruler.Shared.Models
 {
     public class RulerInfo : ModelBase
     {
        
-     private Guid _id;
-        [JsonIgnore]
-        public Guid ID
-        {
-            get
-            {
-                if (Guid.Empty == _id)
-                {
-                    _id = new Guid();
-                    return _id;
-                }
-                return _id;
-            }
-            set
-            {
-                SetProperty(ref _id, value);
-            }
-        }
-        private int _width;
-        [SyncWithUI]
+        private RulerGuideline _guideline;
+       
         [JsonProperty("Width")]
         public int Width
         {
-            get
-            {
-                if (_width<85)
-                {
-                    _width = 85;
-                }
-                return _width;
-            }
-            set
-            {
-                SetProperty(ref _width, value);
-            }
+            get;
+            set;
         }
-        private int _height;
-        [SyncWithUI]
         [JsonProperty("Height")]
         public int Height
         {
-            get
-            {
-                if (_height<85)
-                {
-                    _height = 85;
-                }
-                return _height;
-            }
-            set
-            {
-                SetProperty(ref _height, value);
-            }
+            get;
+            set;
         }
-        private bool _isVertical;
+
         /// <summary>
         /// TODO
         /// </summary>
         [JsonProperty("IsVertical")]
         public bool IsVertical
         {
-            get
-            {
-             return _isVertical;
-            }
-            set
-            {
-                SetProperty(ref _isVertical, value);
-            }
+            get;
+            set;
         }
-        private double _opacity;
-        [SyncWithUI]
+        
         [JsonProperty("Opacity")]
         public double Opacity
         {
-            get
-            {
-                return _opacity;
-            }
-            set
-            {
-                SetProperty(ref _opacity, value);
-            }
+            get;
+            set;
         }
-        private bool _ShowToolTip;
+
         /// <summary>
         /// TODO
         /// </summary>
         [JsonProperty("ShowToolTip")]
         public bool ShowToolTip
         {
-            get
-            {
-                return _ShowToolTip;
-            }
-            set
-            {
-                SetProperty(ref _ShowToolTip, value);
-            }
+            get;
+            set;
         }
-        private bool _isLocked;
+
         /// <summary>
         /// TODO
         /// </summary>
         [JsonProperty("IsLocked")]
         public bool IsLocked
         {
-            get
-            {
-                return _isLocked;
-            }
-            set
-            {
-                SetProperty(ref _isLocked, value);
-            }
+            get;
+            set;
         }
-        private bool _topMost;
-        [SyncWithUI]
+
         [JsonProperty("TopMost")]
         public bool TopMost
         {
-            get
-            {
-                return _topMost;
-            }
-            set
-            {
-                SetProperty(ref _topMost, value);
-            }
+            get;
+            set;
         }
-        private int _top;
         [JsonProperty("Top")]
         public int Top
         {
-            get
-            {
-                return _top;
-            }
-            set
-            {
-                SetProperty(ref _top, value);
-            }
+            get;
+            set;
         }
-        private int _left;
         [JsonProperty("Left")]
         public int Left
-        {    get
-            {
-                return _left;
-            }
-            set
-            {
-                SetProperty(ref _left, value);
-            }
+        {    get;
+            set;
         }
-        private SaveTypes _saveType;
         [JsonProperty("SaveType")]
         public SaveTypes SaveType
         {
-            get
-            {
-                if (Enum.TryParse(_saveType.ToString(),true,out SaveTypes saved))
-                {
-                    return saved;
-                }
-                return SaveTypes.None;
-            }
-            set
-            {
-                SetProperty(ref _saveType,value);
-            }
+            get;
+            set;
         }
-        private RulerGuideline _guideline;
         public RulerGuideline Guideline
         {
-            get
-            {
-                if (_guideline == null)
-                {
-                    _guideline = new RulerGuideline();
-                }
-                return _guideline;
-            }
-            set 
-            {
-                   SetProperty(ref _guideline,value); 
-            }
-        }
-        private MagnifierState _magnifier;
-        public MagnifierState Magnifier
-        {
-            get
-            {
-                if (_magnifier==null)
-                {
-                    _magnifier = new MagnifierState();
-                }
-                return _magnifier;
-            }
-            set
-            {
-                SetProperty(ref _magnifier,value);
-            }
+            get => _guideline;
+            set { _guideline = value; }
         }
 
-
+       
         // The property the Serializer uses
         [JsonProperty("DisplayLocation")]
         public string DisplayLocationString
@@ -247,7 +128,7 @@ namespace Ruler.Shared.Models
                    $"  TopMost: {TopMost} | ShowToolTip: {ShowToolTip}" + Environment.NewLine +
                    $"  IsLocked: {IsLocked}" + Environment.NewLine +
                    $"  SaveType: {SaveType}" +
-                   $"  Guideline:  {Guideline}"; 
+                   $"  Guideline:  {Guideline}"; ;
         }
         public void ToggleOrientation()
         {
