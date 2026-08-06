@@ -75,5 +75,8 @@ namespace Ruler.Wpf.Windows
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+        [DllImport("magnification.dll", SetLastError = true, EntryPoint = "MagSetLensUseBitmapSmoothing")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool MagSetLensUseBitmapSmoothing(IntPtr hwnd, [MarshalAs(UnmanagedType.Bool)] bool bUseSmoothing);
     }
 }

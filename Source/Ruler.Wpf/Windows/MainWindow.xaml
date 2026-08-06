@@ -5,11 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ruler.Wpf.Windows"
         xmlns:menu ="clr-namespace:Ruler.Shared.Models;assembly=Ruler.Shared"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="Ruler Window"
        WindowStyle="None"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent"
+       Height="{Binding  RulerData.Height}" Width="{Binding RulerData.Width}" >
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type menu:MenuItemModel}" 
                                   ItemsSource="{Binding Items}">
@@ -46,7 +48,14 @@
         <KeyBinding Key="PageUp" Modifiers="Control" Command="{Binding MaxOpacityCommand}" />
         <KeyBinding Key="PageDown" Modifiers="Control" Command="{Binding MinOpacityCommand}" />
     </Window.InputBindings>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome ResizeBorderThickness="6" 
+                         CaptionHeight="0" 
+                         UseAeroCaptionButtons="False" 
+                         GlassFrameThickness="0"/>
+    </shell:WindowChrome.WindowChrome>
     <Grid>
-        
+       <!-- Enable native window resizing borders for borderless windows -->
+   
     </Grid>
 </Window>

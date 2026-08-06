@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -33,10 +34,12 @@ namespace Ruler.Wpf.Windows
 
         private RulerInfo _rulerInfo;
         private HwndSource _hwndSource;
-
+        private bool _isUpdatingFromWindow = false;
         public RulerInfo RulerData => _rulerInfo;
         public event EventHandler<RulerInfo> DuplicateRequested;
         private bool _showToolTips = true;
+        private Point? _startPoint = null;
+        private bool _isDragging = false;
         public bool ShowToolTips
         {
             get => _showToolTips;
@@ -84,6 +87,8 @@ namespace Ruler.Wpf.Windows
             // Set size based on info
             this.Width = _rulerInfo.Width;
             this.Height = _rulerInfo.Height;
+            this.Left = _rulerInfo.Left;
+            this.Top = _rulerInfo.Top;
 
             // Setup Interop for Locking/Resize logic
             this.SourceInitialized += (s, e) =>
@@ -93,6 +98,36 @@ namespace Ruler.Wpf.Windows
             };
             PoplateCommands();
             PopulateMenu();
+            this.LocationChanged += OnWindowLocationChanged;
+            this.SizeChanged += OnWindowSizeChanged;
+            UpdateOpacityMenuStates();
+            UpdateMagnificationMenuStates();
+            UpdateSaveTypeMenuStates();
+        }
+        private void OnWindowLocationChanged(object sender, EventArgs e)
+        {
+            if (_rulerInfo == null || _isUpdatingFromWindow) return;
+
+            _isUpdatingFromWindow = true;
+
+            // Update model location values
+            _rulerInfo.Left = (int)this.Left;
+            _rulerInfo.Top = (int)this.Top;
+
+            _isUpdatingFromWindow = false;
+        }
+
+        private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_rulerInfo == null || _isUpdatingFromWindow) return;
+
+            _isUpdatingFromWindow = true;
+
+            // Update model size values
+            _rulerInfo.Width = (int)this.ActualWidth;
+            _rulerInfo.Height = (int)this.ActualHeight;
+
+            _isUpdatingFromWindow = false;
         }
         public void PoplateCommands()
         {
@@ -121,7 +156,13 @@ namespace Ruler.Wpf.Windows
         });
             ToggleOrientationCommand = new DelegateCommand(_ =>
             {
-            _rulerInfo.ToggleOrientation();
+                var currentWidth = this.Width;
+                this.Width = this.Height;
+                this.Height = currentWidth;
+                _rulerInfo.Width =(int)this.Width;
+                _rulerInfo.Height = (int)this.Height;
+                _rulerInfo.IsVertical = !_rulerInfo.IsVertical;
+
             var menuItem = MenuItems.FirstOrDefault(i => i.Header == "Is Vertical?");
                 if (menuItem != null)
                 {
@@ -150,22 +191,7 @@ namespace Ruler.Wpf.Windows
             ToggleShowGuidelineCommand = new DelegateCommand(_ =>
             {
                 _rulerInfo.Guideline.IsEnabled = !_rulerInfo.Guideline.IsEnabled;
-                // If enabling the guideline and position hasn't been set yet
-                if (_rulerInfo.Guideline.IsEnabled && _rulerInfo.Guideline.Position == 0)
-                {
-                    var mousePos = Mouse.GetPosition(this);
-                    bool isMouseInside = mousePos.X >= 0 && mousePos.X <= ActualWidth &&
-                                         mousePos.Y >= 0 && mousePos.Y <= ActualHeight;
-
-                    if (isMouseInside)
-                    {
-                        _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? mousePos.Y : mousePos.X;
-                    }
-                    else
-                    {
-                        _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? ActualHeight / 2 : ActualWidth / 2;
-                    }
-                }
+               
                 var menuItem = MenuItems.FirstOrDefault(i => i.Header == "Show Guideline");
                 if (menuItem != null)
                 {
@@ -490,20 +516,20 @@ namespace Ruler.Wpf.Windows
     valueSelector: i => (double)i / 100.0, // Converts 50 to 0.5
     command: SetOpacityCommand
 );
-            MenuItemModel opacity = new MenuItemModel()
+            MenuItems.Add( new MenuItemModel()
             {
                 Header = "Opacity",
                 ToolTip = "Select i and see the different opacity commands on the short cuts page",
                 Items = opacitymenuitems
                
-            };
+            });
             var saveMenuItems = SaveTypes.None.ToMenuItems(SetSaveTypeCommand);
-            MenuItemModel saveTypes = new MenuItemModel()
+           MenuItems.Add( new MenuItemModel()
             {
                 Header = "Save Rule Data?",
                 Items = saveMenuItems
                 
-            };
+            });
 
             MenuItems.Add(new MenuItemModel
             {
@@ -587,18 +613,71 @@ namespace Ruler.Wpf.Windows
                 }
             }
         }
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+
+            // Record where the click started and capture the mouse
+            _startPoint = e.GetPosition(this);
+            _isDragging = false;
+            this.CaptureMouse();
+        }
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            if (_startPoint.HasValue && !_isDragging)
+            {
+                var currentPosition = e.GetPosition(this);
+
+                double diffX = Math.Abs(currentPosition.X - _startPoint.Value.X);
+                double diffY = Math.Abs(currentPosition.Y - _startPoint.Value.Y);
+
+                if (diffX > SystemParameters.MinimumHorizontalDragDistance ||
+                    diffY > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    if (e.LeftButton == MouseButtonState.Pressed)
+                    {
+                        _isDragging = true;
+
+                        // Release the capture so DragMove can take over tracking smoothly
+                        this.ReleaseMouseCapture();
+
+                        this.DragMove();
+                    }
+                }
+            }
             if (!_rulerInfo.Guideline.IsLocked)
             {
                 var position = e.GetPosition(this);
 
-                // If vertical ruler, track Y coordinate; otherwise track X coordinate
                 _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? position.Y : position.X;
+                
             }
+            this.InvalidateView();
         }
+        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonUp(e);
 
+            if (_startPoint.HasValue)
+            {
+                if (!_isDragging)
+                {
+                    Debug.WriteLine($"Guidelie is enabled: {RulerData.Guideline.IsEnabled}");
+                    if (_rulerInfo?.Guideline.IsEnabled == true)
+                    {
+                        Debug.WriteLine("Locking or unlocking ruler guideline");
+                        _rulerInfo.Guideline.IsLocked = !_rulerInfo.Guideline.IsLocked;
+                    }
+                }
+            }
+
+            // Reset state and release mouse capture
+            _startPoint = null;
+            _isDragging = false;
+            this.ReleaseMouseCapture();
+            this.InvalidateView();
+        }
         private void UpdateToolTip()
         {
             _rulerInfo.ShowToolTip = !_rulerInfo.ShowToolTip;
@@ -669,7 +748,6 @@ namespace Ruler.Wpf.Windows
             drawingContext.DrawRectangle(Brushes.LightSlateGray, tickPen, rulerRect);
 
             bool isVertical = _rulerInfo?.IsVertical ?? false;
-
             if (isVertical)
             {
                 DrawVerticalRuler(drawingContext, tickPen, textBrush, fontTypeface, dpi);
@@ -678,6 +756,24 @@ namespace Ruler.Wpf.Windows
             {
                 DrawHorizontalRuler(drawingContext, tickPen, textBrush, fontTypeface, dpi);
             }
+            if (_rulerInfo?.Guideline.IsEnabled == true)
+            {
+                var guidelinePen = (_rulerInfo.Guideline.IsLocked)?new Pen(Brushes.Red, 1):new Pen(Brushes.Blue,1);
+                if (_rulerInfo.IsVertical)
+                {
+                    drawingContext.DrawLine(guidelinePen,
+                        new Point(0, _rulerInfo.Guideline.Position),
+                        new Point(ActualWidth, _rulerInfo.Guideline.Position));
+                }
+                else
+                {
+                    Debug.WriteLine($"Guideline Position: {_rulerInfo.Guideline.Position}");
+                    drawingContext.DrawLine(guidelinePen,
+                        new Point(_rulerInfo.Guideline.Position, 0),
+                        new Point(_rulerInfo.Guideline.Position, ActualHeight));
+                }
+            }
+
         }
 
         private void DrawHorizontalRuler(DrawingContext dc, Pen pen, Brush brush, Typeface typeface, double dpi)
@@ -690,9 +786,8 @@ namespace Ruler.Wpf.Windows
                 bool isMedium = (x % 25 == 0);
                 double tickLength = isMajor ? 12 : (isMedium ? 8 : 4);
 
-                dc.DrawLine(pen, new Point(x, 0), new Point(x, tickLength));
-                dc.DrawLine(pen, new Point(x, ActualHeight), new Point(x, ActualHeight - tickLength));
-
+                dc.DrawLine(pen, new Point(x, 0.5), new Point(x, tickLength));
+                dc.DrawLine(pen, new Point(x, ActualHeight - 0.5), new Point(x, ActualHeight - tickLength));
                 if (isMajor && x > 0)
                 {
                     var formattedText = new FormattedText(
@@ -754,12 +849,7 @@ namespace Ruler.Wpf.Windows
             }
         }
         // Mouse Events
-        protected override void OnMouseDown(MouseButtonEventArgs e)
-        {
-            base.OnMouseDown(e);
-            if (e.ChangedButton == MouseButton.Left)
-                this.DragMove(); // WPF native helper for moving windows
-        }
+      
 
         // Implementation of IRuler
         public void SetRulerInfo(RulerInfo ruler)

@@ -59,7 +59,10 @@ namespace Ruler.Wpf.Windows
 
             float initialZoom = (float)(_state.ZoomLevel > 0 ? _state.ZoomLevel : 2.0f);
             SetZoom(initialZoom);
-
+            if (_magnifierHost?.MagnifierHandle != IntPtr.Zero)
+            {
+                NativeHelpers.MagSetLensUseBitmapSmoothing(_magnifierHost.MagnifierHandle, false);
+            }
             if (_state is INotifyPropertyChanged inpc)
             {
                 inpc.PropertyChanged += OnMagnifierStatePropertyChanged;
