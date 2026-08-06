@@ -1,0 +1,11 @@
+﻿<Window x:Class="Ruler.Wpf.Windows.MagnifierWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MagnifierWindow" Height="150" Width="150"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ResizeMode="NoResize" ShowInTaskbar="False">
+
+    <!-- Container to host the native Win32 Magnifier control -->
+    <Grid x:Name="HostContainer" Background="Transparent"/>
+
+</Window>
