@@ -112,6 +112,9 @@
     <Compile Include="Windows\ShowShortcutsWindow.xaml.cs">
       <DependentUpon>ShowShortcutsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\UpdateWindow.xaml.cs">
+      <DependentUpon>UpdateWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="ShortcutWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -129,6 +132,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\ShowShortcutsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\UpdateWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -164,6 +171,10 @@
     <ProjectReference Include="..\Ruler.Shared\Ruler.Shared.csproj">
       <Project>{b66439ff-bc75-469f-99fa-70ac0bac4e7a}</Project>
       <Name>Ruler.Shared</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ruler.Updater\Ruler.Updater.csproj">
+      <Project>{34488ab1-c129-4bae-ae72-445aaf8ef9ad}</Project>
+      <Name>Ruler.Updater</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,74 @@
+﻿<Window x:Class="Ruler.CertificateManagement.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ruler Security &amp; Certificate Setup Tool" Height="680" Width="700"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15" TextElement.FontSize="20" TextElement.Foreground="Black" TextElement.FontWeight="Bold">
+            <TextBlock Text="Ruler Certificate Management" />
+            <TextBlock Text="Select target components and manage your security assets securely." />
+        </StackPanel>
+
+        <!-- Main Content Scroll -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- MASTER PFX SECTION -->
+                <Border x:Name="BorderMaster" BorderBrush="#DDD" BorderThickness="1"  TextElement.FontSize="14" TextElement.FontWeight="Bold" TextElement.Foreground="Black" CornerRadius="5" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,5">
+                            <TextBlock Text="1. Master Root PFX (Desktop)"   VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ChkMaster" Content="Include in Run" IsChecked="True" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                        <TextBlock x:Name="TxtMasterStatus" Text="Status: Waiting..." Margin="0,2,0,10"/>
+
+                        <TextBlock Text="Master Public Key XML:" />
+                        <TextBox x:Name="TxtMasterXml" IsReadOnly="True" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,5"/>
+                        <Button Content="Copy Master XML" Click="BtnCopyMaster_Click" Width="140" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ACTIVE SIGNER SECTION -->
+                <Border x:Name="BorderActive" BorderBrush="#DDD" BorderThickness="1" TextElement.FontSize="14" TextElement.FontWeight="Bold" TextElement.Foreground="Black" CornerRadius="5" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,5">
+                            <TextBlock Text="2. Active Signer Certificate (User Store)"   VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ChkActive" Content="Include in Run" IsChecked="True" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                        <TextBlock x:Name="TxtActiveStatus" Text="Status: Waiting..."  Margin="0,2,0,10"/>
+
+                        <TextBlock Text="Active Public Key XML:" />
+                        <TextBox x:Name="TxtActiveXml" Foreground="Black" IsReadOnly="True" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,5"/>
+                        <Button Content="Copy Active XML" Click="BtnCopyActive_Click" Width="140" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- LOCAL DATA SIGNER SECTION -->
+                <Border x:Name="BorderLocal" BorderBrush="#DDD" BorderThickness="1" TextElement.FontSize="14" TextElement.FontWeight="Bold" TextElement.Foreground="Black" CornerRadius="5" Padding="15" Background="#FAFAFA">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,5">
+                            <TextBlock Text="3. Local App Data Certificate (User Store)"  VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ChkLocal" Content="Include in Run" IsChecked="True" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                        <TextBlock x:Name="TxtLocalStatus" Text="Status: Waiting..." Margin="0,2,0,10"/>
+                        <TextBlock Text="Thumbprint is automatically saved to local .dat files."  FontStyle="Italic" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer Action Button -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" TextElement.FontWeight="Bold" TextElement.FontSize="14">
+            <Button Content="Recheck Status" Click="BtnRecheck_Click" Width="130" Height="30" Margin="0,0,10,0"/>
+            <Button Content="Run Selected Setup" Click="BtnRunSetup_Click" Width="150" Height="30" />
+        </StackPanel>
+    </Grid>
+</Window>
