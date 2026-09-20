@@ -64,6 +64,7 @@
     <Compile Include="Interfaces\IRulerRegistry.cs" />
     <Compile Include="Interfaces\IPersistanceService.cs" />
     <Compile Include="Interfaces\IRulerSerializer.cs" />
+    <Compile Include="Models\FileSignature.cs" />
     <Compile Include="Models\GithubAsset.cs" />
     <Compile Include="Models\GitHubRelease.cs" />
     <Compile Include="Interfaces\IRulerInfo.cs" />
@@ -75,6 +76,10 @@
     <Compile Include="Models\ModelBase.cs" />
     <Compile Include="Models\RulerGuideline.cs" />
     <Compile Include="Models\RulerInfo.cs" />
+    <Compile Include="Models\SignedContainer.cs" />
+    <Compile Include="Models\UpdateConstants.cs" />
+    <Compile Include="Models\UpdateManifest.cs" />
+    <Compile Include="Models\UpdatePackageInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Factories\RulerFactory.cs" />
     <Compile Include="Services\MagnifierEngine.cs" />
@@ -82,6 +87,8 @@
     <Compile Include="Services\RulerRegistry.cs" />
     <Compile Include="Services\RulerSerializer.cs" />
     <Compile Include="Attributes\SyncWithUIAttribute.cs" />
+    <Compile Include="Services\SecurityService.cs" />
+    <Compile Include="Services\UpdateService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

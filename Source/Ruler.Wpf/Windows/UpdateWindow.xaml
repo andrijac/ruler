@@ -1,0 +1,34 @@
+﻿<Window x:Class="Ruler.Wpf.Windows.UpdateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Software Update" Height="280" Width="400"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#2D3033" Foreground="White"
+        Loaded="BtnCheck_Click">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Check for a new version" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,4"/>
+        <TextBlock x:Name="TxtVersionInfo" Text="Checking version details..." FontSize="12" Foreground="#AAAAAA" Grid.Row="1" Margin="0,0,0,10"/>
+
+        <TextBox x:Name="TxtReleaseNotes" Grid.Row="2" IsReadOnly="True" 
+                 Background="#1E1E1E" Foreground="#DDDDDD" BorderBrush="#444"
+                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                 Padding="8" Text="Loading release notes..."/>
+
+        <ProgressBar x:Name="PbProgress" Grid.Row="3" Height="6" Margin="0,12,0,0" IsIndeterminate="True" Visibility="Collapsed"/>
+        <TextBlock x:Name="TxtStatus" Grid.Row="3" Text="" FontSize="11" Foreground="#888" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="BtnCheck" Content="Check for Updates" Width="120" Height="26" Margin="0,0,8,0" Click="BtnCheck_Click"/>
+            <Button x:Name="BtnCancel" Content="Cancel" Width="90" Height="26" Margin="0,0,8,0" Click="BtnCancel_Click"/>
+            <Button x:Name="BtnUpdate" Content="Download &amp; Install" Width="130" Height="26" Click="BtnUpdate_Click" IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

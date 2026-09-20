@@ -47,6 +47,7 @@
         <KeyBinding Key="PageDown" Modifiers="Shift" Command="{Binding SetOpacityCommand}" CommandParameter="-5" />
         <KeyBinding Key="PageUp" Modifiers="Control" Command="{Binding MaxOpacityCommand}" />
         <KeyBinding Key="PageDown" Modifiers="Control" Command="{Binding MinOpacityCommand}" />
+        <KeyBinding Key="U" Command="{Binding ToggleShowUpdateWindowCommand}" />
     </Window.InputBindings>
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome ResizeBorderThickness="6" 
