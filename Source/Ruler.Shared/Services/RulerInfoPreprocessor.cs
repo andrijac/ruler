@@ -1,20 +1,13 @@
 ﻿using Ruler.Shared.Enums;
 using Ruler.Shared.Factories;
 using Ruler.Shared.Models;
-using Ruler.Shared.Interfaces;
 
 using System.Collections.Generic;
 
 namespace Ruler.Shared.Services
 {
-    public class RulerInfoPreprocessor : IRulerInfoPreprocessor
+    public class RulerInfoPreprocessor
     {
-        private readonly IRulerFactory _factory;
-
-        public RulerInfoPreprocessor(IRulerFactory factory)
-        {
-            _factory = factory;
-        }
         public IEnumerable<RulerInfo> Preprocess(IEnumerable<RulerInfo> items)
         {
             var outputList = new List<RulerInfo>();
@@ -43,8 +36,7 @@ namespace Ruler.Shared.Services
             if (item == null) return null;
 
             // Creates a fresh instance with its own default property allocations
-            RulerInfo strippedCopy = _factory.CreateDefault();
-            strippedCopy.ID = item.ID;
+            RulerInfo strippedCopy = RulerFactory.CreateDefault();
             strippedCopy.SaveType = item.SaveType;
 
             // Explicitly copy over historical identity so it updates correctly on reload
@@ -54,7 +46,7 @@ namespace Ruler.Shared.Services
             {
                 case SaveTypes.All:
                     // Full clone of everything (including visual guidelines and tools)
-                    _factory.CopyValues(item, strippedCopy);
+                    RulerFactory.CopyValues(item, strippedCopy);
                     break;
 
                 case SaveTypes.Location:
@@ -62,7 +54,6 @@ namespace Ruler.Shared.Services
                     strippedCopy.Left = item.Left;
                     strippedCopy.Top = item.Top;
                     strippedCopy.IsVertical = item.IsVertical;
-                   
                     break;
 
                 case SaveTypes.Size:

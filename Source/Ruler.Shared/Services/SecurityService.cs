@@ -1,17 +1,17 @@
 ﻿using Newtonsoft.Json;
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Ruler.Shared.Models;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-
 using Ruler.Shared.Models;
-
+using System.Security.Cryptography.X509Certificates;
 namespace Ruler.Shared.Services
 {
     public static class SecurityService
@@ -20,6 +20,9 @@ namespace Ruler.Shared.Services
 
         private const string MasterPublicKeyXml = "<RSAKeyValue><Modulus>3xkaPvlFt7UlsQzCWV5KfrGf+KtaxGaeJt+pINSMtfnPFmZ0r1LJJxK8kegGXTJB3ebR0Ppg5ssZ42e9oWGUNzk6UFsKHD1SnIDVIu/3G4MLqRMwoTPJ4dmVtd7KzvKYrw5AkTquKzOzDgqAjtd3CbmHlimJdxFyiPsbMZ0JQHk=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
+        /// <summary>
+        /// Verifies a raw byte array against a base64-encoded RSA signature using embedded XML public keys.
+        /// </summary>
         public static bool VerifyData(byte[] dataBytes, string base64Signature)
         {
             if (string.IsNullOrEmpty(base64Signature)) return false;
@@ -29,6 +32,7 @@ namespace Ruler.Shared.Services
                 byte[] signatureBytes = Convert.FromBase64String(base64Signature);
                 using (var rsa = RSA.Create())
                 {
+                    // 1. Try verifying with the Active public key first
                     try
                     {
                         rsa.FromXmlString(ActivePublicKeyXml);
@@ -39,9 +43,11 @@ namespace Ruler.Shared.Services
                     }
                     catch
                     {
-                        // Fall through
+       
+                        // Active key parsing or verification failed, proceed to fallback
                     }
 
+                    // 2. Fall back to the Master public key
                     try
                     {
                         rsa.FromXmlString(MasterPublicKeyXml);
@@ -58,10 +64,11 @@ namespace Ruler.Shared.Services
                 return false;
             }
         }
-
+        /// <summary>
+        /// Computes the SHA-256 hash of a file and matches it against the expected hash string[cite: 6].
+        /// </summary>
         public static bool VerifyFileHash(string filePath, string expectedHash)
         {
-
             if (!File.Exists(filePath)) return false;
 
             try
@@ -79,17 +86,18 @@ namespace Ruler.Shared.Services
                 return false;
             }
         }
-
+        /// <summary>
+        /// Verifies an individual file's hash and its cryptographic signature[cite: 1, 6].
+        /// </summary>
         public static bool VerifyFileSignature(string filePath, FileSignature fileSig)
         {
             if (fileSig == null || !File.Exists(filePath)) return false;
-
-
+            // 1. Verify file hash matches manifest record
             if (!VerifyFileHash(filePath, fileSig.Hash))
             {
                 return false;
             }
-
+            // 2. Verify file signature bytes[cite: 1]
             byte[] fileBytes = File.ReadAllBytes(filePath);
             return VerifyData(fileBytes, fileSig.Signature);
         }
@@ -113,14 +121,12 @@ namespace Ruler.Shared.Services
 
             if (!File.Exists(manifestPath) || !File.Exists(sigPath) || !File.Exists(zipPath))
             {
-
                 return false;
             }
 
             // 1. Read raw manifest bytes directly to preserve exact line-ending layout for signature verification
             byte[] manifestBytes = File.ReadAllBytes(manifestPath);
             string manifestSig = File.ReadAllText(sigPath).Trim();
-
             if (!VerifyData(manifestBytes, manifestSig))
             {
                 CleanupFailedPackage();
@@ -140,8 +146,7 @@ namespace Ruler.Shared.Services
                 PurgeTempUpdateZips();
                 return false;
             }
-
-            // 4. Extract zip to temporary directory for inner file checks
+            // 4. Extract zip to a temporary directory so we can inspect and verify inner files
             string tempExtractPath = Path.Combine(packageDirectory, "temp_extracted_" + Guid.NewGuid().ToString());
 
             try
@@ -186,13 +191,10 @@ namespace Ruler.Shared.Services
                         sourceWpfConfigPath = targetFilePath;
                     }
                 }
-
-
                 if (string.IsNullOrEmpty(sourceUpdaterPath) || string.IsNullOrEmpty(sourceWpfPath) || string.IsNullOrEmpty(sourceUpdaterConfigPath) || string.IsNullOrEmpty(sourceWpfConfigPath))
                 {
                     return false;
                 }
-
                 // 6. Stage the new updater
                 Directory.CreateDirectory(targetInstallDirectory);
                 string targetUpdaterPath = Path.Combine(targetInstallDirectory, "ruler.updater.exe");
@@ -201,12 +203,12 @@ namespace Ruler.Shared.Services
                 File.Copy(sourceUpdaterPath, targetUpdaterPath, overwrite: true);
                 File.Copy(sourceUpdaterConfigPath, targetUpdaterConfigPath, overwrite: true);
 
+                // 7. Verify the updater was copied successfully and check size
+
                 if (!File.Exists(targetUpdaterPath))
                 {
                     return false;
                 }
-
-
                 FileInfo sourceInfo = new FileInfo(sourceUpdaterPath);
                 FileInfo targetInfo = new FileInfo(targetUpdaterPath);
                 if (sourceInfo.Length != targetInfo.Length)
@@ -216,17 +218,14 @@ namespace Ruler.Shared.Services
 
                 // 7. Launch updater and exit
                 string arguments = $"\"{sourceWpfPath}\" \"{sourceWpfConfigPath}\" \"{targetInstallDirectory}\" \"{currentExeName}\"";
-
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = targetUpdaterPath,
                     Arguments = arguments,
                     UseShellExecute = true
                 });
-
                 Environment.Exit(0);
                 return true;
-
             }
             catch
             {
@@ -234,11 +233,12 @@ namespace Ruler.Shared.Services
             }
             finally
             {
+                // Clean up the temporary extraction folder (if exit didn't occur first)
+
                 CleanupFailedPackage();
                 DeleteFolderIfExists(tempExtractPath);
                 PurgeTempUpdateZips();
             }
-
         }
 
         private static void DeleteFileIfExists(string path)
@@ -257,7 +257,10 @@ namespace Ruler.Shared.Services
                 {
                     Directory.Delete(path, true);
                 }
-                catch { }
+                catch (Exception)
+                {
+                }
+
             }
         }
         private static void PurgeTempUpdateZips()
@@ -265,15 +268,25 @@ namespace Ruler.Shared.Services
             try
             {
                 string tempPath = Path.GetTempPath();
+                // Use the shared constant pattern or base name for cleanup
                 string searchPattern = $"*{UpdateConstants.ZipFileName}";
                 string[] leftoverZips = Directory.GetFiles(tempPath, searchPattern);
                 foreach (string zip in leftoverZips)
                 {
-
-                    try { File.Delete(zip); } catch { }
+                    try
+                    {
+                        File.Delete(zip);
+                    }
+                    catch
+                    {
+                        // Suppress individual file deletion locks if open elsewhere 
+                    }
                 }
             }
-            catch { }
+            catch
+            {
+                // Suppress errors during global temp scan
+            }
         }
     }
 }

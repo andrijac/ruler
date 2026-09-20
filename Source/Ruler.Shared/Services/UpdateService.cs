@@ -1,3 +1,4 @@
+
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,11 @@ using Ruler.Shared.Models;
 
 using Newtonsoft.Json;
 using System.IO;
+using System.Diagnostics;
+using System.IO.Compression;
+using System.Security;
+using System.Security.Cryptography;
+using System.Windows;
 
 namespace Ruler.Shared.Services
 {
@@ -15,14 +21,13 @@ namespace Ruler.Shared.Services
     {
         private static readonly HttpClient HttpClient = new HttpClient();
 
-
         /// <summary>
         /// Queries the GitHub Releases API to dynamically retrieve download URLs 
         /// for the manifest, signature file, and zip package using GitHubRelease and GitHubAsset models.
         /// </summary>
         public static async Task<UpdatePackageInfo> GetLatestGitHubAssetUrlsAsync(string repoOwner, string repoName)
         {
-            string apiUrl = $"https://api.github.com/repos/{repoOwner}/{repoName}/releases/latest";
+            string apiUrl = $"https://api.github.com/repos/{repoOwner}/{repoName}/releases/latest";r
             // GitHub API requires a custom User-Agent header or it will return a 403 Forbidden response
             if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
@@ -95,7 +100,9 @@ namespace Ruler.Shared.Services
         /// Downloads the update artifacts (manifest, detached signature, and zip package) 
         /// and hands them off to SecurityService for cryptographic verification and execution.
         /// </summary>
+
         public static async Task<string> DownloadAndApplyUpdateAsync(string manifestUrl, string sigUrl, string zipUrl, string targetAppDirectory)
+
         {
             try
             {
@@ -103,7 +110,6 @@ namespace Ruler.Shared.Services
                 string manifestPath = Path.Combine(targetAppDirectory, UpdateConstants.ManifestFileName);
                 string sigPath = Path.Combine(targetAppDirectory, UpdateConstants.ManifestSigFileName);
                 string zipPath = Path.Combine(targetAppDirectory, UpdateConstants.ZipFileName);
-
                 // 1. Download manifest.json as raw bytes to prevent text translation line-ending shifts[cite: 2]
                 byte[] manifestBytes = await HttpClient.GetByteArrayAsync(manifestUrl);
                 await Task.Run(() => File.WriteAllBytes(manifestPath, manifestBytes));

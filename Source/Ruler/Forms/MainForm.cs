@@ -1,6 +1,4 @@
-﻿using Ruler.Factories;
-using Ruler.Properties;
-using Ruler.Shared.Attributes;
+﻿using Ruler.Properties;
 using Ruler.Shared.Enums;
 using Ruler.Shared.Factories;
 using Ruler.Shared.Interfaces;
@@ -24,7 +22,7 @@ using System.Windows.Forms.VisualStyles;
 
 namespace Ruler.Forms
 {
-    public partial class MainForm : Form, IRuler
+    public partial class MainForm : Form
     {
         private const int WM_SYSCOMMAND = 0x0112;
         private const int SC_SIZE = 0xF000;
@@ -45,7 +43,7 @@ namespace Ruler.Forms
         
         private Point _startLocation;
         private bool _hasMoved=false;
-        private RulerInfo _rulerInfo;
+        private readonly RulerInfo _rulerInfo;
         private ContextMenuStrip _contextMenuStrip;
         private InteractionMode _currentMode = InteractionMode.None;
         private HitArea _activeArea;
@@ -54,32 +52,11 @@ namespace Ruler.Forms
         private Size _dragStartFormSize;
 
         public RulerInfo RulerData => _rulerInfo; // Expose the RulerInfo for external use (e.g., duplication)  
-       
-        private readonly IRulerFactory _rulerFactory;
-        private readonly IMainFormFactory _mainFormFactory;
-        private readonly IRulerRegistry _rulerRegistry;
+        public MainForm(RulerInfo info)
+        {
 
-        public event EventHandler<RulerInfo> DuplicateRequested;
-        event EventHandler<RulerInfo> IRuler.DuplicateRequested
-        {
-            add { DuplicateRequested += value; }
-            remove { DuplicateRequested -= value; }
-        }
-        public void SetRulerInfo(RulerInfo ruler)
-        {
-            _rulerInfo = ruler;
-            UpdateUIFromModel();
-        }
-
-        public MainForm(RulerInfo info, IRulerFactory factory, IMainFormFactory mainFormFactory, IRulerRegistry rulerRegistry)
-        {
-                    
             _rulerInfo = info;
-            _rulerFactory = factory;
-            _mainFormFactory = mainFormFactory;
-            _rulerRegistry = rulerRegistry;
             InitializeComponent();
-            System.Diagnostics.Debug.WriteLine($"NEW INSTANCE CREATED: {this.GetHashCode()}");
             this.KeyPreview = true; // Enable form to receive key events
             this.FormBorderStyle = FormBorderStyle.None;
             this.AutoScaleMode = AutoScaleMode.None;
@@ -427,15 +404,11 @@ namespace Ruler.Forms
 
         private void DuplicateRuler_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"Button clicked on instance: {this.GetHashCode()}");
-
-            // DEBUG: Is DuplicateRequested null?
-            if (DuplicateRequested == null)
-            {
-                System.Diagnostics.Debug.WriteLine("WARNING: Event is null! Nothing is listening.");
-            }
-
-            DuplicateRequested?.Invoke(this, this.RulerData);
+            RulerInfo newInfo = new RulerInfo();
+            RulerFactory.CopyValues(this._rulerInfo, newInfo);
+            MainForm newForm = new MainForm(newInfo);
+            RulerApplicationContext.Register(newForm);
+            newForm.Show();
         }
 
         private void ToggleGuideline_Click(object sender, EventArgs e)
@@ -447,52 +420,36 @@ namespace Ruler.Forms
         private void ResetToDefault_Click(object sender, EventArgs e)
         {
             // 1. Get default configurations from the factory
-            var defaults = _rulerFactory.CreateDefault();
+            var defaults = RulerFactory.CreateDefault();
 
             // 2. Overwrite values inside your model state
-            _rulerFactory.CopyValues(defaults, _rulerInfo);
-            UpdateUIFromModel();
+            RulerFactory.CopyValues(defaults, _rulerInfo);
 
-        
-        }
-        private void UpdateUIFromModel()
-        {
-            // 1. Reflection Loop: Handles Width, Height, Opacity, etc.
-            // (This loop ignores Top and Left because they have no attribute)
-            var modelType = _rulerInfo.GetType();
-            var formType = this.GetType();
+            // 3. FORCE THE PHYSICAL UI TO MATCH THE RESET VALUES INSTANTLY
+            this.TopMost = _rulerInfo.TopMost;
+            this.Opacity = _rulerInfo.Opacity;
+            this.Size = new Size(_rulerInfo.Width, _rulerInfo.Height);
 
-            foreach (var prop in modelType.GetProperties())
+            // 4. Force context menu checkmarks to instantly recalculate their visual state
+            if (_contextMenuStrip != null)
             {
-                if (prop.GetCustomAttribute<SyncWithUIAttribute>() != null)
-                {
-                    var formProp = formType.GetProperty(prop.Name);
-                    if (formProp != null && formProp.CanWrite)
-                    {
-                        formProp.SetValue(this, prop.GetValue(_rulerInfo));
-                    }
-                }
+                ValidateAllItems(_contextMenuStrip.Items);
             }
 
-            // 2. Manual Atomic Update: Handles Position
-            // This happens only once, so the window jumps exactly once.
-            this.Location = new System.Drawing.Point(_rulerInfo.Left, _rulerInfo.Top);
-
-            // 3. Cleanup
-            if (_contextMenuStrip != null) ValidateAllItems(_contextMenuStrip.Items);
+            // 5. Trigger a full repaint of the tick marks
             this.Invalidate();
         }
+
         private void ClearAllSavedRulers_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Are you sure you want to clear all saved rulers? This cannot be undone.", "Confirm Clear", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
+                RulerApplicationContext.ClearAll();
                 MessageBox.Show("All saved rulers have been cleared.");
                 foreach (MainForm form in Application.OpenForms.OfType<MainForm>())
                 {
-                    _rulerFactory.CopyValues(_rulerFactory.CreateDefault(),this.RulerData);
-
                     form._rulerInfo.SaveType = SaveTypes.None;
-                    _rulerRegistry.Register(form);
+                    RulerApplicationContext.Register(form);
                 }
                 MessageBox.Show("All ruler's save type set to 'Do not Save' to reflect cleared saved data.");
             }
@@ -500,8 +457,18 @@ namespace Ruler.Forms
 
         private void ShowAbout_Click(object sender, EventArgs e)
         {
-            ShowAbout();
-          }
+            string message = string.Format(
+                "Original Ruler implemented by Jeff Key\n" +
+                "www.sliver.com\n" +
+                "ruler.codeplex.com\n" +
+                "Icon by Kristen Magee @ www.kbecca.com.\n" +
+                "Maintained by Andrija Cacanovic\n" +
+                "Hosted on \n" +
+                "https://github.com/andrijac/ruler\n" +
+                "Version {0}",
+                Application.ProductVersion);
+            MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
 
         private void CloseRuler_Click(object sender, EventArgs e)
         {
@@ -510,7 +477,7 @@ namespace Ruler.Forms
 
         private void ExitApplication_Click(object sender, EventArgs e)
         {
-            _rulerRegistry.CloseAll();
+            RulerApplicationContext.CloseAll();
             Application.Exit();
         }
         /// <summary>
@@ -1065,33 +1032,6 @@ namespace Ruler.Forms
         private void MainForm_Click(object sender, EventArgs e)
         {
    //         MessageBox.Show("Main form clicked!");
-        }
-        public void InvalidateView()
-        {
-            this.Invalidate();  
-        }
-        public void ShowAbout()
-        {
-            string message = string.Format(
-              "Original Ruler implemented by Jeff Key\n" +
-              "www.sliver.com\n" +
-              "ruler.codeplex.com\n" +
-              "Icon by Kristen Magee @ www.kbecca.com.\n" +
-              "Maintained by Andrija Cacanovic\n" +
-              "Hosted on \n" +
-              "https://github.com/andrijac/ruler\n" +
-              "Version {0}",
-              Application.ProductVersion);
-            MessageBox.Show(message, "About Ruler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-        }
-        public void ShowShortcuts()
-        {
-
-        }
-        public async Task CheckForUpdatesAsync()
-        {
-
         }
     }
 }

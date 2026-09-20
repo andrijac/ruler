@@ -1,0 +1,234 @@
+﻿<Window x:Class="Ruler.Wpf.Views.RulerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:Ruler.Wpf.Views"
+        xmlns:converters="clr-namespace:Ruler.Wpf.Converters"
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        Topmost="{Binding TopMost}"
+        Width="{Binding Width, Mode=OneWay}" 
+        Height="{Binding Height, Mode=OneWay}"
+        Left="{Binding Left, Mode=TwoWay}" 
+        Top="{Binding Top, Mode=TwoWay}"
+        MouseMove="OnWindowMouseMove" 
+        MouseDown="OnWindowMouseDown" 
+        MouseUp="OnWindowMouseUp"
+        MouseEnter="ThisRulerWindow_MouseEnter"
+        MouseLeave="ThisRulerWindow_MouseLeave"
+        Opacity="{Binding Opacity, Mode=TwoWay}"
+        Name="ThisRulerWindow">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:EnumMatchConverter x:Key="EnumMatchConverter"/>
+        <converters:OpacityMatchConverter x:Key="OpacityMatchConverter"/>
+        <converters:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
+    </Window.Resources>
+    <WindowChrome.WindowChrome>
+        <WindowChrome ResizeBorderThickness="5" 
+                      CaptionHeight="0" 
+                      GlassFrameThickness="0" 
+                      CornerRadius="0" />
+    </WindowChrome.WindowChrome>
+    <Window.InputBindings>
+  
+
+        <KeyBinding Key="O" Command="{Binding ModifySettingCommand}" CommandParameter="FLIP_ORIENTATION" />
+
+        <KeyBinding Key="A" Command="{Binding ModifySettingCommand}" CommandParameter="SAVETYPE_ALL"/>
+        <KeyBinding Key="S" Command="{Binding ModifySettingCommand}" CommandParameter="SAVETYPE_SIZE"/>
+        <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="SAVETYPE_LOCATION"/>
+        <KeyBinding Key="N" Command="{Binding ModifySettingCommand}" CommandParameter="SAVETYPE_NONE"/>
+        <KeyBinding Key="L" Command="{Binding ModifySettingCommand}" CommandParameter="LOCKED"/>
+        <KeyBinding Key="G" Command="{Binding ModifySettingCommand}" CommandParameter="SHOW_GUIDELINE"/>
+        <KeyBinding Key="T" Command="{Binding ModifySettingCommand}" CommandParameter="TOGGLE_ONTOP"/>
+        <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="TOGGLE_TOOLTIP"/>
+        <KeyBinding Key="PageUp" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_UP_10"/>
+        <KeyBinding Key="PageUp" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_TO_100"/>
+        <KeyBinding Key="Next" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_DOWN_10"/>
+        <KeyBinding Key="Next" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_STEP_TO_10"/>
+        <KeyBinding Key="Space" Command="{Binding ModifySettingCommand}" CommandParameter="FLIP_ORIENTATION"/>
+        <KeyBinding Key="Esc" Command="{Binding ModifySettingCommand}" CommandParameter="CLOSE"/>
+        <KeyBinding Key="Esc" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="EXIT_ALL"/>
+        <KeyBinding Key="R" Command="{Binding ModifySettingCommand}" CommandParameter="RESIZE"/>
+        <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="RESET_RULER_DEFAULT"/>
+        <KeyBinding Key="A" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="ABOUT"/>
+        <KeyBinding Key="Left" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_LEFT_10"/>
+        <KeyBinding Key="Right" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_RIGHT_10"/>
+        <KeyBinding Key="Up" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_UP_10"/>
+        <KeyBinding Key="Down" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_DOWN_10"/>
+        <KeyBinding Key="Left" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_LEFT_1"/>
+        <KeyBinding Key="Right" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_RIGHT_1"/>
+        <KeyBinding Key="Up" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_UP_1"/>
+        <KeyBinding Key="Down" Modifiers="Ctrl" Command="{Binding ModifySettingCommand}" CommandParameter="NAVIGATE_DOWN_1"/>
+        <KeyBinding Key="D" Command="{Binding ModifySettingCommand}" CommandParameter="DUPLICATE"/>
+        <KeyBinding Key="I" Command="{Binding ModifySettingCommand}" CommandParameter="SHOW_SHORTCUTS"/>
+        <KeyBinding Key="PageUp" Modifiers="Shift" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_UP_5" />
+        <KeyBinding Key="PageDown" Modifiers="Shift" Command="{Binding ModifySettingCommand}" CommandParameter="OPACITY_DOWN_5" />
+    </Window.InputBindings>
+    <Grid Name="MainRootGrid">
+        
+        <Grid.ContextMenu>
+            <ContextMenu>
+            <MenuItem Header="Stay On Top" 
+                      IsCheckable="True" 
+                      IsChecked="{Binding TopMost, Mode=TwoWay}"
+                      InputGestureText="T"/>
+
+            <MenuItem Header="Lock Resizing" 
+                      IsCheckable="True" 
+                      IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                      InputGestureText="L"/>
+
+            <MenuItem Header="Is Vertical?" 
+                      IsCheckable="True" 
+                      IsChecked="{Binding IsVertical, Mode=OneWay}" 
+                      Command="{Binding ToggleOrientationCommand}"
+                      InputGestureText="Space / O"/>
+
+            <MenuItem Header="Show Tooltip" 
+                      IsCheckable="True" 
+                      IsChecked="{Binding ShowToolTip, Mode=TwoWay}"
+                      InputGestureText="Ctrl + T"/>
+
+            <Separator/>
+
+                <MenuItem Header="Opacity">
+                    <MenuItem Header="100%" Command="{Binding ChangeOpacityCommand}" CommandParameter="1.0" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=1.0, Mode=OneWay}"/>
+                    <MenuItem Header="95%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.95" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.95, Mode=OneWay}"/>
+                    <MenuItem Header="90%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.9" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.9, Mode=OneWay}"/>
+                    <MenuItem Header="85%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.85" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.85, Mode=OneWay}"/>
+                    <MenuItem Header="80%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.8" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.8, Mode=OneWay}"/>
+                    <MenuItem Header="75%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.75" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.75, Mode=OneWay}"/>
+                    <MenuItem Header="70%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.7" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.7, Mode=OneWay}"/>
+                    <MenuItem Header="65%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.65" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.65, Mode=OneWay}"/>
+                    <MenuItem Header="60%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.6" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.6, Mode=OneWay}"/>
+                    <MenuItem Header="55%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.55" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.55, Mode=OneWay}"/>
+                    <MenuItem Header="50%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.5" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.5, Mode=OneWay}"/>
+                    <MenuItem Header="45%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.45" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.45, Mode=OneWay}"/>
+                    <MenuItem Header="40%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.4" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.4, Mode=OneWay}"/>
+                    <MenuItem Header="35%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.35" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.35, Mode=OneWay}"/>
+                    <MenuItem Header="30%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.3" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.3, Mode=OneWay}"/>
+                    <MenuItem Header="25%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.25" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.25, Mode=OneWay}"/>
+                    <MenuItem Header="20%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.2" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.2, Mode=OneWay}"/>
+                    <MenuItem Header="15%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.15" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.15, Mode=OneWay}"/>
+                    <MenuItem Header="10%"  Command="{Binding ChangeOpacityCommand}" CommandParameter="0.1" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.1, Mode=OneWay}"/>
+                    <MenuItem Header="5%"   Command="{Binding ChangeOpacityCommand}" CommandParameter="0.05" IsCheckable="True" IsChecked="{Binding Opacity, Converter={StaticResource OpacityMatchConverter}, ConverterParameter=0.05, Mode=OneWay}"/>
+                </MenuItem>
+
+                <MenuItem Header="Set Size..." Command="{Binding ResizeRulerCommand}"
+                          InputGestureText="R"/>
+            <MenuItem Header="Duplicate" Command="{Binding DuplicateRulerCommand}"
+                      InputGestureText="D"/>
+                <Separator/>
+                <MenuItem Header="Show Guideline" 
+                      IsCheckable="True" 
+                      IsChecked="{Binding CurrentGuideline.IsEnabled}" 
+                      Command="{Binding ToggleGuidelineCommand}"
+                          InputGestureText="G"/>
+            <Separator/>
+
+            <MenuItem Header="Save Type?">
+                <MenuItem Header="None" Command="{Binding SetSaveTypeCommand}" CommandParameter="None" InputGestureText="N"   IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=None, Mode=OneWay}"/>
+                <MenuItem Header="Position" Command="{Binding SetSaveTypeCommand}" CommandParameter="Location" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Location, Mode=OneWay}" InputGestureText="L"/>
+                <MenuItem Header="Full" Command="{Binding SetSaveTypeCommand}" CommandParameter="All" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=All, Mode=OneWay}" InputGestureText="A"/>
+                <MenuItem Header="Size" Command="{Binding SetSaveTypeCommand}" CommandParameter="Size" IsCheckable="True" IsChecked="{Binding SaveType, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Size, Mode=OneWay}" InputGestureText="S"/> 
+            </MenuItem>
+
+           
+                <MenuItem Header="Reset To Default" Command="{Binding ResetToDefaultCommand}" InputGestureText="Ctrl + R"/>
+        
+
+            <MenuItem Header="About..." Command="{Binding ShowAboutDialogCommand}" InputGestureText="Ctrl + A"/>
+                <MenuItem Header="Keyboard Shortcuts" 
+          Command="{Binding ModifySettingCommand}" 
+          CommandParameter="SHOW_SHORTCUTS"
+                          InputGestureText="I"/>
+                <Separator/>
+
+                <MenuItem Header="Close Ruler" 
+              Command="{Binding CloseRulerCommand}"
+                          InputGestureText="Esc"/>
+
+                <Separator/>
+
+                <MenuItem Header="Close All Rulers" 
+              Command="{Binding ExitApplicationCommand}"
+                          InputGestureText="Ctrl + Esc">
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <!-- Very soft muted red tint -->
+                            <Setter Property="Foreground" Value="#C62828"/>
+                            <!-- Sharp dark red text -->
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+            </ContextMenu>
+        </Grid.ContextMenu>
+
+
+
+        <views:RulerControl x:Name="VisualRuler"
+                    DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" 
+                    Width="{Binding ElementName=ThisRulerWindow, Path=ActualWidth}"
+                    Height="{Binding ElementName=ThisRulerWindow, Path=ActualHeight}"
+                    Canvas.Left="0" 
+                    Canvas.Top="0"/>
+
+        <Canvas Name="MainCanvas" Background="Transparent"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                PreviewMouseLeftButtonDown="MainCanvas_PreviewMouseLeftButtonDown"
+                MouseMove="MainCanvas_MouseMove"
+                MouseLeftButtonUp="MainCanvas_MouseLeftButtonUp"
+                MouseEnter="MainCanvas_MouseEnter"
+                MouseLeave="MainCanvas_MouseLeave">
+            <Canvas.Style>
+                <Style TargetType="Canvas">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup />
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsVertical}" Value="True">
+                            <Setter Property="LayoutTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="90" />
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Canvas.Style>
+
+            <Line Stroke="{Binding CurrentGuideline.GuidelineColorHex, FallbackValue=Transparent, TargetNullValue=Transparent}" 
+          StrokeThickness="1.5"
+          X1="{Binding CurrentGuideline.Position, FallbackValue=-10, TargetNullValue=-10}" 
+          X2="{Binding CurrentGuideline.Position, FallbackValue=-10, TargetNullValue=-10}"
+          Y1="0" 
+          Y2="{Binding ActualHeight, ElementName=MainCanvas}">
+                <Line.Style>
+                    <Style TargetType="Line">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding CurrentGuideline.IsEnabled, FallbackValue=False, TargetNullValue=False}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Line.Style>
+            </Line>
+
+        </Canvas>
+        
+    </Grid>
+</Window>

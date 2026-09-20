@@ -174,3 +174,7 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+
+# Exclude the developer setup tool from source control
+Ruler.CertificateManagement/
+Ruler.Generator/

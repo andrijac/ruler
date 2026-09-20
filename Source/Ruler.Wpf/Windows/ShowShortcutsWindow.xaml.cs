@@ -37,6 +37,7 @@ namespace Ruler.Wpf.Windows
             AddShortcutRow("D", "Duplicate Active Ruler", Brushes.White);
             AddShortcutRow("Esc", "Close Active Ruler", Brushes.White);
             AddShortcutRow("Ctrl + Esc", "Exit All Application Instances", Brushes.Red);
+            AddShortcutRow("Ctrl + U", "Check or Apply Updates", Brushes.Green);
 
             // --- SECTION 2: NUDGING & SIZING ---
             AddShortcutHeader("Nudging & Sizing");

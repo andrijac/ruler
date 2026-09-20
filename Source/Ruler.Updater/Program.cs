@@ -1,4 +1,5 @@
-﻿using System;
+using Ruler.Shared.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Ruler.Shared.Models;
 
 namespace Ruler.Updater
 {
@@ -47,13 +47,9 @@ namespace Ruler.Updater
                 }
                 catch { }
 
-
-
-
                 // 2. Copy only the executable file
 
                 string targetFile = Path.Combine(targetDirectory, exeName);
-
                 string targetFileConfig = Path.Combine(targetDirectory, $"{exeName}.config");
 
                 if (File.Exists(sourceRulerExe))

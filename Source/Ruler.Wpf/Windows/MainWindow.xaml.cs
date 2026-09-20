@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -40,8 +39,11 @@ namespace Ruler.Wpf.Windows
         public RulerInfo RulerData => _rulerInfo;
         public event EventHandler<RulerInfo> DuplicateRequested;
         private bool _showToolTips = true;
-        private Point? _startPoint = null;
-        private bool _isDragging = false;
+        private UpdatePackageInfo _cachedUpdatePackage;
+        private MenuItemModel _updateMenuItem;
+        private bool _isUpdateAvailable = false;
+        private string _owner = "IsaacMorris1980";
+        private string _repo = "ruler";
         public bool ShowToolTips
         {
             get => _showToolTips;
@@ -71,7 +73,7 @@ namespace Ruler.Wpf.Windows
         public ICommand ToggleMagnifierCommand { get; private set; }
         public ICommand SetSaveTypeCommand { get; private set; }
         public ICommand SetMagnficationScaleCommand { get; private set; }
-        public ICommand ToggleShowUpdateWindowCommand { get; private set; }
+        public ICommand ToggleShowUpdateWindowCommand { get; private set;}
 
         // DI Dependencies
         private readonly IRulerFactory _rulerFactory;
@@ -90,8 +92,6 @@ namespace Ruler.Wpf.Windows
             // Set size based on info
             this.Width = _rulerInfo.Width;
             this.Height = _rulerInfo.Height;
-            this.Left = _rulerInfo.Left;
-            this.Top = _rulerInfo.Top;
 
             // Setup Interop for Locking/Resize logic
             this.SourceInitialized += (s, e) =>
@@ -167,13 +167,7 @@ namespace Ruler.Wpf.Windows
         });
             ToggleOrientationCommand = new DelegateCommand(_ =>
             {
-                var currentWidth = this.Width;
-                this.Width = this.Height;
-                this.Height = currentWidth;
-                _rulerInfo.Width =(int)this.Width;
-                _rulerInfo.Height = (int)this.Height;
-                _rulerInfo.IsVertical = !_rulerInfo.IsVertical;
-
+            _rulerInfo.ToggleOrientation();
             var menuItem = MenuItems.FirstOrDefault(i => i.Header == "Is Vertical?");
                 if (menuItem != null)
                 {
@@ -202,7 +196,22 @@ namespace Ruler.Wpf.Windows
             ToggleShowGuidelineCommand = new DelegateCommand(_ =>
             {
                 _rulerInfo.Guideline.IsEnabled = !_rulerInfo.Guideline.IsEnabled;
-               
+                // If enabling the guideline and position hasn't been set yet
+                if (_rulerInfo.Guideline.IsEnabled && _rulerInfo.Guideline.Position == 0)
+                {
+                    var mousePos = Mouse.GetPosition(this);
+                    bool isMouseInside = mousePos.X >= 0 && mousePos.X <= ActualWidth &&
+                                         mousePos.Y >= 0 && mousePos.Y <= ActualHeight;
+
+                    if (isMouseInside)
+                    {
+                        _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? mousePos.Y : mousePos.X;
+                    }
+                    else
+                    {
+                        _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? ActualHeight / 2 : ActualWidth / 2;
+                    }
+                }
                 var menuItem = MenuItems.FirstOrDefault(i => i.Header == "Show Guideline");
                 if (menuItem != null)
                 {
@@ -277,9 +286,12 @@ namespace Ruler.Wpf.Windows
                         }
                     }
 
+
                     UpdateSaveTypeMenuStates();
                 }
             });
+            CheckOrApplyUpdateCommand = new DelegateCommand(async _ => await HandleUpdateClickAsync());
+           
 
             SetMagnficationScaleCommand = new DelegateCommand<object>(param =>
             {
@@ -461,7 +473,15 @@ namespace Ruler.Wpf.Windows
                 InputGestureText = "G",
                 Command = ToggleShowGuidelineCommand
             });
-             var magnificationMenu = MenuHelper.CreateRangeMenuItems(
+            _updateMenuItem = new MenuItemModel()
+            {
+                Header = "Check for Updates",
+                IsCheckable = false,
+                Command = CheckOrApplyUpdateCommand,
+                InputGestureText = "Ctrl + U"
+            };
+            MenuItems.Add(_updateMenuItem);
+            var magnificationMenu = MenuHelper.CreateRangeMenuItems(
     start: 1.5,
     end: 5.0,
     step: 0.5,
@@ -528,20 +548,20 @@ namespace Ruler.Wpf.Windows
     valueSelector: i => (double)i / 100.0, // Converts 50 to 0.5
     command: SetOpacityCommand
 );
-            MenuItems.Add( new MenuItemModel()
+            MenuItemModel opacity = new MenuItemModel()
             {
                 Header = "Opacity",
                 ToolTip = "Select i and see the different opacity commands on the short cuts page",
                 Items = opacitymenuitems
                
-            });
+            };
             var saveMenuItems = SaveTypes.None.ToMenuItems(SetSaveTypeCommand);
-           MenuItems.Add( new MenuItemModel()
+            MenuItemModel saveTypes = new MenuItemModel()
             {
                 Header = "Save Rule Data?",
                 Items = saveMenuItems
                 
-            });
+            };
 
             MenuItems.Add(new MenuItemModel
             {
@@ -632,71 +652,18 @@ namespace Ruler.Wpf.Windows
                 }
             }
         }
-        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-        {
-            base.OnMouseLeftButtonDown(e);
-
-            // Record where the click started and capture the mouse
-            _startPoint = e.GetPosition(this);
-            _isDragging = false;
-            this.CaptureMouse();
-        }
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            if (_startPoint.HasValue && !_isDragging)
-            {
-                var currentPosition = e.GetPosition(this);
-
-                double diffX = Math.Abs(currentPosition.X - _startPoint.Value.X);
-                double diffY = Math.Abs(currentPosition.Y - _startPoint.Value.Y);
-
-                if (diffX > SystemParameters.MinimumHorizontalDragDistance ||
-                    diffY > SystemParameters.MinimumVerticalDragDistance)
-                {
-                    if (e.LeftButton == MouseButtonState.Pressed)
-                    {
-                        _isDragging = true;
-
-                        // Release the capture so DragMove can take over tracking smoothly
-                        this.ReleaseMouseCapture();
-
-                        this.DragMove();
-                    }
-                }
-            }
             if (!_rulerInfo.Guideline.IsLocked)
             {
                 var position = e.GetPosition(this);
 
+                // If vertical ruler, track Y coordinate; otherwise track X coordinate
                 _rulerInfo.Guideline.Position = _rulerInfo.IsVertical ? position.Y : position.X;
-                
             }
-            this.InvalidateView();
         }
-        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
-        {
-            base.OnMouseLeftButtonUp(e);
 
-            if (_startPoint.HasValue)
-            {
-                if (!_isDragging)
-                {
-                    Debug.WriteLine($"Guidelie is enabled: {RulerData.Guideline.IsEnabled}");
-                    if (_rulerInfo?.Guideline.IsEnabled == true)
-                    {
-                        Debug.WriteLine("Locking or unlocking ruler guideline");
-                        _rulerInfo.Guideline.IsLocked = !_rulerInfo.Guideline.IsLocked;
-                    }
-                }
-            }
-
-            // Reset state and release mouse capture
-            _startPoint = null;
-            _isDragging = false;
-            this.ReleaseMouseCapture();
-            this.InvalidateView();
-        }
         private void UpdateToolTip()
         {
             _rulerInfo.ShowToolTip = !_rulerInfo.ShowToolTip;
@@ -767,6 +734,7 @@ namespace Ruler.Wpf.Windows
             drawingContext.DrawRectangle(Brushes.LightSlateGray, tickPen, rulerRect);
 
             bool isVertical = _rulerInfo?.IsVertical ?? false;
+
             if (isVertical)
             {
                 DrawVerticalRuler(drawingContext, tickPen, textBrush, fontTypeface, dpi);
@@ -775,24 +743,6 @@ namespace Ruler.Wpf.Windows
             {
                 DrawHorizontalRuler(drawingContext, tickPen, textBrush, fontTypeface, dpi);
             }
-            if (_rulerInfo?.Guideline.IsEnabled == true)
-            {
-                var guidelinePen = (_rulerInfo.Guideline.IsLocked)?new Pen(Brushes.Red, 1):new Pen(Brushes.Blue,1);
-                if (_rulerInfo.IsVertical)
-                {
-                    drawingContext.DrawLine(guidelinePen,
-                        new Point(0, _rulerInfo.Guideline.Position),
-                        new Point(ActualWidth, _rulerInfo.Guideline.Position));
-                }
-                else
-                {
-                    Debug.WriteLine($"Guideline Position: {_rulerInfo.Guideline.Position}");
-                    drawingContext.DrawLine(guidelinePen,
-                        new Point(_rulerInfo.Guideline.Position, 0),
-                        new Point(_rulerInfo.Guideline.Position, ActualHeight));
-                }
-            }
-
         }
 
         private void DrawHorizontalRuler(DrawingContext dc, Pen pen, Brush brush, Typeface typeface, double dpi)
@@ -805,8 +755,9 @@ namespace Ruler.Wpf.Windows
                 bool isMedium = (x % 25 == 0);
                 double tickLength = isMajor ? 12 : (isMedium ? 8 : 4);
 
-                dc.DrawLine(pen, new Point(x, 0.5), new Point(x, tickLength));
-                dc.DrawLine(pen, new Point(x, ActualHeight - 0.5), new Point(x, ActualHeight - tickLength));
+                dc.DrawLine(pen, new Point(x, 0), new Point(x, tickLength));
+                dc.DrawLine(pen, new Point(x, ActualHeight), new Point(x, ActualHeight - tickLength));
+
                 if (isMajor && x > 0)
                 {
                     var formattedText = new FormattedText(
@@ -868,7 +819,12 @@ namespace Ruler.Wpf.Windows
             }
         }
         // Mouse Events
-      
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (e.ChangedButton == MouseButton.Left)
+                this.DragMove(); // WPF native helper for moving windows
+        }
 
         // Implementation of IRuler
         public void SetRulerInfo(RulerInfo ruler)
@@ -942,6 +898,91 @@ namespace Ruler.Wpf.Windows
         {
             throw new NotImplementedException();
         }
+        private async Task CheckForUpdatesOnStartupAsync()
+        {
+            try
+            {
+                _cachedUpdatePackage = await UpdateService.GetLatestGitHubAssetUrlsAsync(_owner, _repo);
+
+                string currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0";
+                var (available, latestVersion) = await UpdateService.CheckForUpdateAsync(_cachedUpdatePackage.ManifestUrl, currentVersion);
+
+                if (available && _updateMenuItem != null)
+                {
+                    _isUpdateAvailable = true;
+                    _updateMenuItem.Header = $"Update Available: v{latestVersion}";
+                }
+            }
+            catch
+            {
+                // Fail silently during background checks
+            }
+        }
+
+        private async Task HandleUpdateClickAsync()
+        {
+            if (!_isUpdateAvailable)
+            {
+                // Manual check if clicked before background check finished
+                if (_updateMenuItem != null) _updateMenuItem.Header = "Checking for Updates...";
+
+                try
+                {
+                    _cachedUpdatePackage = await UpdateService.GetLatestGitHubAssetUrlsAsync(_owner, _repo);
+                    string currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0";
+                    var (available, latestVersion) = await UpdateService.CheckForUpdateAsync(_cachedUpdatePackage.ManifestUrl, currentVersion);
+
+                    if (available)
+                    {
+                        _isUpdateAvailable = true;
+                        if (_updateMenuItem != null) _updateMenuItem.Header = $"Update Available: v{latestVersion}";
+                    }
+                    else
+                    {
+                        if (_updateMenuItem != null) _updateMenuItem.Header = "Ruler is Up to Date";
+                        await Task.Delay(2000);
+                        if (_updateMenuItem != null) _updateMenuItem.Header = "Check for Updates";
+                    }
+                }
+                catch
+                {
+                    if (_updateMenuItem != null) _updateMenuItem.Header = "Check Failed";
+                    await Task.Delay(2000);
+                    if (_updateMenuItem != null) _updateMenuItem.Header = "Check for Updates";
+                }
+            }
+            else
+            {
+                // User clicked the available update -> Download and Apply
+                if (_cachedUpdatePackage == null) return;
+
+                if (_updateMenuItem != null) _updateMenuItem.Header = "Downloading Update...";
+                try
+                {
+                    string targetDir = AppDomain.CurrentDomain.BaseDirectory;
+
+                    // Downloads files, verifies cryptographic signatures via SecurityService, and stages them
+                    await UpdateService.DownloadAndApplyUpdateAsync(
+                        _cachedUpdatePackage.ManifestUrl,
+                        _cachedUpdatePackage.SigUrl,
+                        _cachedUpdatePackage.ZipUrl,
+                        targetDir
+                    );
+
+                    if (_updateMenuItem != null) _updateMenuItem.Header = "Restarting...";
+                    await Task.Delay(1000);
+
+                    Application.Current.Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    if (_updateMenuItem != null) _updateMenuItem.Header = "Update Failed";
+                    MessageBox.Show($"Update installation failed: {ex.Message}", "Security Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    await Task.Delay(3000);
+                    if (_updateMenuItem != null) _updateMenuItem.Header = "Update Available";
+                }
+            }
+        }
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
@@ -958,6 +999,15 @@ namespace Ruler.Wpf.Windows
             bool down = Keyboard.IsKeyDown(Key.Down);
             bool left = Keyboard.IsKeyDown(Key.Left);
             bool right = Keyboard.IsKeyDown(Key.Right);
+            if (isCtrl && e.Key == Key.U)
+            {
+                if (CheckOrApplyUpdateCommand.CanExecute(null))
+                {
+                    CheckOrApplyUpdateCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
+            }
 
             if (up && left) { dx = -1; dy = -1; }
             else if (up && right) { dx = 1; dy = -1; }
