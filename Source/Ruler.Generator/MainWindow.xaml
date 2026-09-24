@@ -1,0 +1,78 @@
+﻿<Window x:Class="Ruler.Generator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ruler Release Generator" Height="620" Width="600"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Release Version:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBox x:Name="TxtVersion" Text="1.0.0.0" Height="25" VerticalContentAlignment="Center"/>
+        </StackPanel>
+
+        
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="Ruler Executable Path (Ruler.exe):" FontWeight="Bold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtRulerPath" Height="25" VerticalContentAlignment="Center" Margin="0,0,5,0"/>
+                <Button Grid.Column="1" Content="Browse" Click="BrowseRuler_Click"/>
+            </Grid>
+        </StackPanel>
+
+        
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="Ruler Updater Path (Ruler.Updater.exe):" FontWeight="Bold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtUpdaterPath" Height="25" VerticalContentAlignment="Center" Margin="0,0,5,0"/>
+                <Button Grid.Column="1" Content="Browse" Click="BrowseUpdater_Click"/>
+            </Grid>
+        </StackPanel>
+
+        
+        <StackPanel Grid.Row="3" Margin="0,0,0,15">
+            <TextBlock Text="Output Destination Directory:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtOutputPath" Height="25" VerticalContentAlignment="Center" Margin="0,0,5,0"/>
+                <Button Grid.Column="1" Content="Browse" Click="BrowseOutput_Click"/>
+            </Grid>
+        </StackPanel>
+
+        <GroupBox Grid.Row="4" Header="Test Package Scenarios (Fault Injection)" Padding="10" Margin="0,0,0,15">
+            <StackPanel>
+                <RadioButton x:Name="RbValidPackage" Content="Valid Package (Normal Release)" IsChecked="True" Margin="0,0,0,5"/>
+                <RadioButton x:Name="RbFailManifest" Content="Make manifest.json fail (Tamper JSON)" Margin="0,0,0,5"/>
+                <RadioButton x:Name="RbFailZip" Content="Make Zip file fail (Corrupt package binary)" Margin="0,0,0,5"/>
+                <RadioButton x:Name="RbFailWpfExe" Content="Tamper inner Ruler.exe" Margin="0,0,0,5"/>
+                <RadioButton x:Name="RbFailUpdaterExe" Content="Tamper inner Ruler.Updater.exe" Margin="0,0,0,0"/>
+            </StackPanel>
+        </GroupBox>
+
+        
+        <Button Grid.Row="5" Content="Generate &amp; Sign Package" Height="35" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="Generate_Click" Margin="0,0,0,15"/>
+
+        
+        <TextBox x:Name="TxtLog" Grid.Row="6" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#F0F0F0"/>
+    </Grid>
+</Window>
