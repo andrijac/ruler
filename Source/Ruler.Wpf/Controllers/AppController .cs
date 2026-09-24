@@ -74,6 +74,7 @@ namespace Ruler.Wpf.Controllers
             {
                 var copy = new RulerInfo();
                 _rulerFactory.CopyValues(newInfo, copy);
+                copy.ID = Guid.NewGuid();
                 ShowRuler(copy);
             };
 

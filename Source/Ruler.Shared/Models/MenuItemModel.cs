@@ -8,13 +8,21 @@ namespace Ruler.Shared.Models
 {
     public class MenuItemModel:ModelBase
     {
-        public string Header { get; set; }
+        private string _header;
+        private bool _isChecked;
+        private string _toolTip;
+        public string Header {
+            get => _header;
+                 set=> SetProperty(ref _header, value); }
         public object Value { get; set; } // Stores the opacity (e.g., 0.5)
         public string InputGestureText { get; set; } // used to display keyboard shortcut
         public ICommand Command { get; set; }
-        public bool IsCheckable { get; set; }
-        public bool IsChecked { get; set; }
-       public string ToolTip { get; set;}
+        public bool IsCheckable { get; set; } = false;
+        public bool IsChecked { get=>_isChecked; set { SetProperty(ref _isChecked, value); } }
+        public string ToolTip { 
+            get=> _toolTip;
+            set { SetProperty(ref _toolTip, value); } 
+        }
         public ObservableCollection<MenuItemModel> Items { get; set; } = new ObservableCollection<MenuItemModel>();
 
         public MenuItemModel() { }

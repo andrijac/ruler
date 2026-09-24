@@ -11,7 +11,8 @@
        WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
-       Height="{Binding  RulerData.Height}" Width="{Binding RulerData.Width}" >
+       Height="{Binding  RulerData.Height}" Width="{Binding RulerData.Width}"
+        MouseDoubleClick="Window_MouseDoubleClick">
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type menu:MenuItemModel}" 
                                   ItemsSource="{Binding Items}">
@@ -20,7 +21,8 @@
                       IsChecked="{Binding IsChecked}"
                       Command="{Binding Command}"
                       InputGestureText="{Binding InputGestureText}"
-                      CommandParameter="{Binding}"/>
+                      CommandParameter="{Binding}"
+                      ToolTip="{Binding ToolTip}"/>
         </HierarchicalDataTemplate>
        
     </Window.Resources>

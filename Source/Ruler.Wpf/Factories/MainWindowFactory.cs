@@ -5,7 +5,10 @@ using Ruler.Shared.Models;
 using Ruler.Wpf.Windows;
 
 using System;
-using System.Windows;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Ruler.Wpf.Factories
 {
@@ -22,24 +25,21 @@ namespace Ruler.Wpf.Factories
 
         public IRuler Create(RulerInfo info, EventHandler handler = null)
         {
-            // 1. Create the WPF Window using DI
-            // 'RulerWindow' replaces your old 'MainForm'
-            var ruler = ActivatorUtilities.CreateInstance<MainWindow>(_serviceProvider, info);
+            // 1. Create the WPF Window using DI. 
+            // ActivatorUtilities passes 'info' as an explicit runtime argument 
+            // and automatically resolves IRulerFactory and IRulerRegistry from the container.
+            MainWindow ruler = ActivatorUtilities.CreateInstance<MainWindow>(_serviceProvider, info);
 
-            // 2. Wire up the event handler if provided
+            // 2. Wire up the event handler if provided using the concrete window instance
             if (handler != null)
             {
-                // WPF Windows use the 'Closed' event just like WinForms
-                if (ruler is IRuler rulers)
-                {
-                    rulers.Closed += handler;
-                }
+                ruler.Closed += handler;
             }
 
             // 3. Register the ruler in your shared registry
             _registry.Register(ruler);
 
-            return ruler;
+            return ruler; // Returns MainWindow cleanly as IRuler
         }
     }
 }
