@@ -17,11 +17,11 @@ namespace Ruler.Wpf.Windows
     /// <summary>
     /// Interaction logic for ShowShortcutsWindow.xaml
     /// </summary>
-    public partial class ShortcutWindow : Window
+    public partial class ShowShortcutsWindow : Window
     {
         private int _currentRow = 0;
 
-        public ShortcutWindow()
+        public ShowShortcutsWindow()
         {
             InitializeComponent();
             PopulateShortcuts();

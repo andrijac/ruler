@@ -15,18 +15,26 @@ namespace Ruler.Shared.Models
     {
        
         private RulerGuideline _guideline;
-       
+       private Guid _id;
+        [JsonIgnore]
+        public Guid ID
+        {
+            get => _id;
+            set { _id = value; }
+        }
+        private int _width;
         [JsonProperty("Width")]
         public int Width
         {
-            get;
-            set;
+            get => _width;
+            set =>SetProperty(ref _width, value);
         }
+        private int _height;
         [JsonProperty("Height")]
         public int Height
         {
-            get;
-            set;
+            get => _height;
+            set =>SetProperty(ref _height, value);
         }
 
         /// <summary>
@@ -91,11 +99,16 @@ namespace Ruler.Shared.Models
         }
         public RulerGuideline Guideline
         {
-            get => _guideline;
+            get { if (_guideline == null) _guideline = new RulerGuideline(); return _guideline; }
             set { _guideline = value; }
         }
+        private MagnifierState _magnifierState;
+        public MagnifierState Magnifier
+        {
+            get { if (_magnifierState == null) _magnifierState = new MagnifierState(); return _magnifierState; }
+            set { _magnifierState = value; }
+        }
 
-       
         // The property the Serializer uses
         [JsonProperty("DisplayLocation")]
         public string DisplayLocationString

@@ -9,16 +9,23 @@ namespace Ruler.Test
 	[TestClass]
 	public class RulerInfoTests
 	{
+		private readonly IRulerFactory _rulerFactory;
+
+		public RulerInfoTests(IRulerFactory rulerFactory)
+		{
+			_rulerFactory = rulerFactory;
+		}
+
 		[TestMethod]
 		public void GetDefaultRulerInfoTest()
 		{
-			Assert.AreNotEqual(null, RulerFactory.CreateDefault());
+			Assert.AreNotEqual(null, _rulerFactory.CreateDefault());
 		}
 
 		[TestMethod]
 		public void CopyIntoTest()
 		{
-			RulerInfo source = RulerFactory.CreateDefault();
+			RulerInfo source = _rulerFactory.CreateDefault();
 			source.Width = 500;
 			source.Height = 80;
 			source.Opacity = 0.90;
@@ -27,7 +34,7 @@ namespace Ruler.Test
 			source.IsVertical = true;
 			source.TopMost = true;
           
-			RulerInfo target = RulerFactory.CreateDefault();
+			RulerInfo target = _rulerFactory.CreateDefault();
 			target.Width = 200;
 			target.Height = 50;
 			target.Opacity = 0.50;
@@ -37,7 +44,7 @@ namespace Ruler.Test
 			target.TopMost = false;
 
 
-			RulerFactory.CopyValues(source, target);
+			_rulerFactory.CopyValues(source, target);
 
 			var properties = Helper.GetPublicPropertiesFromInterface(typeof(IRulerInfo));
 

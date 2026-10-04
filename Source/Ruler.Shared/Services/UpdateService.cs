@@ -27,7 +27,7 @@ namespace Ruler.Shared.Services
         /// </summary>
         public static async Task<UpdatePackageInfo> GetLatestGitHubAssetUrlsAsync(string repoOwner, string repoName)
         {
-            string apiUrl = $"https://api.github.com/repos/{repoOwner}/{repoName}/releases/latest";r
+            string apiUrl = $"https://api.github.com/repos/{repoOwner}/{repoName}/releases/latest";
             // GitHub API requires a custom User-Agent header or it will return a 403 Forbidden response
             if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
