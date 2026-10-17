@@ -58,7 +58,13 @@
                          GlassFrameThickness="0"/>
     </shell:WindowChrome.WindowChrome>
     <Grid>
-       <!-- Enable native window resizing borders for borderless windows -->
-   
+        <Border x:Name="InfoOverlay" 
+            HorizontalAlignment="Left" VerticalAlignment="Top" 
+            Margin="0,0,0,0"
+            Background="#F0F8F8F8" BorderBrush="DarkGray" BorderThickness="0.5" 
+            CornerRadius="3" Padding="6,3"
+            Visibility="Collapsed">
+            <StackPanel x:Name="InfoContentPanel" Orientation="Horizontal" VerticalAlignment="Center"/>
+        </Border>
     </Grid>
 </Window>

@@ -88,7 +88,9 @@
     <Compile Include="Converters\OpacityMatchConverter.cs" />
     <Compile Include="Factories\MainWindowFactory.cs" />
     <Compile Include="Managers\WindowManager.cs" />
-    <Compile Include="Services\WpfPersistanceService.cs" />
+    <Compile Include="Services\MonitorPersistanceService.cs" />
+    <Compile Include="Services\MonitorTrackerService.cs" />
+    <Compile Include="Services\WpfRulerPersistanceService.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
@@ -104,6 +106,9 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\NativeHelpers.cs" />
+    <Compile Include="Windows\CalibrationWindow.xaml.cs">
+      <DependentUpon>CalibrationWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\SetSizeWindow.xaml.cs">
       <DependentUpon>SetSizeWindow.xaml</DependentUpon>
     </Compile>
@@ -120,6 +125,10 @@
     <Page Include="Windows\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Windows\CalibrationWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\SetSizeWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

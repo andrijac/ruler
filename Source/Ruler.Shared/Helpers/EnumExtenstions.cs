@@ -46,7 +46,8 @@ namespace Ruler.Shared.Helpers
                     Header = enumValue.GetDisplayName(), // Calls your previous extension method
                     Value = enumValue,
                     Command = command,
-                    IsCheckable = true
+                    IsCheckable = true,
+                    
                 });
             }
 

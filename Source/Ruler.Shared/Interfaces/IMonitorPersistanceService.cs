@@ -8,11 +8,10 @@ using System.Threading.Tasks;
 
 namespace Ruler.Shared.Interfaces
 {
-    public interface IPersistanceService
+    public interface IMonitorPersistenceService
     {
-        List<RulerInfo> LoadAll();
-        void SaveAll(IEnumerable<RulerInfo> rulers);
-        void Update(RulerInfo info);
+        Dictionary<string, MonitorCalibrationProfile> LoadProfiles();
+        void SaveProfiles(Dictionary<string, MonitorCalibrationProfile> profiles);
         void Reset();
     }
 }

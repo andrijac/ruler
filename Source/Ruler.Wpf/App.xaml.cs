@@ -50,14 +50,18 @@ namespace Ruler.Wpf
             services.AddSingleton<IRulerSerializer, RulerSerializer>();
             services.AddSingleton<IRulerInfoPreprocessor, RulerInfoPreprocessor>();
             services.AddSingleton<IRulerRegistry, RulerRegistry>();
+            services.AddSingleton<MonitorSerializer>();
 
             // 2. WPF-specific Services (Converted from WinForms versions)
-            services.AddSingleton<IPersistanceService, WpfPersistenceService>();
+            services.AddSingleton<IRulerPersistanceService, WpfRulerPersistenceService>();
+            services.AddSingleton<IMonitorPersistenceService, MonitorPersistenceService>();
 
             // 3. Factories (Converted for WPF)
             services.AddTransient<IRulerFactory, RulerFactory>();
             services.AddSingleton<IMainFormFactory, RulerWindowFactory>();
 
+            // 3.5 . Monitor Registry
+            services.AddSingleton<IMonitorRegistry, MonitorRegistry>();
             // 4. Controller & UI
             services.AddSingleton<AppController>();
             services.AddTransient<MainWindow>();
