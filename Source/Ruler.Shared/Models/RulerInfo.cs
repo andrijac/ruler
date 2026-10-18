@@ -36,7 +36,13 @@ namespace Ruler.Shared.Models
             get => _height;
             set =>SetProperty(ref _height, value);
         }
-
+        private string _lastDeviceName;
+        [JsonProperty("LastDeviceName")]
+        public string LastDeviceName
+        {
+            get => _lastDeviceName;
+            set => SetProperty(ref _lastDeviceName, value);
+        }
         /// <summary>
         /// TODO
         /// </summary>
@@ -107,6 +113,16 @@ namespace Ruler.Shared.Models
         {
             get { if (_magnifierState == null) _magnifierState = new MagnifierState(); return _magnifierState; }
             set { _magnifierState = value; }
+        }
+        private RulerUnit _rulerUnit;
+        public RulerUnit RulerUnits
+        {
+            get { if (!Enum.TryParse(_rulerUnit.ToString(), out RulerUnit unit))
+                {
+                    return RulerUnit.Pixels;
+                }
+                 return unit; }
+            set { SetProperty(ref _rulerUnit, value); }
         }
 
         // The property the Serializer uses

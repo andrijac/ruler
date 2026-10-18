@@ -13,13 +13,13 @@ namespace Ruler.Wpf.Controllers
     public class AppController
     {
         private readonly IRulerRegistry _registry;
-        private readonly IPersistanceService _settings;
+        private readonly IRulerPersistanceService _settings;
         private readonly IRulerFactory _rulerFactory;
         private readonly IMainFormFactory _mainFormFactory;
 
         public AppController(
             IRulerRegistry registry,
-            IPersistanceService settings,
+            IRulerPersistanceService settings,
             IRulerFactory factory,
             IMainFormFactory mainFormFactory)
         {

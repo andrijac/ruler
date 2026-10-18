@@ -13,14 +13,14 @@ using System.Threading.Tasks;
 
 namespace Ruler.Wpf.Services
 {
-    public class WpfPersistenceService : IPersistanceService
+    public class WpfRulerPersistenceService : IRulerPersistanceService
     {
         private const string SettingKey = "RulerData";
         private readonly IRulerInfoPreprocessor _processor;
         private readonly IRulerSerializer _settingsService;
         private readonly IRulerRegistry _registry;
 
-        public WpfPersistenceService(
+        public WpfRulerPersistenceService(
             IRulerInfoPreprocessor rulerInfoPreprocessor,
             IRulerSerializer settings,
             IRulerRegistry registry)

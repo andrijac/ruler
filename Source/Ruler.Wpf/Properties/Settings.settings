@@ -5,5 +5,11 @@
     <Setting Name="RulerCollection" Type="System.String" Scope="User">
       <Value Profile="(Default)">"[]"</Value>
     </Setting>
+    <Setting Name="RulerData" Type="System.String" Scope="User">
+      <Value Profile="(Default)">"[]"</Value>
+    </Setting>
+    <Setting Name="MonitorData" Type="System.String" Scope="User">
+      <Value Profile="(Default)">"[]"</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
