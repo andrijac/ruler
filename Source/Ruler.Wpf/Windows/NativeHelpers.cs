@@ -78,5 +78,27 @@ namespace Ruler.Wpf.Windows
         [DllImport("magnification.dll", SetLastError = true, EntryPoint = "MagSetLensUseBitmapSmoothing")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool MagSetLensUseBitmapSmoothing(IntPtr hwnd, [MarshalAs(UnmanagedType.Bool)] bool bUseSmoothing);
+        // Monitor Tracking Constants
+        public const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+        private const int CCHDEVICENAME = 32;
+
+        // Monitor Tracking Structs (reusing your existing RECT struct)
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct MONITORINFOEX
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHDEVICENAME)]
+            public string szDevice;
+        }
+
+        // Monitor Tracking P/Invoke Imports
+        [DllImport("user32.dll")]
+        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
     }
 }
