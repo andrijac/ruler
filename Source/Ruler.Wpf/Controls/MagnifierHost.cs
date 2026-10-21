@@ -6,7 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Interop;
 
-namespace Ruler.Wpf.Windows
+using Ruler.Wpf.Services;
+
+namespace Ruler.Wpf.Controls
 {
     public class MagnifierHost : HwndHost
     {
