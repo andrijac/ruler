@@ -12,6 +12,7 @@
         AllowsTransparency="True"
         Background="Transparent"
        Height="{Binding  RulerData.Height}" Width="{Binding RulerData.Width}"
+        Topmost="{Binding RulerData.TopMost}"
         MouseDoubleClick="Window_MouseDoubleClick">
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type menu:MenuItemModel}" 
