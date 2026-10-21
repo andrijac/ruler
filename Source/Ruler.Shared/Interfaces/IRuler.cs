@@ -11,7 +11,7 @@ namespace Ruler.Shared.Interfaces
     public interface IRuler:IDisposable
     {
         // Data Access
-        RulerInfo RulerData { get; }
+        RulerInfo RulerData { get; set; }
         event EventHandler<RulerInfo> DuplicateRequested;
 
         // Window Management
@@ -28,7 +28,6 @@ namespace Ruler.Shared.Interfaces
         // User Commands
         void ShowAbout();
         void ShowShortcuts();
-        Task CheckForUpdatesAsync();
 
         // Lifecycle Events
         event EventHandler Closed;

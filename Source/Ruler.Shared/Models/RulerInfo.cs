@@ -13,161 +13,93 @@ namespace Ruler.Shared.Models
 {
     public class RulerInfo : ModelBase
     {
-       
-        private RulerGuideline _guideline;
-       private Guid _id;
         [JsonIgnore]
-        public Guid ID
-        {
-            get => _id;
-            set { _id = value; }
-        }
-        private int _width;
+        public Guid ID { get; set; } = Guid.NewGuid();
+
+        private int _width = 400;
         [JsonProperty("Width")]
         public int Width
         {
             get => _width;
-            set =>SetProperty(ref _width, value);
+            set => SetProperty(ref _width, value);
         }
-        private int _height;
+
+        private int _height = 75;
         [JsonProperty("Height")]
         public int Height
         {
             get => _height;
-            set =>SetProperty(ref _height, value);
+            set => SetProperty(ref _height, value);
         }
-        private string _lastDeviceName;
+
+        private string _lastDeviceName = string.Empty;
         [JsonProperty("LastDeviceName")]
         public string LastDeviceName
         {
             get => _lastDeviceName;
             set => SetProperty(ref _lastDeviceName, value);
         }
-        /// <summary>
-        /// TODO
-        /// </summary>
+
         [JsonProperty("IsVertical")]
-        public bool IsVertical
-        {
-            get;
-            set;
-        }
-        
+        public bool IsVertical { get; set; }
+
         [JsonProperty("Opacity")]
-        public double Opacity
-        {
-            get;
-            set;
-        }
+        public double Opacity { get; set; } = 0.60;
 
-        /// <summary>
-        /// TODO
-        /// </summary>
         [JsonProperty("ShowToolTip")]
-        public bool ShowToolTip
-        {
-            get;
-            set;
-        }
+        public bool ShowToolTip { get; set; }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
         [JsonProperty("IsLocked")]
-        public bool IsLocked
-        {
-            get;
-            set;
-        }
+        public bool IsLocked { get; set; }
 
         [JsonProperty("TopMost")]
-        public bool TopMost
-        {
-            get;
-            set;
-        }
+        public bool TopMost { get; set; } = true;
+
         [JsonProperty("Top")]
-        public int Top
-        {
-            get;
-            set;
-        }
+        public int Top { get; set; }
+
         [JsonProperty("Left")]
-        public int Left
-        {    get;
-            set;
-        }
+        public int Left { get; set; }
+
         [JsonProperty("SaveType")]
-        public SaveTypes SaveType
-        {
-            get;
-            set;
-        }
-        public RulerGuideline Guideline
-        {
-            get { if (_guideline == null) _guideline = new RulerGuideline(); return _guideline; }
-            set { _guideline = value; }
-        }
-        private MagnifierState _magnifierState;
-        public MagnifierState Magnifier
-        {
-            get { if (_magnifierState == null) _magnifierState = new MagnifierState(); return _magnifierState; }
-            set { _magnifierState = value; }
-        }
-        private RulerUnit _rulerUnit;
+        public SaveTypes SaveType { get; set; } = SaveTypes.None;
+
+        [JsonProperty("Guideline")]
+        public RulerGuideline Guideline { get; set; } = new RulerGuideline();
+
+        [JsonProperty("Magnifier")]
+        public MagnifierState Magnifier { get; set; } = new MagnifierState();
+
+        private RulerUnit _rulerUnit = RulerUnit.Pixels;
+        [JsonProperty("RulerUnits")]
         public RulerUnit RulerUnits
         {
-            get { if (!Enum.TryParse(_rulerUnit.ToString(), out RulerUnit unit))
-                {
-                    return RulerUnit.Pixels;
-                }
-                 return unit; }
-            set { SetProperty(ref _rulerUnit, value); }
+            get => _rulerUnit;
+            set => SetProperty(ref _rulerUnit, value);
         }
 
-        // The property the Serializer uses
-        [JsonProperty("DisplayLocation")]
-        public string DisplayLocationString
-        {
-            get => $"{Left},{Top}"; 
-            set
-            {
-                var parts = value.Split(',');
-                if (parts.Length == 2 &&
-                    int.TryParse(parts[0], out int x) &&
-                    int.TryParse(parts[1], out int y))
-                {
-                    Left = x;
-                    Top = y;
-                }
-            }
-        }
         [JsonIgnore]
-       public Orientation RulerOrientation
-        {
-            get => IsVertical ? Orientation.Vertical : Orientation.Horizontal;
-        }
+        public Orientation RulerOrientation => IsVertical ? Orientation.Vertical : Orientation.Horizontal;
+
         public override string ToString()
         {
             return $"[RulerInfo Details]" + Environment.NewLine +
-                   $"  IsVertical: {IsVertical})" + Environment.NewLine +
+                   $"  IsVertical: {IsVertical}" + Environment.NewLine +
                    $"  Size: {Width}x{Height}" + Environment.NewLine +
-                   $"  Location: {Left},{Top} (Display: {DisplayLocationString})" + Environment.NewLine +
+                   $"  Location: {Left},{Top}" + Environment.NewLine +
                    $"  Opacity: {Opacity}" + Environment.NewLine +
                    $"  TopMost: {TopMost} | ShowToolTip: {ShowToolTip}" + Environment.NewLine +
                    $"  IsLocked: {IsLocked}" + Environment.NewLine +
-                   $"  SaveType: {SaveType}" +
-                   $"  Guideline:  {Guideline}"; ;
+                   $"  SaveType: {SaveType}" + Environment.NewLine +
+                   $"  Guideline: {Guideline}";
         }
+
         public void ToggleOrientation()
         {
-            Console.WriteLine(this.ToString());
             IsVertical = !IsVertical;
-            var oldWidth = Width;
+            int oldWidth = Width;
             Width = Height;
             Height = oldWidth;
-            Console.WriteLine("Orientation toggled. New state:");
-            Console.WriteLine(this.ToString());
         }
     }
 

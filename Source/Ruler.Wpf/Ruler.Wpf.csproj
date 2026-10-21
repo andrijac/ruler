@@ -88,6 +88,7 @@
     <Compile Include="Converters\OpacityMatchConverter.cs" />
     <Compile Include="Factories\MainWindowFactory.cs" />
     <Compile Include="Managers\WindowManager.cs" />
+    <Compile Include="Models\ShortcutItem.cs" />
     <Compile Include="Services\MonitorPersistanceService.cs" />
     <Compile Include="Services\MonitorTrackerService.cs" />
     <Compile Include="Services\WpfRulerPersistanceService.cs" />
@@ -98,14 +99,20 @@
     </Compile>
     <Compile Include="Commands\RelayCommand.cs" />
     <Compile Include="Converters\OpacityToPercentConverter.cs" />
-    <Compile Include="Windows\MagnifierHost.cs" />
+    <Compile Include="ViewModels\CalibrationViewModel.cs" />
+    <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\SetSizeViewModel.cs" />
+    <Compile Include="ViewModels\ShowShortcutsViewModel.cs" />
+    <Compile Include="ViewModels\UpdateViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Controls\MagnifierHost.cs" />
     <Compile Include="Windows\MagnifierWindow.xaml.cs">
       <DependentUpon>MagnifierWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Windows\NativeHelpers.cs" />
+    <Compile Include="Services\NativeHelpers.cs" />
     <Compile Include="Windows\CalibrationWindow.xaml.cs">
       <DependentUpon>CalibrationWindow.xaml</DependentUpon>
     </Compile>

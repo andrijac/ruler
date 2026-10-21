@@ -6,15 +6,17 @@
         WindowStartupLocation="CenterOwner"
         Background="#1E1E1E" 
         ResizeMode="NoResize"
-        ShowInTaskbar="False"
-        PreviewKeyDown="Window_PreviewKeyDown">
+        ShowInTaskbar="False">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid x:Name="ShortcutGrid" Margin="25,15,25,25">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="40*"/>
-                <ColumnDefinition Width="60*"/>
-            </Grid.ColumnDefinitions>
-        </Grid>
+        <ItemsControl ItemsSource="{Binding Shortcuts}" Margin="25,15,25,25">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <ContentControl>
+                        <!-- Style selector or data trigger can separate Headers from Rows -->
+                    </ContentControl>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </ScrollViewer>
 </Window>
