@@ -51,6 +51,15 @@ namespace Ruler.Wpf.Services
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
             public float[] v;
         }
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+        [DllImport("gdi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DeleteObject(IntPtr hObject);
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         public struct MONITORINFOEX

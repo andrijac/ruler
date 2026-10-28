@@ -1,0 +1,28 @@
+﻿<Window x:Class="Ruler.Wpf.Windows.RulerTooltipWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RulerTooltipWindow" 
+        Height="Auto" Width="Auto"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        IsHitTestVisible="False"
+        SizeToContent="WidthAndHeight">
+    <Border Background="#E0FFFFFF" BorderBrush="DarkGray" BorderThickness="1" CornerRadius="3" Padding="6,4">
+        <StackPanel Orientation="Vertical">
+            <!-- Size Display -->
+            <StackPanel Orientation="Horizontal" Margin="0,1">
+                <TextBlock Text="Size: " FontWeight="SemiBold" FontSize="11" Foreground="DarkSlateGray"/>
+                <TextBlock x:Name="SizeText" FontSize="11" Foreground="Black" Text="0 x 0"/>
+            </StackPanel>
+
+            <!-- Guideline Position Display -->
+            <StackPanel x:Name="GuidelinePanel" Orientation="Horizontal" Margin="0,1">
+                <TextBlock Text="Guide: " FontWeight="SemiBold" FontSize="11" Foreground="DarkSlateGray"/>
+                <TextBlock x:Name="GuidelineText" FontSize="11" Foreground="Black" Text="0.0"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
