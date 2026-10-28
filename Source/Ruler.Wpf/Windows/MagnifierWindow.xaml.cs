@@ -1,10 +1,14 @@
 ﻿using Ruler.Shared.Models;
 using Ruler.Shared.Services;
+using Ruler.Wpf.Controls;
+using Ruler.Wpf.Services;
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -20,8 +24,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using Ruler.Wpf.Controls;
-using Ruler.Wpf.Services;
+
+using Brushes = System.Windows.Media.Brushes;
+using Color = System.Drawing.Color;
+using Pen = System.Windows.Media.Pen;
 
 namespace Ruler.Wpf.Windows
 {
@@ -30,181 +36,171 @@ namespace Ruler.Wpf.Windows
     /// </summary>
     public partial class MagnifierWindow : Window
     {
-        private readonly RulerInfo _rulerData;
-        private readonly MagnifierState _state;
-        private MagnifierHost _magnifierHost;
+        private BitmapSource _capturedSnapshot;
+        private double _rulerWidthPhysical;
+        private double _rulerHeightPhysical;
+        private System.Windows.Point _rulerScreenOriginPhysical;
+        private double _zoomFactor = 2.0;
+        private bool _isNearEdge = false;
 
-        private readonly double _windowWidth = 150.0;
-        private readonly double _windowHeight;
-
-        private int _lastCursorX = -1;
-        private int _lastCursorY = -1;
-
-        public MagnifierWindow(RulerInfo rulerData)
+        public MagnifierWindow()
         {
             InitializeComponent();
-
-            _rulerData = rulerData ?? throw new ArgumentNullException(nameof(rulerData));
-            _state = _rulerData.Magnifier;
-
-            _windowHeight = _rulerData.Height / 2.0;
-
-            this.Width = _windowWidth;
-            this.Height = _windowHeight;
-
-            var dpi = VisualTreeHelper.GetDpi(this);
-            int physicalWidth = (int)(_windowWidth * dpi.DpiScaleX);
-            int physicalHeight = (int)(_windowHeight * dpi.DpiScaleY);
-
-            _magnifierHost = new MagnifierHost(physicalWidth, physicalHeight);
-            HostContainer.Children.Add(_magnifierHost);
-
-            float initialZoom = (float)(_state.ZoomLevel > 0 ? _state.ZoomLevel : 2.0f);
-            SetZoom(initialZoom);
-            if (_magnifierHost?.MagnifierHandle != IntPtr.Zero)
-            {
-                NativeHelpers.MagSetLensUseBitmapSmoothing(_magnifierHost.MagnifierHandle, false);
-            }
-            if (_state is INotifyPropertyChanged inpc)
-            {
-                inpc.PropertyChanged += OnMagnifierStatePropertyChanged;
-            }
-
-            CompositionTarget.Rendering += OnRendering;
-            this.Closed += (s, e) =>
-            {
-                CompositionTarget.Rendering -= OnRendering;
-                if (_state is INotifyPropertyChanged notify)
-                {
-                    notify.PropertyChanged -= OnMagnifierStatePropertyChanged;
-                }
-            };
-        }
-
-        private void OnMagnifierStatePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(MagnifierState.ZoomLevel))
-            {
-                // Force an immediate refresh when zoom changes, even if the mouse is stationary
-                UpdateMagnifierPositionAndContent(forceUpdate: true);
-            }
         }
 
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
 
+            // Make window click-through using NativeHelpers constants
             IntPtr hwnd = new WindowInteropHelper(this).Handle;
-
             int extendedStyle = NativeHelpers.GetWindowLong(hwnd, NativeHelpers.GWL_EXSTYLE);
-            NativeHelpers.SetWindowLong(hwnd, NativeHelpers.GWL_EXSTYLE, extendedStyle | NativeHelpers.WS_EX_TRANSPARENT | NativeHelpers.WS_EX_LAYERED);
-
-            NativeHelpers.GetClientRect(hwnd, out NativeHelpers.RECT clientRect);
-
-            IntPtr hRgn = NativeHelpers.CreateEllipticRgn(0, 0, clientRect.Right, clientRect.Bottom);
-            NativeHelpers.SetWindowRgn(hwnd, hRgn, true);
+            NativeHelpers.SetWindowLong(hwnd, NativeHelpers.GWL_EXSTYLE, extendedStyle | NativeHelpers.WS_EX_TRANSPARENT);
         }
 
-        private void OnRendering(object sender, EventArgs e)
+        public void UpdateMagnifier(System.Windows.Point mouseScreenPosPhysical, double rulerWidthPhysical, double rulerHeightPhysical, System.Windows.Point rulerScreenOriginPhysical, double zoomFactor = 2.0)
         {
-            UpdateMagnifierPositionAndContent(forceUpdate: false);
-        }
+            if (rulerWidthPhysical <= 0 || rulerHeightPhysical <= 0) return;
 
-        private void UpdateMagnifierPositionAndContent(bool forceUpdate)
+            _rulerWidthPhysical = rulerWidthPhysical;
+            _rulerHeightPhysical = rulerHeightPhysical;
+            _rulerScreenOriginPhysical = rulerScreenOriginPhysical;
+            _zoomFactor = zoomFactor;
+
+            var dpi = VisualTreeHelper.GetDpi(this);
+
+            // Offset the window from the cursor so it doesn't overlap the capture zone
+            Left = (mouseScreenPosPhysical.X / dpi.DpiScaleX) + 20;
+            Top = (mouseScreenPosPhysical.Y / dpi.DpiScaleY) - Height - 20;
+
+            _capturedSnapshot = CaptureRegionWithEdgeOverflow(mouseScreenPosPhysical, (int)Width, 50, _zoomFactor);
+            InvalidateVisual();
+        }
+        private BitmapSource CaptureRegionWithEdgeOverflow(System.Windows.Point mousePosPhysical, int windowSize, int overflow, double zoomFactor)
         {
-            if (NativeHelpers.GetCursorPos(out NativeHelpers.POINT cursorPoint))
+            double sourceCaptureSize = windowSize / zoomFactor;
+            double halfSourceSize = sourceCaptureSize / 2.0;
+
+            double localX = mousePosPhysical.X - _rulerScreenOriginPhysical.X;
+            double localY = mousePosPhysical.Y - _rulerScreenOriginPhysical.Y;
+
+            double desiredLeft = localX - halfSourceSize;
+            double desiredTop = localY - halfSourceSize;
+            double desiredRight = desiredLeft + sourceCaptureSize;
+            double desiredBottom = desiredTop + sourceCaptureSize;
+
+            bool isNearOrOverRuler = !(desiredRight < -overflow || desiredLeft > _rulerWidthPhysical + overflow ||
+                                       desiredBottom < -overflow || desiredTop > _rulerHeightPhysical + overflow);
+
+            int actualWidth, actualHeight;
+            int srcX, srcY;
+            int destX = 0, destY = 0;
+
+            if (isNearOrOverRuler)
             {
-                var dpi = VisualTreeHelper.GetDpi(this);
-                double dpiX = dpi.DpiScaleX;
-                double dpiY = dpi.DpiScaleY;
+                _isNearEdge = (desiredLeft < 0 || desiredTop < 0 || desiredRight > _rulerWidthPhysical || desiredBottom > _rulerHeightPhysical);
 
-                // Check bounds against owner window using physical pixels + buffer
-                if (Owner is Window ownerWindow)
+                double targetLeft = Math.Max(-overflow, desiredLeft);
+                double targetTop = Math.Max(-overflow, desiredTop);
+                double targetRight = Math.Min(_rulerWidthPhysical + overflow, desiredRight);
+                double targetBottom = Math.Min(_rulerHeightPhysical + overflow, desiredBottom);
+
+                actualWidth = Math.Max(0, (int)Math.Round(targetRight - targetLeft));
+                actualHeight = Math.Max(0, (int)Math.Round(targetBottom - targetTop));
+
+                srcX = (int)Math.Round(_rulerScreenOriginPhysical.X + targetLeft);
+                srcY = (int)Math.Round(_rulerScreenOriginPhysical.Y + targetTop);
+
+                destX = (int)Math.Round((targetLeft - desiredLeft) * zoomFactor);
+                destY = (int)Math.Round((targetTop - desiredTop) * zoomFactor);
+            }
+            else
+            {
+                _isNearEdge = false;
+                actualWidth = (int)Math.Round(sourceCaptureSize);
+                actualHeight = (int)Math.Round(sourceCaptureSize);
+
+                srcX = (int)Math.Round(mousePosPhysical.X - halfSourceSize);
+                srcY = (int)Math.Round(mousePosPhysical.Y - halfSourceSize);
+                destX = 0;
+                destY = 0;
+            }
+
+            using (var finalBitmap = new Bitmap(windowSize, windowSize, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            {
+                using (var g = Graphics.FromImage(finalBitmap))
                 {
-                    var ownerDpi = VisualTreeHelper.GetDpi(ownerWindow);
-                    double ownerLeftPx = ownerWindow.Left * ownerDpi.DpiScaleX;
-                    double ownerTopPx = ownerWindow.Top * ownerDpi.DpiScaleY;
-                    double ownerWidthPx = ownerWindow.ActualWidth * ownerDpi.DpiScaleX;
-                    double ownerHeightPx = ownerWindow.ActualHeight * ownerDpi.DpiScaleY;
+                    g.Clear(Color.FromArgb(240, 240, 240));
 
-                    double bufferPx = 30.0;
-                    bool isNearRuler = cursorPoint.X >= (ownerLeftPx - bufferPx) &&
-                                       cursorPoint.X <= (ownerLeftPx + ownerWidthPx + bufferPx) &&
-                                       cursorPoint.Y >= (ownerTopPx - bufferPx) &&
-                                       cursorPoint.Y <= (ownerTopPx + ownerHeightPx + bufferPx);
-
-                    if (!isNearRuler)
+                    if (actualWidth > 0 && actualHeight > 0)
                     {
-                        if (this.Visibility != Visibility.Hidden)
+                        using (var sourceBitmap = new Bitmap(actualWidth, actualHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
                         {
-                            this.Visibility = Visibility.Hidden;
-                            _lastCursorX = -1;
-                            _lastCursorY = -1;
+                            using (var sg = Graphics.FromImage(sourceBitmap))
+                            {
+                                sg.CopyFromScreen(srcX, srcY, 0, 0, new System.Drawing.Size(actualWidth, actualHeight), CopyPixelOperation.SourceCopy);
+                            }
+
+                            int destWidth = (int)Math.Round(actualWidth * zoomFactor);
+                            int destHeight = (int)Math.Round(actualHeight * zoomFactor);
+
+                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+
+                            g.DrawImage(sourceBitmap,
+                                new System.Drawing.Rectangle(destX, destY, destWidth, destHeight),
+                                new System.Drawing.Rectangle(0, 0, actualWidth, actualHeight),
+                                GraphicsUnit.Pixel);
                         }
-                        return;
                     }
                 }
 
-                // Skip if mouse hasn't moved and we aren't forcing an update (prevents jitter)
-                if (!forceUpdate && cursorPoint.X == _lastCursorX && cursorPoint.Y == _lastCursorY)
+                // Convert HBitmap to WPF BitmapSource and safely release the GDI handle
+                IntPtr hBitmap = finalBitmap.GetHbitmap();
+                try
                 {
-                    return;
+                    var bitmapSource = Imaging.CreateBitmapSourceFromHBitmap(
+                        hBitmap,
+                        IntPtr.Zero,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                    bitmapSource.Freeze();
+                    return bitmapSource;
                 }
-
-                _lastCursorX = cursorPoint.X;
-                _lastCursorY = cursorPoint.Y;
-
-                this.Visibility = Visibility.Visible;
-
-                // Center WPF window on mouse cursor
-                this.Left = (cursorPoint.X / dpiX) - (_windowWidth / 2);
-                this.Top = (cursorPoint.Y / dpiY) - (_windowHeight / 2);
-
-                // Update zoom transform and source rectangle
-                if (_magnifierHost?.MagnifierHandle != IntPtr.Zero)
+                finally
                 {
-                    float currentZoom = (float)(_state.ZoomLevel > 0 ? _state.ZoomLevel : 2.0f);
-                    Debug.WriteLine($"Current Zoom: {currentZoom}");
-                    var matrix = new NativeHelpers.MAGTRANSFORM { v = new float[9] };
-                    matrix.v[0] = currentZoom;
-                    matrix.v[4] = currentZoom;
-                    matrix.v[8] = 1.0f;
-                    NativeHelpers.MagSetWindowTransform(_magnifierHost.MagnifierHandle, ref matrix);
-
-                    int physicalWidth = (int)(_windowWidth * dpiX);
-                    int physicalHeight = (int)(_windowHeight * dpiY);
-
-                    int sourceWidth = (int)(physicalWidth / currentZoom);
-                    int sourceHeight = (int)(physicalHeight / currentZoom);
-
-                    int contentOffsetX = 0;
-                    int captureCenterX = cursorPoint.X + contentOffsetX;
-                    int captureCenterY = cursorPoint.Y;
-
-                    var srcRect = new NativeHelpers.RECT
-                    {
-                        Left = captureCenterX - (sourceWidth / 2),
-                        Top = captureCenterY - (sourceHeight / 2),
-                        Right = captureCenterX + (sourceWidth / 2),
-                        Bottom = captureCenterY + (sourceHeight / 2)
-                    };
-
-                    NativeHelpers.MagSetWindowSource(_magnifierHost.MagnifierHandle, srcRect);
+                    NativeHelpers.DeleteObject(hBitmap);
                 }
             }
         }
-
-        public void SetZoom(float zoomFactor)
+        protected override void OnRender(DrawingContext dc)
         {
-            if (_magnifierHost?.MagnifierHandle != IntPtr.Zero)
-            {
-                var matrix = new NativeHelpers.MAGTRANSFORM { v = new float[9] };
-                matrix.v[0] = zoomFactor;
-                matrix.v[4] = zoomFactor;
-                matrix.v[8] = 1.0f;
+            base.OnRender(dc);
 
-                NativeHelpers.MagSetWindowTransform(_magnifierHost.MagnifierHandle, ref matrix);
+            if (_capturedSnapshot != null)
+            {
+                RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.NearestNeighbor);
+                dc.DrawImage(_capturedSnapshot, new Rect(0, 0, ActualWidth, ActualHeight));
             }
+
+            DrawMagnifierOverlay(dc);
+        }
+
+        private void DrawMagnifierOverlay(DrawingContext dc)
+        {
+            double centerX = ActualWidth / 2;
+            double centerY = ActualHeight / 2;
+
+            var crosshairPen = new Pen(Brushes.Red, 1);
+            dc.DrawLine(crosshairPen, new System.Windows.Point(centerX - 12, centerY), new System.Windows.Point(centerX + 12, centerY));
+            dc.DrawLine(crosshairPen, new System.Windows.Point(centerX, centerY - 12), new System.Windows.Point(centerX, centerY + 12));
+
+            //if (_isNearEdge)
+            //{
+            //    var edgePen = new Pen(Brushes.OrangeRed, 2);
+            //    edgePen.DashStyle = DashStyles.Dash;
+            //    dc.DrawRectangle(null, edgePen, new Rect(6, 6, ActualWidth - 12, ActualHeight - 12));
+            //}
         }
     }
 

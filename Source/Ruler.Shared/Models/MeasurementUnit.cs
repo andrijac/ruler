@@ -68,7 +68,8 @@ namespace Ruler.Shared.Models
         /// Parameters: (dc, typeface, brush, pen, x, centerY, u, dpi, lastLabelX, actualHeight)
         /// </summary>
         public Action<DrawingContext, Typeface, Brush, Pen, double, double, double, double, double, double> CustomDraw { get; set; }
-
+        public bool SupportsFractions { get; set; } = false;
+        public Func<double, string> FormatFraction { get; set; }
 
         // ==========================================
         // PREDEFINED STANDARD UNITS REGISTRY
@@ -115,38 +116,6 @@ namespace Ruler.Shared.Models
                 return 4.0;
             }
         };
-
-        private static int GCD(int a, int b) => b == 0 ? a : GCD(b, a % b);
-
-        public static void DrawFractionStack(DrawingContext dc, Typeface typeface, Brush brush, Pen pen,
-          double x, double centerY, int whole, int num, int den, double dpi, string abbreviation = "in")
-        {
-            double currentX = x;
-
-            // 1. Draw whole number if greater than 0
-            if (whole > 0)
-            {
-                var wholeText = new FormattedText(whole.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 9, brush, dpi);
-                dc.DrawText(wholeText, new Point(currentX - (wholeText.Width / 2), centerY - (wholeText.Height / 2)));
-                currentX += (wholeText.Width / 2) + 6; // Shift right for the fraction stack
-            }
-
-            // 2. Measure numerator and denominator for the stack
-            var numText = new FormattedText(num.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 6, brush, dpi);
-            var denText = new FormattedText(den.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 6, brush, dpi);
-            double maxWidth = Math.Max(numText.Width, denText.Width);
-
-            // Draw fraction stack centered at currentX
-            double fractionLeft = currentX;
-            dc.DrawText(numText, new Point(fractionLeft + (maxWidth - numText.Width) / 2, centerY - 9));
-            dc.DrawLine(pen, new Point(fractionLeft - 1, centerY), new Point(fractionLeft + maxWidth + 1, centerY));
-            dc.DrawText(denText, new Point(fractionLeft + (maxWidth - denText.Width) / 2, centerY + 1));
-
-            // 3. Draw the Abbreviation ("in") right after the fraction stack!
-            double afterFractionX = fractionLeft + maxWidth + 4;
-            var abbrevText = new FormattedText(abbreviation, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 8, brush, dpi);
-            dc.DrawText(abbrevText, new Point(afterFractionX, centerY - (abbrevText.Height / 2)));
-        }
         public static readonly MeasurementUnit Inches = new MeasurementUnit
         {
             Name = "Inches",
@@ -159,6 +128,7 @@ namespace Ruler.Shared.Models
             UnitToPixel = (val, dpi, total) => val * dpi,
             ShouldLabel = val => val > 0 && Math.Abs(val % 0.25) < 0.001,
             FormatLabel = (val, isVertical) => $"{val} in",
+            SupportsFractions = true,
             CustomDraw = (dc, typeface, brush, pen, x, centerY, u, dpi, lastLabelX, actualHeight) =>
             {
                 int whole = (int)Math.Floor(u);
@@ -184,6 +154,20 @@ namespace Ruler.Shared.Models
 
                     DrawFractionStack(dc, typeface, brush, pen, x, centerY, whole, num, den, dpi, "in");
                 }
+            },
+            
+            FormatFraction = (value) => {
+                int whole = (int)Math.Floor(value);
+                double remainder = value - whole;
+                int sixteenths = (int)Math.Round(remainder * 16.0);
+                if (sixteenths == 16) { whole++; sixteenths = 0; }
+                if (sixteenths == 0) return whole == 0 ? "0 in" : $"{whole} in";
+
+                int gcd = GCD(sixteenths, 16);
+                int num = sixteenths / gcd;
+                int den = 16 / gcd;
+
+                return whole == 0 ? $"{num}/{den} in" : $"{whole} {num}/{den} in";
             },
             GetMinorTickLength = index =>
             {
@@ -279,5 +263,36 @@ namespace Ruler.Shared.Models
                 return 4.0;                      // 5% marks
             }
         };
+        private static int GCD(int a, int b) => b == 0 ? a : GCD(b, a % b);
+
+        public static void DrawFractionStack(DrawingContext dc, Typeface typeface, Brush brush, Pen pen,
+          double x, double centerY, int whole, int num, int den, double dpi, string abbreviation = "in")
+        {
+            double currentX = x;
+
+            // 1. Draw whole number if greater than 0
+            if (whole > 0)
+            {
+                var wholeText = new FormattedText(whole.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 9, brush, dpi);
+                dc.DrawText(wholeText, new Point(currentX - (wholeText.Width / 2), centerY - (wholeText.Height / 2)));
+                currentX += (wholeText.Width / 2) + 6; // Shift right for the fraction stack
+            }
+
+            // 2. Measure numerator and denominator for the stack
+            var numText = new FormattedText(num.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 6, brush, dpi);
+            var denText = new FormattedText(den.ToString(), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 6, brush, dpi);
+            double maxWidth = Math.Max(numText.Width, denText.Width);
+
+            // Draw fraction stack centered at currentX
+            double fractionLeft = currentX;
+            dc.DrawText(numText, new Point(fractionLeft + (maxWidth - numText.Width) / 2, centerY - 9));
+            dc.DrawLine(pen, new Point(fractionLeft - 1, centerY), new Point(fractionLeft + maxWidth + 1, centerY));
+            dc.DrawText(denText, new Point(fractionLeft + (maxWidth - denText.Width) / 2, centerY + 1));
+
+            // 3. Draw the Abbreviation ("in") right after the fraction stack!
+            double afterFractionX = fractionLeft + maxWidth + 4;
+            var abbrevText = new FormattedText(abbreviation, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 8, brush, dpi);
+            dc.DrawText(abbrevText, new Point(afterFractionX, centerY - (abbrevText.Height / 2)));
+        }
     }
 }

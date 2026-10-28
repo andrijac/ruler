@@ -4,6 +4,7 @@ using Ruler.Shared.Helpers;
 using Ruler.Shared.Interfaces;
 using Ruler.Shared.Models;
 using Ruler.Shared.Services;
+using Ruler.Wpf.Windows;
 
 using System;
 using System.Collections.Generic;
@@ -15,12 +16,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Ruler.Wpf.ViewModels
 {
     public class RulerViewModel : ViewModelBase
     {
         private RulerInfo _rulerInfo;
+       
         private readonly IMonitorRegistry _monitorRegistry;
         private readonly IRulerFactory _rulerFactory;
 
@@ -49,7 +52,7 @@ namespace Ruler.Wpf.ViewModels
             }
         }
 
-        private string _updateMenuHeader = "Update Available";
+        private string _updateMenuHeader = "Check for Updates";
         public string UpdateMenuHeader
         {
             get => _updateMenuHeader;
@@ -68,6 +71,8 @@ namespace Ruler.Wpf.ViewModels
         public Action RequestExit { get; set; }
         public Action<int, int> RequestResizeWindow { get; set; } // (width, height)
         public Action<int, int> RequestMoveWindow { get; set; }   // (deltaX, deltaY)
+        public Action SyncTooltip { get; set; }
+
         public event EventHandler<RulerInfo> DuplicateRequested;
 
         // --- Command Properties ---
@@ -93,6 +98,7 @@ namespace Ruler.Wpf.ViewModels
         public ICommand ToggleShowMenuTooltips { get; private set; }
         public ICommand ToggleCalibrationWindow { get; private set; }
         public ICommand ToggleMeasurementUnit { get; private set; }
+        public ICommand SetRulerScaleCommand { get; private set; }
 
 #if DEBUG
         private readonly string _owner = "IsaacMorris1980";
@@ -132,6 +138,7 @@ namespace Ruler.Wpf.ViewModels
 
             ToggleToolTipCommand = new DelegateCommand(_ => {
                 RulerData.ShowToolTip = !RulerData.ShowToolTip;
+              SyncTooltip?.Invoke();
                 var menuItem = MenuItems.FirstOrDefault(i => i.Header == "Show ToolTip");
                 if (menuItem != null)
                 {
@@ -269,6 +276,16 @@ namespace Ruler.Wpf.ViewModels
                 ShowToolTips = !ShowToolTips;
                 RequestInvalidate?.Invoke();
             });
+            SetRulerScaleCommand = new DelegateCommand<object>(param => {
+                double scale = 1.0;
+                if (param is MenuItemModel model && model.Value is double dVal) scale = dVal;
+                else if (param is double directVal) scale = directVal;
+
+                if (RulerData.RulerUnits == RulerUnit.Pixels)
+                {
+                    RulerScale = Math.Max(0.25, Math.Min(5.0, scale));
+                }
+            });
 
             ToggleMeasurementUnit = new DelegateCommand<object>(val => {
                 RulerUnit unit = default;
@@ -319,29 +336,7 @@ namespace Ruler.Wpf.ViewModels
             RequestInvalidate?.Invoke();
         }
 
-        public async Task CheckForUpdatesAsync()
-        {
-            try
-            {
-                string entryVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0.0";
-                var updateInfo = await UpdateService.GetLatestGitHubAssetUrlsAsync(_owner, _repo);
-                var latestVersion = await UpdateService.CheckForUpdateAsync(updateInfo.ManifestUrl, entryVersion);
-
-                if (latestVersion.UpdateAvailable)
-                {
-                    UpdateMenuHeader = $"Update Available: {latestVersion.LatestVersion}";
-                }
-                else
-                {
-                    UpdateMenuHeader = $"No Updates Available (Current: {entryVersion})";
-                }
-            }
-            catch
-            {
-                UpdateMenuHeader = "Check for Updates Failed";
-            }
-        }
-
+     
         public void PopulateMenu()
         {
             MenuItems.Clear();
@@ -356,7 +351,20 @@ namespace Ruler.Wpf.ViewModels
             var magnificationMenu = MenuHelper.CreateRangeMenuItems(1.5, 5.0, 0.5, "{0:0.#}x Zoom", i => i, SetMagnficationScaleCommand);
             MenuItems.Add(new MenuItemModel { Header = "Show Magnifier", IsCheckable = true, IsChecked = RulerData.Magnifier.IsActive, InputGestureText = "M", Command = ToggleMagnifierCommand });
             MenuItems.Add(new MenuItemModel { Header = "Magnification Scale", Items = magnificationMenu });
-            MenuItems.Add(new MenuItemModel { Header = "Reset to Default", InputGestureText = "Ctrl+R", Command = ToggleResetToDefaultCommand });
+            var scaleMenuItems = new ObservableCollection<MenuItemModel>();
+            double[] chromeZooms = { 0.25, 0.33, 0.50, 0.67, 0.75, 0.80, 0.90, 1.00, 1.10, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00, 4.00, 5.00 };
+            foreach (var zoom in chromeZooms)
+            {
+                int percent = (int)Math.Round(zoom * 100);
+                scaleMenuItems.Add(new MenuItemModel
+                {
+                    Header = $"{percent}%",
+                    Value = zoom,
+                    Command = SetRulerScaleCommand
+                });
+            }
+            MenuItems.Add(new MenuItemModel { Header = "Ruler Scale", ToolTip = "Scale ruler size (Pixels mode only)", Items = scaleMenuItems });
+            MenuItems.Add(new MenuItemModel { Header = "Reset to Default", InputGestureText = "Ctrl+R", Command = ToggleResetToDefaultCommand});
             MenuItems.Add(new MenuItemModel { Header = "Show About", InputGestureText = "A", Command = ToggleAboutCommand });
             MenuItems.Add(new MenuItemModel { Header = "Close Ruler", InputGestureText = "Esc", Command = ToggleCloseCommand });
             MenuItems.Add(new MenuItemModel { Header = "Exit Application", InputGestureText = "Ctrl + Esc", Command = ToggleExitCommand });
@@ -433,6 +441,12 @@ namespace Ruler.Wpf.ViewModels
                     item.IsChecked = (RulerData.RulerUnits == unitVal);
                 }
             }
+            else if (parentHeader == "Ruler Scale")
+            {
+                item.IsCheckable = true;
+                if (item.Value is double rulerScaleVal) item.IsChecked = Math.Abs(RulerScale - rulerScaleVal) < 0.0001;
+                item.IsEnabled = (RulerData.RulerUnits == RulerUnit.Pixels);
+            }
         }
         public void ApplySizeChange(int newWidth, int newHeight, RulerUnit newUnit)
         {
@@ -443,6 +457,43 @@ namespace Ruler.Wpf.ViewModels
             OnPropertyChanged(nameof(RulerData));
             RequestResizeWindow?.Invoke(newWidth, newHeight);
             RequestInvalidate?.Invoke();
+        }
+        //private void SyncTooltipWindowState()
+        //{
+        //    if (_rulerInfo.ShowToolTip)
+        //    {
+        //        if (_tooltipWindow == null)
+        //        {
+        //            _tooltipWindow = new RulerTooltipWindow(_rulerInfo)
+        //            {
+        //                Owner = this,
+        //                Topmost = true
+        //            };
+        //            _tooltipWindow.Show();
+        //        }
+
+        //        double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        //        double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
+        //        _tooltipWindow.UpdateMetrics(ActualWidth, ActualHeight, effectiveDpi);
+        //    }
+        //    else
+        //    {
+        //        _tooltipWindow?.Close();
+        //        _tooltipWindow = null;
+        //    }
+        //}
+        public double RulerScale
+        {
+            get => RulerData.RulerScale;
+            set
+            {
+                if (RulerData.RulerScale != value)
+                {
+                    RulerData.RulerScale = value; // RulerInfo's internal SetProperty handles the backing field & notification
+                    OnPropertyChanged(nameof(RulerScale));
+                    RequestInvalidate?.Invoke();
+                }
+            }
         }
     }
 }

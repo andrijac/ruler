@@ -33,6 +33,14 @@ namespace Ruler.Wpf
         {
             base.OnStartup(e);
             NativeHelpers.MagInitialize();
+            try
+            {
+                LocalCertificateService.GetOrInstallLocalCertificate();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to ensure local signing certificate on startup: {ex.Message}");
+            }
             var services = new ServiceCollection();
             ConfigureServices(services);
             ServiceProvider = services.BuildServiceProvider();

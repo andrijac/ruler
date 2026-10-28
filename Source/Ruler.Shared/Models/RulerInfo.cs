@@ -69,17 +69,39 @@ namespace Ruler.Shared.Models
 
         [JsonProperty("Magnifier")]
         public MagnifierState Magnifier { get; set; } = new MagnifierState();
-
+        private double _rulerScale = 1.0;
+        [JsonProperty("RulerScale")]
+        public double RulerScale
+        {
+            get => _rulerScale;
+            set
+            {
+                if (_rulerUnit != RulerUnit.Pixels)
+                {
+                    value = 1.0;
+                }
+                SetProperty(ref _rulerScale, value);
+            }
+        }
         private RulerUnit _rulerUnit = RulerUnit.Pixels;
         [JsonProperty("RulerUnits")]
         public RulerUnit RulerUnits
         {
             get => _rulerUnit;
-            set => SetProperty(ref _rulerUnit, value);
+            set
+            {
+                if (SetProperty(ref _rulerUnit, value))
+                {
+                    if (value != RulerUnit.Pixels)
+                    {
+                        RulerScale = 1.0;
+                    }
+                }
+            }
         }
 
-        [JsonIgnore]
-        public Orientation RulerOrientation => IsVertical ? Orientation.Vertical : Orientation.Horizontal;
+        //[JsonIgnore]
+        //public Orientation RulerOrientation => IsVertical ? Orientation.Vertical : Orientation.Horizontal;
 
         public override string ToString()
         {
@@ -91,7 +113,9 @@ namespace Ruler.Shared.Models
                    $"  TopMost: {TopMost} | ShowToolTip: {ShowToolTip}" + Environment.NewLine +
                    $"  IsLocked: {IsLocked}" + Environment.NewLine +
                    $"  SaveType: {SaveType}" + Environment.NewLine +
-                   $"  Guideline: {Guideline}";
+                   $"  Guideline: {Guideline}" + Environment.NewLine +
+                   $"  RulerScale: {RulerScale}" + Environment.NewLine +
+                   $"  RulerUnits: {RulerUnits}";
         }
 
         public void ToggleOrientation()
