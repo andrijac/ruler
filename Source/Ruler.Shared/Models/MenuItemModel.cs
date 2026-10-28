@@ -11,6 +11,7 @@ namespace Ruler.Shared.Models
         private string _header;
         private bool _isChecked;
         private string _toolTip;
+        private bool _isEnabled = true;
         public string Header {
             get => _header;
                  set=> SetProperty(ref _header, value); }
@@ -18,6 +19,11 @@ namespace Ruler.Shared.Models
         public string InputGestureText { get; set; } // used to display keyboard shortcut
         public ICommand Command { get; set; }
         public bool IsCheckable { get; set; } = false;
+        public bool IsEnabled
+        {
+            get => _isEnabled;
+            set => SetProperty(ref _isEnabled, value);
+        }
         public bool IsChecked { get=>_isChecked; set { SetProperty(ref _isChecked, value); } }
         public string ToolTip { 
             get=> _toolTip;

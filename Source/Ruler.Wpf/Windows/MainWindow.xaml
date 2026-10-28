@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Ruler.Wpf.Windows"
         xmlns:menu ="clr-namespace:Ruler.Shared.Models;assembly=Ruler.Shared"
+        xmlns:localControls="clr-namespace:Ruler.Wpf.Controls"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="Ruler Window"
@@ -59,13 +60,9 @@
                          GlassFrameThickness="0"/>
     </shell:WindowChrome.WindowChrome>
     <Grid>
-        <Border x:Name="InfoOverlay" 
-            HorizontalAlignment="Left" VerticalAlignment="Top" 
-            Margin="0,0,0,0"
-            Background="#F0F8F8F8" BorderBrush="DarkGray" BorderThickness="0.5" 
-            CornerRadius="3" Padding="6,3"
-            Visibility="Collapsed">
-            <StackPanel x:Name="InfoContentPanel" Orientation="Horizontal" VerticalAlignment="Center"/>
-        </Border>
+       
+            <localControls:RulerInfoDisplay x:Name="StaticInfoDisplay" 
+                                        RulerData="{Binding RulerData}" />
+        
     </Grid>
 </Window>

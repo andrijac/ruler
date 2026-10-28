@@ -4,6 +4,7 @@ using Ruler.Shared.Helpers;
 using Ruler.Shared.Interfaces;
 using Ruler.Shared.Models;
 using Ruler.Shared.Services;
+using Ruler.Wpf.Controls;
 using Ruler.Wpf.Services;
 using Ruler.Wpf.ViewModels;
 
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -32,7 +34,8 @@ namespace Ruler.Wpf.Windows
         private RulerInfo _rulerInfo => _viewModel?.RulerData;
         private HwndSource _hwndSource;
         private bool _isUpdatingFromWindow = false;
-
+        private double _cachedOverlayWidth = 150;
+        private double _cachedOverlayHeight = 25;
         public event EventHandler<RulerInfo> DuplicateRequested;
         public RulerInfo RulerData
         {
@@ -61,6 +64,7 @@ namespace Ruler.Wpf.Windows
         private bool _isInitialized = false;
 
         private Point _mouseScreenPosition;
+        private RulerTooltipWindow _tooltipWindow;
 
         public MainWindow(RulerInfo info, IRulerFactory factory, IRulerRegistry rulerRegistry, IMonitorRegistry monitorRegistry)
         {
@@ -69,21 +73,24 @@ namespace Ruler.Wpf.Windows
             _monitorRegistry = monitorRegistry ?? throw new ArgumentNullException(nameof(monitorRegistry));
 
             // Initialize ViewModel and bind action callbacks
-            _viewModel = new RulerViewModel(info, _monitorRegistry, _rulerFactory);
-
-            _viewModel.RequestInvalidate = InvalidateView;
-            _viewModel.RequestOpenSetSize = OpenSetSizeWindow;
-            _viewModel.RequestOpenCalibration = OpenCalibrationWindow;
-            _viewModel.RequestOpenUpdate = OpenUpdateWindow;
-            _viewModel.RequestOpenShortcuts = OpenShortcutsWindow;
-            _viewModel.RequestOpenAbout = OpenAboutWindow;
-            _viewModel.RequestOpenMagnifier = HandleMagnifierToggle;
-            _viewModel.RequestCloseWindow = Close;
-            _viewModel.RequestExit = () => Application.Current.Shutdown();
-            _viewModel.RequestResizeWindow = (w, h) => { this.Width = w; this.Height = h; };
-            _viewModel.RequestMoveWindow = (dx, dy) => { this.Left += dx; this.Top += dy; };
-            _viewModel.DuplicateRequested += (s, data) => DuplicateRequested?.Invoke(s, data);
-
+            _viewModel = new RulerViewModel(info, _monitorRegistry, _rulerFactory)
+            {
+                RequestInvalidate = InvalidateView,
+                RequestOpenSetSize = OpenSetSizeWindow,
+                RequestOpenCalibration = OpenCalibrationWindow,
+                RequestOpenUpdate = OpenUpdateWindow,
+                RequestOpenShortcuts = OpenShortcutsWindow,
+                RequestOpenAbout = OpenAboutWindow,
+                RequestOpenMagnifier = HandleMagnifierToggle,
+                RequestCloseWindow = Close,
+                RequestExit = () => Application.Current.Shutdown(),
+                RequestResizeWindow = (w, h) => { this.Width = w; this.Height = h; },
+                RequestMoveWindow = (dx, dy) => { this.Left += dx; this.Top += dy; },
+                SyncTooltip = SyncTooltipWindowState
+            };
+                 _viewModel.DuplicateRequested += (s, data) => DuplicateRequested?.Invoke(s, data);
+                
+            
             InitializeComponent();
             DataContext = _viewModel;
 
@@ -105,6 +112,7 @@ namespace Ruler.Wpf.Windows
             this.SizeChanged += OnWindowSizeChanged;
             this.ContextMenuOpening += (s, e) => _viewModel.UpdateAllMenuStates();
             _isUpdatingFromWindow = false;
+          
         }
 
         private void UpdateMonitorContext()
@@ -131,12 +139,12 @@ namespace Ruler.Wpf.Windows
             _currentProfile.CalibrationChanged += OnProfileCalibrationChanged;
 
             _currentProfile.SyncResolution(monitorWidth, monitorHeight);
-            InvalidateVisual();
+            InvalidateView();
         }
 
         private void OnProfileCalibrationChanged(object sender, EventArgs e)
         {
-            InvalidateVisual();
+            InvalidateView();
         }
 
         private void OnWindowLocationChanged(object sender, EventArgs e)
@@ -148,6 +156,7 @@ namespace Ruler.Wpf.Windows
             _rulerInfo.Top = (int)this.Top;
             UpdateMonitorContext();
             _isUpdatingFromWindow = false;
+            InvalidateView();
         }
 
         private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
@@ -159,6 +168,7 @@ namespace Ruler.Wpf.Windows
             _rulerInfo.Height = (int)this.ActualHeight;
             UpdateMonitorContext();
             _isUpdatingFromWindow = false;
+            InvalidateView();
         }
 
         // --- Dialog & Window Management Callbacks ---
@@ -235,13 +245,24 @@ namespace Ruler.Wpf.Windows
             }
             else
             {
-                if (_magnifierWindow != null) _magnifierWindow.Show();
-                else
+                // Get current global screen cursor coordinates via NativeHelpers
+                NativeHelpers.GetCursorPos(out var nativePt);
+                Point screenMousePos = new Point(nativePt.X, nativePt.Y);
+                Point rulerScreenOrigin = this.PointToScreen(new Point(0, 0));
+
+                if (_magnifierWindow != null)
                 {
-                    _magnifierWindow = new MagnifierWindow(_rulerInfo) { Owner = this };
-                    _magnifierWindow.Closed += (s, args) => _magnifierWindow = null;
                     _magnifierWindow.Show();
                 }
+                else
+                {
+                    _magnifierWindow = new MagnifierWindow() { Owner = this };
+                    _magnifierWindow.Closed += (s, args) => _magnifierWindow = null;
+                    _magnifierWindow.Show();
+
+                    // Immediately update with live coordinates upon creation
+                     }
+                UpdateMagnifierPosition();
             }
         }
 
@@ -310,17 +331,14 @@ namespace Ruler.Wpf.Windows
                     drawingContext.DrawLine(guidePen, new Point(x, 0), new Point(x, ActualHeight));
                 }
             }
-            if (_rulerInfo.RulerUnits == RulerUnit.Pixels)
-            {
-                DrawRulerInfoText(drawingContext, fontTypeface, textBrush, dpi);
-            }
+
         }
 
         private void DrawHorizontalRuler(DrawingContext dc, Pen pen, Brush brush, Typeface typeface, double dpi)
         {
             bool dualSided = ActualHeight > 100;
             var unitConfig = MeasurementUnit.Get(_rulerInfo.RulerUnits);
-
+            double scaleMultiplier = (_rulerInfo.RulerUnits == RulerUnit.Pixels) ? _rulerInfo.RulerScale : 1.0;
             double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
             double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
 
@@ -336,7 +354,7 @@ namespace Ruler.Wpf.Windows
             for (int i = 0; i <= totalSteps; i++)
             {
                 double u = i * minorStep;
-                double x = unitConfig.UnitToPixel(u, effectiveDpi, ActualWidth);
+                double x = unitConfig.UnitToPixel(u, effectiveDpi, ActualWidth) * scaleMultiplier;
                 if (x > ActualWidth) break;
 
                 bool isMajor = (i % subdivisions == 0) || Math.Abs(u % majorInterval) < 0.0001;
@@ -403,7 +421,7 @@ namespace Ruler.Wpf.Windows
         {
             bool dualSided = ActualWidth > 100;
             var unitConfig = MeasurementUnit.Get(_rulerInfo.RulerUnits);
-
+            double scaleMultiplier = (_rulerInfo.RulerUnits == RulerUnit.Pixels) ? _rulerInfo.RulerScale : 1.0;
             double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
             double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
 
@@ -419,7 +437,7 @@ namespace Ruler.Wpf.Windows
             for (int i = 0; i <= totalSteps; i++)
             {
                 double u = i * minorStep;
-                double y = unitConfig.UnitToPixel(u, effectiveDpi, ActualHeight);
+                double y = unitConfig.UnitToPixel(u, effectiveDpi, ActualHeight) * scaleMultiplier;
                 if (y > ActualHeight) break;
 
                 bool isMajor = (i % subdivisions == 0) || Math.Abs(u % majorInterval) < 0.0001;
@@ -482,94 +500,21 @@ namespace Ruler.Wpf.Windows
             }
         }
 
-        private void DrawRulerInfoText(DrawingContext dc, Typeface typeface, Brush brush, double dpi)
-        {
-            string infoText = CreateRulerText();
-            double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(dpi) : dpi;
-
-            var formattedText = new FormattedText(
-                infoText,
-                CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                typeface,
-                9,
-                brush,
-                effectiveDpi);
-
-            Point textPos = _rulerInfo.IsVertical
-                ? new Point((ActualWidth - formattedText.Width) / 2, 25)
-                : new Point(35, (ActualHeight - formattedText.Height) / 2);
-
-            dc.DrawText(formattedText, textPos);
-        }
-
-        private string CreateRulerText()
-        {
-            var unitConfig = MeasurementUnit.Get(_rulerInfo.RulerUnits);
-            double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
-            double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
-
-            double totalPixels = _rulerInfo.IsVertical ? ActualHeight : ActualWidth;
-            double totalUnitValue = unitConfig.PixelToUnit(totalPixels, effectiveDpi, totalPixels);
-
-            string sizeStr = unitConfig.FormatLabel != null
-                ? unitConfig.FormatLabel(totalUnitValue, _rulerInfo.IsVertical).Replace("\n", " ")
-                : $"{totalUnitValue:0.##} {unitConfig.Abbreviation}";
-
-            if (_rulerInfo.RulerUnits == RulerUnit.Pixels && !sizeStr.Contains("px"))
-            {
-                sizeStr += " px";
-            }
-
-            string text = $"Size: {sizeStr}";
-
-            if (_rulerInfo.Guideline.IsEnabled)
-            {
-                double guidePixels = _rulerInfo.Guideline.Position;
-                double guideUnitValue = unitConfig.PixelToUnit(guidePixels, effectiveDpi, totalPixels);
-
-                string guideStr = unitConfig.FormatLabel != null
-                    ? unitConfig.FormatLabel(guideUnitValue, _rulerInfo.IsVertical).Replace("\n", " ")
-                    : $"{guideUnitValue:0.##} {unitConfig.Abbreviation}";
-
-                if (_rulerInfo.RulerUnits == RulerUnit.Pixels && !guideStr.Contains("px"))
-                {
-                    guideStr += " px";
-                }
-                text += $"{Environment.NewLine}Guideline: {guideStr}";
-            }
-
-            return text;
-        }
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
 
             var position = e.GetPosition(this);
 
-            if (_rulerInfo.ShowToolTip && InfoOverlay != null)
+
+            if (_rulerInfo.ShowToolTip)
             {
-                double overlayWidth = InfoOverlay.ActualWidth > 0 ? InfoOverlay.ActualWidth : 120;
-                double overlayHeight = InfoOverlay.ActualHeight > 0 ? InfoOverlay.ActualHeight : 25;
-
-                double left = position.X + 15;
-                if (left + overlayWidth > ActualWidth - 5)
-                {
-                    left = position.X - overlayWidth - 15;
-                }
-                left = Math.Max(5, left);
-
-                double top = position.Y + 15;
-                if (top + overlayHeight > ActualHeight - 5)
-                {
-                    top = position.Y - overlayHeight - 15;
-                }
-                top = Math.Max(5, top);
-
-                InfoOverlay.Margin = new Thickness(left, top, 0, 0);
+                double left = position.X;
+                double top = position.Y - 15;
+                _tooltipWindow.Left = left;
+               _tooltipWindow.Top = top;
             }
-
+          UpdateMagnifierPosition();
             if (_rulerInfo?.Guideline?.IsEnabled != true || _rulerInfo.Guideline.IsLocked) return;
 
             if (position.X <= 0 && position.Y <= 0) return;
@@ -591,7 +536,30 @@ namespace Ruler.Wpf.Windows
                 this.DragMove();
             }
         }
+        private void SyncTooltipWindowState()
+        {
+            if (_rulerInfo.ShowToolTip)
+            {
+                if (_tooltipWindow == null)
+                {
+                    _tooltipWindow = new RulerTooltipWindow(_rulerInfo)
+                    {
+                        Owner = this,
+                        Topmost = true
+                    };
+                    _tooltipWindow.Show();
+                }
 
+                double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
+                double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
+                _tooltipWindow.UpdateMetrics(ActualWidth, ActualHeight, effectiveDpi);
+            }
+            else
+            {
+                _tooltipWindow?.Close();
+                _tooltipWindow = null;
+            }
+        }
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
@@ -608,7 +576,30 @@ namespace Ruler.Wpf.Windows
                 }
             }
         }
+        private void UpdateMagnifierPosition()
+        {
+            if (_magnifierWindow == null || !_magnifierWindow.IsLoaded || !this.IsLoaded || ActualWidth <= 0)
+                return;
 
+            // 1. Get exact DPI scale factor
+            var dpi = VisualTreeHelper.GetDpi(this);
+
+            // 2. Get true window top-left in physical pixels (bypassing client-area padding)
+            System.Windows.Point screenTopLeft = new System.Windows.Point(this.Left * dpi.DpiScaleX, this.Top * dpi.DpiScaleY);
+
+            // 3. Calculate true physical width and height
+            double physicalWidth = ActualWidth * dpi.DpiScaleX;
+            double physicalHeight = ActualHeight * dpi.DpiScaleY;
+
+            if (physicalWidth <= 0 || physicalHeight <= 0) return;
+
+            // 4. Get exact physical screen cursor position
+            NativeHelpers.GetCursorPos(out var nativeCursor);
+            System.Windows.Point physicalMousePos = new System.Windows.Point(nativeCursor.X, nativeCursor.Y);
+
+            // 5. Pass clean coordinates to the magnifier
+            _magnifierWindow.UpdateMagnifier(physicalMousePos, physicalWidth, physicalHeight, screenTopLeft, _rulerInfo.Magnifier.ZoomLevel);
+        }
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
@@ -651,87 +642,44 @@ namespace Ruler.Wpf.Windows
 
         public void InvalidateView()
         {
-            RefreshToolTipDisplay();
+            RefreshInfoDisplays();
             InvalidateVisual();
         }
 
-        private void RefreshToolTipDisplay()
+        //private void RefreshToolTipDisplay()
+        //{
+        //    var infoOverlay = FindName("InfoOverlay") as Border;
+        //    var infoDisplay = FindName("InfoDisplayControl") as RulerInfoDisplay;
+
+        //    if (_rulerInfo.ShowToolTip && infoOverlay != null)
+        //    {
+        //        infoOverlay.Visibility = Visibility.Visible;
+
+        //        // Calculate effective DPI
+        //        double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        //        double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
+
+        //        // Pass the main window's dimensions and DPI to the user control
+        //        infoDisplay?.UpdateMetrics(ActualWidth, ActualHeight, effectiveDpi);
+
+        //        this.ToolTip = null;
+        //    }
+        //    else if (infoOverlay != null)
+        //    {
+        //        infoOverlay.Visibility = Visibility.Collapsed;
+        //        this.ToolTip = null;
+        //    }
+        //}
+        private void RefreshInfoDisplays()
         {
-            if (_rulerInfo.ShowToolTip && InfoContentPanel != null)
-            {
-                InfoOverlay.Visibility = Visibility.Visible;
-                InfoContentPanel.Children.Clear();
+            // Calculate effective DPI
+            double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
+            double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
 
-                var unitConfig = MeasurementUnit.Get(_rulerInfo.RulerUnits);
-                double baseDpi = 96.0 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
-                double effectiveDpi = _currentProfile != null ? _currentProfile.GetEffectiveDpi(baseDpi) : baseDpi;
-
-                InfoContentPanel.Children.Add(new TextBlock { Text = "Size: ", FontSize = 9, Foreground = Brushes.Black, VerticalAlignment = VerticalAlignment.Center });
-
-                double totalPixels = _rulerInfo.IsVertical ? ActualHeight : ActualWidth;
-                double totalUnitValue = unitConfig.PixelToUnit(totalPixels, effectiveDpi, totalPixels);
-
-                InfoContentPanel.Children.Add(CreateMeasurementDisplayElement(totalUnitValue, unitConfig.Abbreviation, effectiveDpi));
-
-                if (_rulerInfo.Guideline.IsEnabled)
-                {
-                    InfoContentPanel.Children.Add(new TextBlock { Text = " | Guide: ", FontSize = 9, Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) });
-
-                    string lockStatus = _rulerInfo.Guideline.IsLocked ? "Locked" : "Current";
-                    InfoContentPanel.Children.Add(new TextBlock { Text = $"({lockStatus}) ", FontSize = 9, Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center });
-
-                    double guidePixels = _rulerInfo.Guideline.Position;
-                    double guideUnitValue = unitConfig.PixelToUnit(guidePixels, effectiveDpi, totalPixels);
-
-                    InfoContentPanel.Children.Add(CreateMeasurementDisplayElement(guideUnitValue, unitConfig.Abbreviation, effectiveDpi));
-                }
-
-                this.ToolTip = null;
-            }
-            else if (InfoOverlay != null)
-            {
-                InfoOverlay.Visibility = Visibility.Collapsed;
-                this.ToolTip = null;
-            }
-        }
-
-        private UIElement CreateMeasurementDisplayElement(double unitValue, string unitAbbrev, double effectiveDpi)
-        {
-            var unitConfig = MeasurementUnit.Get(_rulerInfo.RulerUnits);
-
-            if (unitConfig.CustomDraw != null && _rulerInfo.RulerUnits == RulerUnit.Inches)
-            {
-                var visual = new DrawingVisual();
-                using (var dc = visual.RenderOpen())
-                {
-                    var typeface = new Typeface("Segoe UI");
-                    var brush = Brushes.Black;
-                    var pen = new Pen(Brushes.Black, 1);
-
-                    unitConfig.CustomDraw(dc, typeface, brush, pen, 22.0, 10.0, unitValue, effectiveDpi, 0.0, 20.0);
-                }
-
-                var drawingImage = new DrawingImage(visual.Drawing);
-                return new System.Windows.Controls.Image
-                {
-                    Source = drawingImage,
-                    Width = 44,
-                    Height = 20,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-            }
-            else
-            {
-                string text = $"{unitValue:0.##} {unitAbbrev}";
-                return new TextBlock
-                {
-                    Text = text,
-                    FontSize = 9,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.Black,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-            }
+            // 1. Update Static Display
+            var staticDisplay = FindName("StaticInfoDisplay") as RulerInfoDisplay;
+            staticDisplay?.UpdateMetrics(ActualWidth, ActualHeight, effectiveDpi);
+            _tooltipWindow?.UpdateMetrics(ActualWidth, ActualHeight, effectiveDpi);
         }
 
         // Interface stub implementations required by IRuler if applicable

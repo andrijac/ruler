@@ -1,10 +1,13 @@
-﻿using Ruler.Shared.Interfaces;
+﻿using Newtonsoft.Json;
+
+using Ruler.Shared.Interfaces;
 using Ruler.Shared.Models;
 using Ruler.Shared.Services;
 
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,41 +16,111 @@ namespace Ruler.Wpf.Services
 {
     public class MonitorPersistenceService : IMonitorPersistenceService
     {
-        private const string SettingKey = "MonitorData";
-     
+        private const string FileName = "monitors.json";
+        private const string SettingKey = "MonitorData"; // Legacy key from exe.config
+        private const string CertSubject = "RulerLocalDataSigner";
         private readonly MonitorSerializer _settingsService;
+        private readonly string _filePath;
 
-        public MonitorPersistenceService(
-            MonitorSerializer settings)
+        public MonitorPersistenceService(MonitorSerializer settings)
         {
             _settingsService = settings;
+            _filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, FileName);
+
+            try
+            {
+                LocalCertificateService.GetOrInstallLocalCertificate();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to ensure local signing certificate: {ex.Message}");
+            }
         }
 
         public Dictionary<string, MonitorCalibrationProfile> LoadProfiles()
         {
-            var json = ConfigurationManager.AppSettings[SettingKey];
-            return _settingsService.DeserializeProfiles(json);
+            // If the new signed JSON file doesn't exist, check legacy exe.config
+            if (!File.Exists(_filePath))
+            {
+                try
+                {
+                    var legacyJson = ConfigurationManager.AppSettings[SettingKey];
+                    if (!string.IsNullOrWhiteSpace(legacyJson))
+                    {
+                        // Deserialize from legacy format
+                        var migratedProfiles = _settingsService.DeserializeProfiles(legacyJson);
+
+                        // Automatically save and sign into the new monitors.json file
+                        SaveProfiles(migratedProfiles);
+                        return migratedProfiles;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to migrate legacy monitor data: {ex.Message}");
+                }
+
+                return _settingsService.DeserializeProfiles(string.Empty);
+            }
+
+            try
+            {
+                string json = File.ReadAllText(_filePath);
+                var container = JsonConvert.DeserializeObject<SignedContainer>(json);
+
+                if (container != null && !string.IsNullOrEmpty(container.Payload) && !string.IsNullOrEmpty(container.Signature))
+                {
+                    byte[] payloadBytes = Encoding.UTF8.GetBytes(container.Payload);
+                    byte[] signatureBytes = Convert.FromBase64String(container.Signature);
+
+                    if (CryptographicSigningService.VerifyData(payloadBytes, signatureBytes, CertSubject))
+                    {
+                        return _settingsService.DeserializeProfiles(container.Payload);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Warning: monitors.json cryptographic signature verification failed!");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load signed monitors.json: {ex.Message}");
+            }
+
+            return _settingsService.DeserializeProfiles(string.Empty);
         }
 
         public void SaveProfiles(Dictionary<string, MonitorCalibrationProfile> profiles)
         {
-            var json = _settingsService.SerializeProfiles(profiles);
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            try
+            {
+                string payloadJson = _settingsService.SerializeProfiles(profiles);
 
-            if (config.AppSettings.Settings[SettingKey] == null)
-                config.AppSettings.Settings.Add(SettingKey, json);
-            else
-                config.AppSettings.Settings[SettingKey].Value = json;
+                byte[] payloadBytes = Encoding.UTF8.GetBytes(payloadJson);
+                byte[] signatureBytes = CryptographicSigningService.SignData(payloadBytes, CertSubject);
 
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
+                var container = new SignedContainer
+                {
+                    Payload = payloadJson,
+                    Signature = Convert.ToBase64String(signatureBytes)
+                };
+
+                string containerJson = JsonConvert.SerializeObject(container, Formatting.Indented);
+                File.WriteAllText(_filePath, containerJson);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save and sign monitors.json: {ex.Message}");
+            }
         }
+
         public void Reset()
         {
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings.Clear();
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
+            if (File.Exists(_filePath))
+            {
+                try { File.Delete(_filePath); } catch { }
+            }
         }
     }
 }
