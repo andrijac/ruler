@@ -18,6 +18,7 @@ namespace Ruler.Shared.Factories
         {
             return new RulerInfo
             {
+                ID = new Guid(),
                 Width = 400,
                 Height = 75,
                 Opacity = 0.60,

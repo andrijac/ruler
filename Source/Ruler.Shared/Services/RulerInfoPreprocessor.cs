@@ -47,7 +47,7 @@ namespace Ruler.Shared.Services
             strippedCopy.SaveType = item.SaveType;
 
             // Explicitly copy over historical identity so it updates correctly on reload
-          //  strippedCopy.Guid = item.Guid;
+            strippedCopy.ID = item.ID;
 
             switch (item.SaveType)
             {

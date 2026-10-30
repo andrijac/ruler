@@ -13,7 +13,7 @@ namespace Ruler.Shared.Models
 {
     public class RulerInfo : ModelBase
     {
-        [JsonIgnore]
+        [JsonProperty("ID")]
         public Guid ID { get; set; } = Guid.NewGuid();
 
         private int _width = 400;
