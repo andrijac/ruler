@@ -14,7 +14,7 @@ namespace Ruler.Shared.Interfaces
 
         void Unregister(IRuler ruler);
 
-        IEnumerable<IRuler> GetActiveRulers();
+        IEnumerable<RulerInfo> GetRulersToSave();
 
         // Retrieves a specific ruler by its unique ID
         IRuler GetRulerById(Guid id);

@@ -91,7 +91,7 @@ namespace Ruler.Wpf.Controllers
             }
 
             // Check if any rulers are still active
-            var active = _registry.GetActiveRulers();
+            var active = _registry.GetRulersToSave();
 
             // In WPF, we use Application.Current.Shutdown()
             if (!active.Any())

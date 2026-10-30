@@ -18,7 +18,7 @@ namespace Ruler.Shared.Services
         /// </summary>
         public static string GetOrInstallLocalCertificate()
         {
-            using (var store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
+            using (var store = new X509Store(StoreName.My, StoreLocation.CurrentUser))
             {
                 store.Open(OpenFlags.ReadWrite);
 
