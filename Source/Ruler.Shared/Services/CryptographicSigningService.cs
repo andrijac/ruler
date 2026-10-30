@@ -35,7 +35,7 @@ namespace Ruler.Shared.Services
         /// <summary>
         /// Computes a detached CMS/PKCS#7 digital signature for a byte array using the specified signing certificate.
         /// </summary>
-        public static byte[] SignData(byte[] data, string certSubjectName, StoreLocation storeLocation = StoreLocation.LocalMachine, StoreName storeName = StoreName.My)
+        public static byte[] SignData(byte[] data, string certSubjectName, StoreLocation storeLocation = StoreLocation.CurrentUser, StoreName storeName = StoreName.My)
         {
             using (var cert = GetCertificate(certSubjectName, storeLocation, storeName))
             {
@@ -51,7 +51,7 @@ namespace Ruler.Shared.Services
         /// <summary>
         /// Verifies a detached CMS/PKCS#7 signature against a byte array and a trusted certificate.
         /// </summary>
-        public static bool VerifyData(byte[] data, byte[] signatureBytes, string trustedCertSubjectName, StoreLocation storeLocation = StoreLocation.LocalMachine, StoreName storeName = StoreName.My)
+        public static bool VerifyData(byte[] data, byte[] signatureBytes, string trustedCertSubjectName, StoreLocation storeLocation = StoreLocation.CurrentUser, StoreName storeName = StoreName.My)
         {
             try
             {
@@ -88,7 +88,7 @@ namespace Ruler.Shared.Services
         /// <summary>
         /// Signs a physical file and writes a companion .sig file containing the detached signature.
         /// </summary>
-        public static void SignFile(string filePath, string certSubjectName, StoreLocation storeLocation = StoreLocation.LocalMachine, StoreName storeName = StoreName.My)
+        public static void SignFile(string filePath, string certSubjectName, StoreLocation storeLocation = StoreLocation.CurrentUser, StoreName storeName = StoreName.My)
         {
             if (!File.Exists(filePath))
             {
@@ -104,7 +104,7 @@ namespace Ruler.Shared.Services
         /// <summary>
         /// Verifies a physical file using its companion .sig file against a trusted certificate.
         /// </summary>
-        public static bool VerifyFile(string filePath, string trustedCertSubjectName, StoreLocation storeLocation = StoreLocation.LocalMachine, StoreName storeName = StoreName.My)
+        public static bool VerifyFile(string filePath, string trustedCertSubjectName, StoreLocation storeLocation = StoreLocation.CurrentUser, StoreName storeName = StoreName.My)
         {
             string sigPath = filePath + ".sig";
             if (!File.Exists(filePath) || !File.Exists(sigPath))

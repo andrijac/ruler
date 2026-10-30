@@ -65,13 +65,13 @@ namespace Ruler.Wpf.Windows
 
         private Point _mouseScreenPosition;
         private RulerTooltipWindow _tooltipWindow;
-
-        public MainWindow(RulerInfo info, IRulerFactory factory, IRulerRegistry rulerRegistry, IMonitorRegistry monitorRegistry)
+        private IRulerPersistanceService _persistenceService;
+        public MainWindow(RulerInfo info, IRulerFactory factory, IRulerRegistry rulerRegistry, IMonitorRegistry monitorRegistry,IRulerPersistanceService rulerPersistanceService)
         {
             _rulerFactory = factory ?? throw new ArgumentNullException(nameof(factory));
             _rulerRegistry = rulerRegistry ?? throw new ArgumentNullException(nameof(rulerRegistry));
             _monitorRegistry = monitorRegistry ?? throw new ArgumentNullException(nameof(monitorRegistry));
-
+            _persistenceService = rulerPersistanceService ?? throw new ArgumentNullException(nameof(rulerPersistanceService));
             // Initialize ViewModel and bind action callbacks
             _viewModel = new RulerViewModel(info, _monitorRegistry, _rulerFactory)
             {
@@ -82,21 +82,29 @@ namespace Ruler.Wpf.Windows
                 RequestOpenShortcuts = OpenShortcutsWindow,
                 RequestOpenAbout = OpenAboutWindow,
                 RequestOpenMagnifier = HandleMagnifierToggle,
-                RequestCloseWindow = Close,
-                RequestExit = () => Application.Current.Shutdown(),
                 RequestResizeWindow = (w, h) => { this.Width = w; this.Height = h; },
                 RequestMoveWindow = (dx, dy) => { this.Left += dx; this.Top += dy; },
-                SyncTooltip = SyncTooltipWindowState
+                SyncTooltip = SyncTooltipWindowState,
+                RequestCloseWindow = () => { this.Close(); } 
             };
                  _viewModel.DuplicateRequested += (s, data) => DuplicateRequested?.Invoke(s, data);
-                
-            
+            _viewModel.RequestExit += () =>
+            {
+                var rulersToSave = _rulerRegistry.GetRulersToSave();
+                _persistenceService.SaveAll(rulersToSave);
+                Application.Current.Shutdown();
+            };
+
+
             InitializeComponent();
             DataContext = _viewModel;
-
+            _rulerRegistry.Register(this);
             _isUpdatingFromWindow = true;
+            this.WindowStartupLocation = WindowStartupLocation.Manual;
             this.Width = _rulerInfo.Width;
             this.Height = _rulerInfo.Height;
+            this.Left = _rulerInfo.Left;
+            this.Top = _rulerInfo.Top;
 
             // Setup Interop Hook and Initialize Monitor Context
             this.SourceInitialized += (s, e) =>

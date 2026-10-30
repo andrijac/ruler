@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Converters\RawJsonConverter.cs" />
     <Compile Include="Enums\HitArea.cs" />
     <Compile Include="Enums\InteractionMode.cs" />
     <Compile Include="Enums\MenuItemEnum.cs" />

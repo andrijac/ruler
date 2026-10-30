@@ -103,6 +103,11 @@ namespace Ruler.Wpf.Services
         {
             try
             {
+                Debug.WriteLine($"Number of Rulers {rulers.Count()}");
+                foreach (RulerInfo r in rulers)
+                {
+                    Debug.WriteLine($"Saving Ruler: ID={r.ID}, Width={r.Width}, Height={r.Height}, Opacity={r.Opacity}, SaveType={r.SaveType}");
+                }
                 var rulersToSave = _processor.Preprocess(rulers);
                 string payloadJson = _settingsService.SerializeRulers(rulersToSave);
 
@@ -130,7 +135,7 @@ namespace Ruler.Wpf.Services
             {
                 _registry.UpdateRulerByID(info);
             }
-            SaveAll(_registry.GetActiveRulers().Select(r => r.RulerData).ToList());
+            SaveAll(_registry.GetRulersToSave());
         }
 
         public void Reset()
